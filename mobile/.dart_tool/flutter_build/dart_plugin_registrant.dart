@@ -6,10 +6,12 @@
 // @dart = 2.19
 
 import 'dart:io'; // flutter_ignore: dart_io_import.
+import 'package:google_sign_in_android/google_sign_in_android.dart' as google_sign_in_android;
 import 'package:path_provider_android/path_provider_android.dart' as path_provider_android;
 import 'package:shared_preferences_android/shared_preferences_android.dart' as shared_preferences_android;
 import 'package:url_launcher_android/url_launcher_android.dart' as url_launcher_android;
 import 'package:video_player_android/video_player_android.dart' as video_player_android;
+import 'package:google_sign_in_ios/google_sign_in_ios.dart' as google_sign_in_ios;
 import 'package:path_provider_foundation/path_provider_foundation.dart' as path_provider_foundation;
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart' as shared_preferences_foundation;
 import 'package:url_launcher_ios/url_launcher_ios.dart' as url_launcher_ios;
@@ -18,6 +20,7 @@ import 'package:path_provider_linux/path_provider_linux.dart' as path_provider_l
 import 'package:share_plus/share_plus.dart' as share_plus;
 import 'package:shared_preferences_linux/shared_preferences_linux.dart' as shared_preferences_linux;
 import 'package:url_launcher_linux/url_launcher_linux.dart' as url_launcher_linux;
+import 'package:google_sign_in_ios/google_sign_in_ios.dart' as google_sign_in_ios;
 import 'package:path_provider_foundation/path_provider_foundation.dart' as path_provider_foundation;
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart' as shared_preferences_foundation;
 import 'package:url_launcher_macos/url_launcher_macos.dart' as url_launcher_macos;
@@ -33,6 +36,15 @@ class _PluginRegistrant {
   @pragma('vm:entry-point')
   static void register() {
     if (Platform.isAndroid) {
+      try {
+        google_sign_in_android.GoogleSignInAndroid.registerWith();
+      } catch (err) {
+        print(
+          '`google_sign_in_android` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
       try {
         path_provider_android.PathProviderAndroid.registerWith();
       } catch (err) {
@@ -70,6 +82,15 @@ class _PluginRegistrant {
       }
 
     } else if (Platform.isIOS) {
+      try {
+        google_sign_in_ios.GoogleSignInIOS.registerWith();
+      } catch (err) {
+        print(
+          '`google_sign_in_ios` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
       try {
         path_provider_foundation.PathProviderFoundation.registerWith();
       } catch (err) {
@@ -144,6 +165,15 @@ class _PluginRegistrant {
       }
 
     } else if (Platform.isMacOS) {
+      try {
+        google_sign_in_ios.GoogleSignInIOS.registerWith();
+      } catch (err) {
+        print(
+          '`google_sign_in_ios` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
       try {
         path_provider_foundation.PathProviderFoundation.registerWith();
       } catch (err) {

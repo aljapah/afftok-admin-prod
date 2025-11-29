@@ -5,17 +5,17 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<string>$(DEVELOPMENT_LANGUAGE )</string>
 	<key>CFBundleDisplayName</key>
 	<string>Afftok</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>com.afftok.app</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>reftok</string>
+	<string>afftok</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -44,6 +44,26 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.571624708472-meq9i5kvacqudq368tdba9d5tt3ghgn1</string>
+			</array>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+	<string>571624708472-meq9i5kvacqudq368tdba9d5tt3ghgn1.apps.googleusercontent.com</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app requires access to your local network to function properly.</string>
+	<key>NSBonjourServiceTypes</key>
+	<array>
+		<string>_http._tcp</string>
+		<string>_https._tcp</string>
 	</array>
 </dict>
 </plist>

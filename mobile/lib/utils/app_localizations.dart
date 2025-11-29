@@ -158,6 +158,7 @@ class AppLocalizations {
       'signUpToStart': 'Sign up to start sharing and tracking',
       'alreadyHaveAccount': 'Already have an account?',
       'signInLink': 'Sign In',
+      'confirmPassword': 'Confirm Password',
       
       // Offer Categories
       'categoryAll': 'All',
@@ -606,6 +607,7 @@ class AppLocalizations {
       'signUpToStart': 'سجل لتبدأ بالمشاركة والتتبع',
       'alreadyHaveAccount': 'هل لديك حساب بالفعل؟',
       'signInLink': 'تسجيل الدخول',
+      'confirmPassword': 'تأكيد كلمة المرور',
       
       // Offer Categories
       'categoryAll': 'الكل',
