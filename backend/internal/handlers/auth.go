@@ -19,6 +19,12 @@ type AuthHandler struct {
 	db *gorm.DB
 }
 
+type GoogleClaims struct {
+	Email   string `json:"email"`
+	Name    string `json:"name"`
+	Picture string `json:"picture"`
+}
+
 func NewAuthHandler(db *gorm.DB) *AuthHandler {
 	return &AuthHandler{db: db}
 }
@@ -238,7 +244,7 @@ func (h *AuthHandler) GoogleSignIn(c *gin.Context) {
 	})
 }
 
-func (h *AuthHandler) verifyGoogleToken(idToken string) (map[string]interface{}, error) {
+func (h *AuthHandler) verifyGoogleToken(idToken string) (*GoogleClaims, error) {
 	parts := strings.Split(idToken, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("invalid token format")
@@ -252,12 +258,12 @@ func (h *AuthHandler) verifyGoogleToken(idToken string) (map[string]interface{},
 		return nil, err
 	}
 
-	var claims map[string]interface{}
+	var claims GoogleClaims
 	if err := json.Unmarshal(decoded, &claims); err != nil {
 		return nil, err
 	}
 
-	return claims, nil
+	return &claims, nil
 }
 
 func generateUsernameFromEmail(email string) string {
