@@ -1,9 +1,13 @@
-FROM golang:1.24-alpine
-WORKDIR /app
+FROM golang:1.24-alpine AS builder
+WORKDIR /build
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 COPY backend/ .
-RUN CGO_ENABLED=0 go build -o /server ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/api
+
 FROM alpine:latest
-COPY --from=0 /server /server
-CMD ["/server"]
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /build/server .
+EXPOSE 8080
+CMD ["./server"]
