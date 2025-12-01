@@ -74,15 +74,21 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 	}
 
 	h.db.Model(&userOffer).UpdateColumn("conversions", h.db.Raw("conversions + 1"))
+	h.db.Model(&userOffer).UpdateColumn("monthly_conversions", h.db.Raw("monthly_conversions + 1"))
+	
 	if conversion.Status == "approved" {
 		h.db.Model(&userOffer).UpdateColumn("earnings", h.db.Raw("earnings + ?", conversion.Commission))
+		h.db.Model(&userOffer).UpdateColumn("monthly_earnings", h.db.Raw("monthly_earnings + ?", conversion.Commission))
 	}
 
 	h.db.Model(&models.Offer{}).Where("id = ?", userOffer.OfferID).UpdateColumn("total_conversions", h.db.Raw("total_conversions + 1"))
 
 	h.db.Model(&models.AfftokUser{}).Where("id = ?", userOffer.UserID).UpdateColumn("total_conversions", h.db.Raw("total_conversions + 1"))
+	h.db.Model(&models.AfftokUser{}).Where("id = ?", userOffer.UserID).UpdateColumn("monthly_conversions", h.db.Raw("monthly_conversions + 1"))
+	
 	if conversion.Status == "approved" {
 		h.db.Model(&models.AfftokUser{}).Where("id = ?", userOffer.UserID).UpdateColumn("total_earnings", h.db.Raw("total_earnings + ?", conversion.Commission))
+		h.db.Model(&models.AfftokUser{}).Where("id = ?", userOffer.UserID).UpdateColumn("monthly_earnings", h.db.Raw("monthly_earnings + ?", conversion.Commission))
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -117,8 +123,10 @@ func (h *PostbackHandler) ApproveConversion(c *gin.Context) {
 	var userOffer models.UserOffer
 	if err := h.db.First(&userOffer, "id = ?", conversion.UserOfferID).Error; err == nil {
 		h.db.Model(&userOffer).UpdateColumn("earnings", h.db.Raw("earnings + ?", conversion.Commission))
+		h.db.Model(&userOffer).UpdateColumn("monthly_earnings", h.db.Raw("monthly_earnings + ?", conversion.Commission))
 
 		h.db.Model(&models.AfftokUser{}).Where("id = ?", userOffer.UserID).UpdateColumn("total_earnings", h.db.Raw("total_earnings + ?", conversion.Commission))
+		h.db.Model(&models.AfftokUser{}).Where("id = ?", userOffer.UserID).UpdateColumn("monthly_earnings", h.db.Raw("monthly_earnings + ?", conversion.Commission))
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -51,8 +51,12 @@ func (s *ClickService) TrackClick(c *gin.Context, userOfferID uuid.UUID) (*model
 	if err := database.DB.First(&userOffer, "id = ?", userOfferID).Error; err == nil {
 		database.DB.Model(&models.Offer{}).Where("id = ?", userOffer.OfferID).UpdateColumn("total_clicks", database.DB.Raw("total_clicks + 1"))
 		
-		// Update user total clicks
+			// Update user total clicks
 		database.DB.Model(&models.AfftokUser{}).Where("id = ?", userOffer.UserID).UpdateColumn("total_clicks", database.DB.Raw("total_clicks + 1"))
+		
+		// Update monthly clicks
+		database.DB.Model(&models.UserOffer{}).Where("id = ?", userOfferID).UpdateColumn("monthly_clicks", database.DB.Raw("monthly_clicks + 1"))
+		database.DB.Model(&models.AfftokUser{}).Where("id = ?", userOffer.UserID).UpdateColumn("monthly_clicks", database.DB.Raw("monthly_clicks + 1"))
 	}
 
 	return &click, nil

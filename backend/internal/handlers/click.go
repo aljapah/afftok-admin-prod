@@ -42,10 +42,15 @@ func (h *ClickHandler) TrackClick(c *gin.Context) {
 	if promoterID != "" {
 		promoterUUID, err := uuid.Parse(promoterID)
 		if err == nil {
-			h.db.FirstOrCreate(&userOffer, models.UserOffer{
-				UserID:  promoterUUID,
-				OfferID: id,
-			})
+			if err := h.db.Where("user_id = ? AND offer_id = ?", promoterUUID, id).First(&userOffer).Error; err != nil {
+				userOffer = models.UserOffer{
+					ID:      uuid.New(),
+					UserID:  promoterUUID,
+					OfferID: id,
+					Status:  "active",
+				}
+				h.db.Create(&userOffer)
+			}
 		}
 	}
 

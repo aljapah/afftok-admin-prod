@@ -287,6 +287,43 @@ class ApiService {
     }
   }
 
+  // Generic POST request
+  Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> body) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}$endpoint'),
+        headers: _getHeaders(includeAuth: true),
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'data': data,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Request failed',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
   // Generic DELETE request
   Future<Map<String, dynamic>> delete(String endpoint) async {
     try {

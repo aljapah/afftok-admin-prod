@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/offer.dart';
 import '../utils/app_localizations.dart';
+import '../providers/auth_provider.dart';
 
 class OfferCard extends StatefulWidget {
   final Offer offer;
@@ -60,7 +62,16 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
   }
 
   Future<void> _openRegistration(String url) async {
-    final Uri uri = Uri.parse(url);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userID = authProvider.currentUser?.id;
+    
+    String finalUrl = url;
+    if (userID != null && userID.isNotEmpty) {
+      final separator = url.contains('?') ? '&' : '?';
+      finalUrl = '$url${separator}promoter=$userID';
+    }
+    
+    final Uri uri = Uri.parse(finalUrl);
 
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
