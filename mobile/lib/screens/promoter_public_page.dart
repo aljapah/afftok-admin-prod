@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import '../models/user.dart';
-import '../models/user_offer.dart';
-import '../models/offer.dart';
+import 'package:provider/provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_localizations.dart';
-import 'download_prompt_screen.dart';
+import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 
-class PromoterPublicPage extends StatelessWidget {
+class PromoterPublicPage extends StatefulWidget {
   final String username;
 
   const PromoterPublicPage({
@@ -14,523 +16,195 @@ class PromoterPublicPage extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final lang = AppLocalizations.of(context);
-    
-    // In real app, fetch user data from API based on username
-    // For now, using sample data
-    final promoter = currentUser;
-    final userOffers = getUserOffers(promoter.id);
-    final allOffers = Offer.getSampleOffers();
+  State<PromoterPublicPage> createState() => _PromoterPublicPageState();
+}
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: CustomScrollView(
-        slivers: [
-          // Header with promoter info
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            backgroundColor: Colors.black,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      const Color(0xFF8E2DE2).withOpacity(0.3),
-                      Colors.black,
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Avatar
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-                          ),
-                          border: Border.all(color: Colors.white, width: 3),
-                        ),
-                        child: Center(
-                          child: Text(
-                            promoter.displayName[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // Name
-                      Text(
-                        promoter.displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      // Username
-                      Text(
-                        '@$username',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Level badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.amber),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              promoter.level.emoji,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              promoter.level.displayName,
-                              style: const TextStyle(
-                                color: Colors.amber,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+class _PromoterPublicPageState extends State<PromoterPublicPage> {
+  late final WebViewController _webViewController;
+  bool _isLoading = true;
+  final ApiService _apiService = ApiService();
 
-          // Bio
-          if (promoter.bio != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  promoter.bio!,
-                  style: TextStyle(
-                    color: Colors.grey[300],
-                    fontSize: 15,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-
-          // Stats
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[800]!),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatItem(
-                      icon: Icons.inventory_2,
-                      label: lang.offers,
-                      value: '${userOffers.length}',
-                      color: Colors.blue,
-                    ),
-                    _buildStatItem(
-                      icon: Icons.people,
-                      label: lang.helped,
-                      value: '${promoter.stats.totalReferrals}',
-                      color: Colors.green,
-                    ),
-                    _buildStatItem(
-                      icon: Icons.emoji_events,
-                      label: lang.rank,
-                      value: '#${promoter.stats.globalRank}',
-                      color: Colors.amber,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Section title
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 32, 20, 16),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.card_giftcard,
-                    color: Color(0xFF8E2DE2),
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    lang.recommendedOffers,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Offers list
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final userOffer = userOffers[index];
-                  final offer = allOffers.firstWhere(
-                    (o) => o.id == userOffer.offerId,
-                    orElse: () => allOffers.first,
-                  );
-                  return _buildOfferCard(context, offer, userOffer, lang);
-                },
-                childCount: userOffers.length,
-              ),
-            ),
-          ),
-
-          // Footer
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                children: [
-                  const Divider(color: Colors.grey),
-                  const SizedBox(height: 24),
-                  Image.asset(
-                    'assets/logo.png',
-                    height: 40,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Text(
-                        'AffTok',
-                        style: TextStyle(
-                          color: Color(0xFF8E2DE2),
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    lang.poweredByAffTok,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      // TODO: Navigate to app download or sign up
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8E2DE2),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      lang.startEarningToo,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _initializeWebView();
   }
 
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+  void _initializeWebView() async {
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            if (request.url.startsWith('http') &&
+                (request.url.contains('instagram.com') ||
+                 request.url.contains('tiktok.com') ||
+                 request.url.contains('twitter.com') ||
+                 request.url.contains('youtube.com'))) {
+              launchUrl(Uri.parse(request.url), mode: LaunchMode.externalApplication);
+              return NavigationDecision.prevent;
+            }
+            if (request.url.endsWith('privacy.html') || request.url.endsWith('terms.html')) {
+              _showHtmlPage(request.url);
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+          onPageFinished: (_) {
+            _injectUserData();
+            setState(() {
+              _isLoading = false;
+            });
+          },
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
+      );
+
+    try {
+      final htmlContent = await _loadPromoterPageFromAPI();
+      _webViewController.loadHtmlString(htmlContent, baseUrl: 'https://afftok-backend-prod-production.up.railway.app/');
+    } catch (e) {
+      print('Error loading HTML: $e');
+      final fallbackHtml = await rootBundle.loadString('assets/html/promoter_landing.html');
+      _webViewController.loadHtmlString(fallbackHtml, baseUrl: 'https://afftok-backend-prod-production.up.railway.app/');
+    }
   }
 
-  Widget _buildOfferCard(
-    BuildContext context,
-    Offer offer,
-    UserOffer userOffer,
-    AppLocalizations lang,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[800]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Offer image
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.network(
-              offer.imageUrl,
-              height: 150,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 150,
-                  color: Colors.grey[800],
-                  child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      size: 50,
-                      color: Colors.white30,
-                    ),
-                  ),
-                );
+  Future<String> _loadPromoterPageFromAPI() async {
+    try {
+      final response = await _apiService.get('/promoter/user/${widget.username}');
+      
+      if (response['success'] == true && response['html'] != null) {
+        return response['html'] as String;
+      }
+      
+      throw Exception('Failed to load promoter page from API');
+    } catch (e) {
+      print('Error loading from API: $e');
+      rethrow;
+    }
+  }
+
+  void _showHtmlPage(String url) async {
+    String title = 'سياسة الخصوصية';
+    String filePath = 'assets/html/privacy.html';
+
+    if (url.contains('terms')) {
+      title = 'شروط الاستخدام';
+      filePath = 'assets/html/terms.html';
+    }
+
+    try {
+      final htmlContent = await rootBundle.loadString(filePath);
+
+      final pageController = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted);
+
+      pageController.addJavaScriptChannel(
+        'FlutterChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          if (message.message == 'close') {
+            Navigator.of(context).pop();
+          }
+        },
+      );
+
+      pageController
+        ..setNavigationDelegate(
+            NavigationDelegate(
+              onPageFinished: (_) {
+                pageController.runJavaScript('''
+                  const backBtn = document.getElementById('back-btn');
+                  if (backBtn) {
+                    backBtn.addEventListener('click', (e) => {
+                      e.preventDefault();
+                      FlutterChannel.postMessage('close');
+                    });
+                  }
+                ''');
               },
             ),
-          ),
+        )
+        ..loadHtmlString(htmlContent);
 
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Company name and logo
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.all(6),
-                      child: Image.network(
-                        offer.logoUrl,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Text(
-                              offer.companyName[0],
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            offer.companyName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                offer.rating.toString(),
-                                style: const TextStyle(
-                                  color: Colors.amber,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                offer.category,
-                                style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // Description
-                Text(
-                  offer.description,
-                  style: TextStyle(
-                    color: Colors.grey[300],
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                const SizedBox(height: 16),
-
-                // Reward
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.card_giftcard,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        offer.reward,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Start button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DownloadPromptScreen(
-                            offer: offer,
-                            userOffer: userOffer,
-                            promoterUsername: currentUser.username,
-                          ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.rocket_launch, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          lang.startNow,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.black,
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              title: Text(title, style: const TextStyle(color: Colors.white)),
+              leading: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
             ),
+            body: WebViewWidget(controller: pageController),
+          );
+        },
+      );
+    } catch (e) {
+      print('Error loading page: $e');
+    }
+  }
+
+  void _injectUserData() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+
+    if (user != null) {
+      final jsCode = '''
+        window.userData = {
+          username: "${user.username}",
+          displayName: "${user.displayName}",
+          avatar: "${user.avatarUrl ?? ''}",
+          rank: ${user.stats.globalRank},
+          totalClicks: ${user.stats.totalClicks},
+          totalConversions: ${user.stats.totalConversions},
+          conversionRate: ${user.stats.conversionRate.toStringAsFixed(1)}
+        };
+        if (window.updateProfileData) {
+          window.updateProfileData(window.userData);
+        }
+      ''';
+
+      _webViewController.runJavaScript(jsCode);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = AppLocalizations.of(context);
+
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context);
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: Text(lang.myPublicPage ?? "صفحتي", style: const TextStyle(color: Colors.white)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
-        ],
+        ),
+        body: Stack(
+          children: [
+            WebViewWidget(controller: _webViewController),
+            if (_isLoading)
+              const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
-

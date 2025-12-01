@@ -1,281 +1,38 @@
 package handlers
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/afftok/backend/internal/models"
-	"github.com/afftok/backend/pkg/utils"
+	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-type AuthHandler struct {
-	db *gorm.DB
+type UserStatsResponse struct {
+	TotalClicks          int     `json:"total_clicks"`
+	TotalConversions     int     `json:"total_conversions"`
+	TotalRegisteredOffers int    `json:"total_registered_offers"`
+	MonthlyClicks        int     `json:"monthly_clicks"`
+	MonthlyConversions   int     `json:"monthly_conversions"`
+	GlobalRank           int     `json:"global_rank"`
+	ConversionRate       float64 `json:"conversion_rate"`
 }
 
-type GoogleClaims struct {
-	Email   string `json:"email"`
-	Name    string `json:"name"`
-	Picture string `json:"picture"`
-}
-
-func NewAuthHandler(db *gorm.DB) *AuthHandler {
-	return &AuthHandler{db: db}
-}
-
-func (h *AuthHandler) Register(c *gin.Context) {
-	type RegisterRequest struct {
-		Username string `json:"username" binding:"required,min=3,max=50"`
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=6"`
-		FullName string `json:"full_name"`
-	}
-
-	var req RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var existingUser models.AfftokUser
-	if err := h.db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
-		return
-	}
-
-	if err := h.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
-		return
-	}
-
-	hashedPassword, err := utils.HashPassword(req.Password)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
-	}
-
-	user := models.AfftokUser{
-		ID:           uuid.New(),
-		Username:     req.Username,
-		Email:        req.Email,
-		PasswordHash: hashedPassword,
-		FullName:     req.FullName,
-		Role:         "user",
-		Status:       "active",
-		Points:       0,
-		Level:        1,
-	}
-
-	if err := h.db.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-		return
-	}
-
-	accessToken, err := utils.GenerateToken(user.ID, user.Username, user.Email, user.Role)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	refreshToken, err := utils.GenerateRefreshToken(user.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate refresh token"})
-		return
-	}
-
-	user.PasswordHash = ""
-
-	c.JSON(http.StatusCreated, gin.H{
-		"message":       "User registered successfully",
-		"user":          user,
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
-}
-
-func (h *AuthHandler) Login(c *gin.Context) {
-	type LoginRequest struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
-
-	var req LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var user models.AfftokUser
-	if err := h.db.Where("username = ? OR email = ?", req.Username, req.Username).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	if user.Status == "suspended" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Account is suspended"})
-		return
-	}
-
-	if !utils.CheckPassword(user.PasswordHash, req.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	accessToken, err := utils.GenerateToken(user.ID, user.Username, user.Email, user.Role)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	refreshToken, err := utils.GenerateRefreshToken(user.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate refresh token"})
-		return
-	}
-
-	user.PasswordHash = ""
-
-	c.JSON(http.StatusOK, gin.H{
-		"message":       "Login successful",
-		"user":          user,
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
-}
-
-func (h *AuthHandler) GoogleSignIn(c *gin.Context) {
-	type GoogleSignInRequest struct {
-		IDToken string `json:"idToken" binding:"required"`
-	}
-
-	var req GoogleSignInRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	googleClaims, err := h.verifyGoogleToken(req.IDToken)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Google token"})
-		return
-	}
-
-	var user models.AfftokUser
-	if err := h.db.Where("email = ?", googleClaims.Email).First(&user).Error; err == nil {
-		if user.Status == "suspended" {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Account is suspended"})
-			return
-		}
-
-		accessToken, err := utils.GenerateToken(user.ID, user.Username, user.Email, user.Role)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-			return
-		}
-
-		refreshToken, err := utils.GenerateRefreshToken(user.ID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate refresh token"})
-			return
-		}
-
-		user.PasswordHash = ""
-
-		c.JSON(http.StatusOK, gin.H{
-			"message":       "Login successful",
-			"user":          user,
-			"access_token":  accessToken,
-			"refresh_token": refreshToken,
-		})
-		return
-	}
-
-	username := generateUsernameFromEmail(googleClaims.Email)
-	randomPassword := generateRandomPassword()
-	hashedPassword, err := utils.HashPassword(randomPassword)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-		return
-	}
-
-	newUser := models.AfftokUser{
-		ID:           uuid.New(),
-		Username:     username,
-		Email:        googleClaims.Email,
-		PasswordHash: hashedPassword,
-		FullName:     googleClaims.Name,
-		AvatarURL:    googleClaims.Picture,
-		Role:         "user",
-		Status:       "active",
-		Points:       0,
-		Level:        1,
-	}
-
-	if err := h.db.Create(&newUser).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-		return
-	}
-
-	accessToken, err := utils.GenerateToken(newUser.ID, newUser.Username, newUser.Email, newUser.Role)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	refreshToken, err := utils.GenerateRefreshToken(newUser.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate refresh token"})
-		return
-	}
-
-	newUser.PasswordHash = ""
-
-	c.JSON(http.StatusCreated, gin.H{
-		"message":       "User created and logged in successfully",
-		"user":          newUser,
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
-}
-
-func (h *AuthHandler) verifyGoogleToken(idToken string) (*GoogleClaims, error) {
-	parts := strings.Split(idToken, ".")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid token format")
-	}
-
-	payload := parts[1]
-	payload += strings.Repeat("=", (4-len(payload)%4)%4)
-
-	decoded, err := base64.URLEncoding.DecodeString(payload)
-	if err != nil {
-		return nil, err
-	}
-
-	var claims GoogleClaims
-	if err := json.Unmarshal(decoded, &claims); err != nil {
-		return nil, err
-	}
-
-	return &claims, nil
-}
-
-func generateUsernameFromEmail(email string) string {
-	parts := strings.Split(email, "@")
-	username := parts[0]
-	hash := sha256.Sum256([]byte(email))
-	suffix := base64.URLEncoding.EncodeToString(hash[:])[:8]
-	return username + "_" + suffix
-}
-
-func generateRandomPassword() string {
-	return base64.StdEncoding.EncodeToString([]byte(uuid.New().String()))[:16]
+type UserResponseWithStats struct {
+	ID                   uuid.UUID         `json:"id"`
+	Username             string            `json:"username"`
+	Email                string            `json:"email"`
+	FullName             string            `json:"full_name"`
+	AvatarURL            string            `json:"avatar_url"`
+	Bio                  string            `json:"bio"`
+	Role                 string            `json:"role"`
+	Status               string            `json:"status"`
+	Points               int               `json:"points"`
+	Level                int               `json:"level"`
+	CreatedAt            string            `json:"created_at"`
+	Stats                UserStatsResponse `json:"stats"`
 }
 
 func (h *AuthHandler) GetMe(c *gin.Context) {
@@ -291,49 +48,74 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	user.PasswordHash = ""
+	var totalClicks int64
+	var totalConversions int64
+	var totalOffers int64
+	var monthlyClicks int64
+	var monthlyConversions int64
+
+	h.db.Model(&models.Click{}).
+		Joins("JOIN user_offers ON clicks.user_offer_id = user_offers.id").
+		Where("user_offers.user_id = ? AND user_offers.status = ?", user.ID, "active").
+		Count(&totalClicks)
+
+	h.db.Model(&models.Conversion{}).
+		Joins("JOIN user_offers ON conversions.user_offer_id = user_offers.id").
+		Where("user_offers.user_id = ? AND conversions.status = ?", user.ID, "approved").
+		Count(&totalConversions)
+
+	h.db.Model(&models.UserOffer{}).
+		Where("user_id = ? AND status = ?", user.ID, "active").
+		Count(&totalOffers)
+
+	h.db.Model(&models.Click{}).
+		Joins("JOIN user_offers ON clicks.user_offer_id = user_offers.id").
+		Where("user_offers.user_id = ? AND user_offers.status = ? AND EXTRACT(MONTH FROM clicks.clicked_at) = EXTRACT(MONTH FROM NOW())", user.ID, "active").
+		Count(&monthlyClicks)
+
+	h.db.Model(&models.Conversion{}).
+		Joins("JOIN user_offers ON conversions.user_offer_id = user_offers.id").
+		Where("user_offers.user_id = ? AND conversions.status = ? AND EXTRACT(MONTH FROM conversions.converted_at) = EXTRACT(MONTH FROM NOW())", user.ID, "approved").
+		Count(&monthlyConversions)
+
+	conversionRate := 0.0
+	if totalClicks > 0 {
+		conversionRate = (float64(totalConversions) / float64(totalClicks)) * 100
+	}
+
+	var globalRank int64 = 1
+	h.db.Model(&models.AfftokUser{}).
+		Where("total_conversions > ?", user.TotalConversions).
+		Count(&globalRank)
+	globalRank += 1
+
+	stats := UserStatsResponse{
+		TotalClicks:           int(totalClicks),
+		TotalConversions:      int(totalConversions),
+		TotalRegisteredOffers: int(totalOffers),
+		MonthlyClicks:         int(monthlyClicks),
+		MonthlyConversions:    int(monthlyConversions),
+		GlobalRank:            int(globalRank),
+		ConversionRate:        conversionRate,
+	}
+
+	response := UserResponseWithStats{
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		FullName:  user.FullName,
+		AvatarURL: user.AvatarURL,
+		Bio:       user.Bio,
+		Role:      user.Role,
+		Status:    user.Status,
+		Points:    user.Points,
+		Level:     user.Level,
+		CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Stats:     stats,
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": user,
-	})
-}
-
-func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	type RefreshRequest struct {
-		RefreshToken string `json:"refresh_token" binding:"required"`
-	}
-
-	var req RefreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	claims, err := utils.ValidateToken(req.RefreshToken)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
-		return
-	}
-
-	var user models.AfftokUser
-	if err := h.db.First(&user, "id = ?", claims.UserID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
-	accessToken, err := utils.GenerateToken(user.ID, user.Username, user.Email, user.Role)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"access_token": accessToken,
-	})
-}
-
-func (h *AuthHandler) Logout(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Logout successful",
+		"success": true,
+		"user":    response,
 	})
 }

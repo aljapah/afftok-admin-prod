@@ -3,8 +3,11 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/offer.dart';
 import '../models/user_offer.dart';
+import '../services/api_service.dart';
 
 class OfferService {
+  final ApiService _apiService = ApiService();
+
   Future<Map<String, dynamic>> getAllOffers({
     String? status,
     String? category,
@@ -17,19 +20,18 @@ class OfferService {
       if (category != null) queryParams['category'] = category;
       if (sort != null) queryParams['sort'] = sort;
       if (order != null) queryParams['order'] = order;
-
+      
       final uri = Uri.parse('${ApiConfig.baseUrl}/api/offers')
           .replace(queryParameters: queryParams);
-
+      
       final response = await http.get(
         uri,
         headers: {'Content-Type': 'application/json'},
       ).timeout(ApiConfig.connectTimeout);
-
+      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         
-        // فحص إذا كانت البيانات موجودة وليست فارغة
         if (data['offers'] == null || (data['offers'] is! List)) {
           return {
             'success': true,
@@ -39,7 +41,6 @@ class OfferService {
         
         final offersJson = data['offers'] as List;
         
-        // فحص إذا كانت القائمة فارغة
         if (offersJson.isEmpty) {
           return {
             'success': true,
@@ -48,7 +49,6 @@ class OfferService {
         }
         
         final offers = offersJson.map((json) => Offer.fromJson(json)).toList();
-
         return {
           'success': true,
           'offers': offers,
@@ -69,20 +69,12 @@ class OfferService {
 
   Future<Map<String, dynamic>> getMyOffers() async {
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/api/offers/my');
-
-      final response = await http.get(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      ).timeout(ApiConfig.connectTimeout);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      final result = await _apiService.get('/offers/my');
+      
+      if (result['success'] == true) {
+        final data = result['data'] as Map<String, dynamic>?;
         
-        // فحص إذا كانت البيانات موجودة وليست فارغة
-        if (data['offers'] == null || (data['offers'] is! List)) {
+        if (data == null || data['offers'] == null || (data['offers'] is! List)) {
           return {
             'success': true,
             'offers': [],
@@ -91,7 +83,6 @@ class OfferService {
         
         final offersJson = data['offers'] as List;
         
-        // فحص إذا كانت القائمة فارغة
         if (offersJson.isEmpty) {
           return {
             'success': true,
@@ -100,7 +91,6 @@ class OfferService {
         }
         
         final offers = offersJson.map((json) => UserOffer.fromJson(json)).toList();
-
         return {
           'success': true,
           'offers': offers,
@@ -108,46 +98,59 @@ class OfferService {
       } else {
         return {
           'success': false,
-          'error': 'Failed to load my offers: ${response.statusCode}',
+          'error': result['error'] ?? 'Failed to load offers',
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Error fetching my offers: $e',
+        'error': 'Error fetching offers: $e',
       };
     }
   }
 
   Future<Map<String, dynamic>> joinOffer(String offerId) async {
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/api/offers/$offerId/join');
-
-      final response = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      ).timeout(ApiConfig.connectTimeout);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = json.decode(response.body);
-
+      final result = await _apiService.post('/offers/$offerId/join', {});
+      
+      if (result['success'] == true) {
         return {
           'success': true,
-          'message': data['message'] ?? 'Successfully joined offer',
+          'message': result['message'] ?? 'Offer joined successfully',
         };
       } else {
-        final data = json.decode(response.body);
         return {
           'success': false,
-          'error': data['error'] ?? 'Failed to join offer',
+          'error': result['error'] ?? 'Failed to join offer',
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error joining offer: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> getOfferStats(String offerId) async {
+    try {
+      final result = await _apiService.get('/offers/$offerId/stats');
+      
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'stats': result['data'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': result['error'] ?? 'Failed to load stats',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error fetching stats: $e',
       };
     }
   }
