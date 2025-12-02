@@ -298,8 +298,6 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 
 	totalClicks := user.TotalClicks
 	totalConversions := user.TotalConversions
-	monthlyClicks := user.MonthlyClicks
-	monthlyConversions := user.MonthlyConversions
 
 	conversionRate := 0.0
 	if totalClicks > 0 {
@@ -318,8 +316,6 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		"total_clicks": totalClicks,
 		"total_conversions": totalConversions,
 		"total_registered_offers": totalOffers,
-		"monthly_clicks": monthlyClicks,
-		"monthly_conversions": monthlyConversions,
 		"global_rank": globalRank,
 		"conversion_rate": conversionRate,
 	}
