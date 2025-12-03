@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/aljapah/afftok-backend-prod/internal/models"
+	"github.com/aljapah/afftok-backend-prod/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -18,6 +19,224 @@ type AdvertiserHandler struct {
 // NewAdvertiserHandler creates a new advertiser handler
 func NewAdvertiserHandler(db *gorm.DB) *AdvertiserHandler {
 	return &AdvertiserHandler{db: db}
+}
+
+// AdvertiserRegisterRequest represents the advertiser registration request
+type AdvertiserRegisterRequest struct {
+	Username    string `json:"username" binding:"required"`
+	Email       string `json:"email" binding:"required,email"`
+	Password    string `json:"password" binding:"required,min=6"`
+	FullName    string `json:"full_name" binding:"required"`
+	CompanyName string `json:"company_name" binding:"required"`
+	Phone       string `json:"phone"`
+	Website     string `json:"website"`
+	Country     string `json:"country"`
+}
+
+// RegisterAdvertiser handles advertiser registration
+// POST /api/advertiser/register
+func (h *AdvertiserHandler) RegisterAdvertiser(c *gin.Context) {
+	var req AdvertiserRegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if email already exists
+	var existingUser models.AfftokUser
+	if err := h.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
+		return
+	}
+
+	// Check if username already exists
+	if err := h.db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username already taken"})
+		return
+	}
+
+	// Hash password
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process password"})
+		return
+	}
+
+	// Create advertiser user
+	user := models.AfftokUser{
+		ID:           uuid.New(),
+		Username:     req.Username,
+		Email:        req.Email,
+		PasswordHash: hashedPassword,
+		FullName:     req.FullName,
+		CompanyName:  req.CompanyName,
+		Phone:        req.Phone,
+		Website:      req.Website,
+		Country:      req.Country,
+		Role:         "advertiser",
+		Status:       "active",
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+
+	if err := h.db.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create advertiser account"})
+		return
+	}
+
+	// Generate JWT token
+	token, err := utils.GenerateToken(user.ID.String())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Advertiser account created successfully",
+		"user": gin.H{
+			"id":           user.ID,
+			"username":     user.Username,
+			"email":        user.Email,
+			"full_name":    user.FullName,
+			"company_name": user.CompanyName,
+			"role":         user.Role,
+		},
+		"access_token": token,
+	})
+}
+
+// PauseOffer pauses an active offer
+// POST /api/advertiser/offers/:id/pause
+func (h *AdvertiserHandler) PauseOffer(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	advertiserID, ok := userID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	offerIDStr := c.Param("id")
+	offerID, err := uuid.Parse(offerIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offer ID"})
+		return
+	}
+
+	// Find offer and verify ownership
+	var offer models.Offer
+	if err := h.db.First(&offer, "id = ? AND advertiser_id = ?", offerID, advertiserID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Offer not found or not owned by you"})
+		return
+	}
+
+	if offer.Status != "active" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Only active offers can be paused"})
+		return
+	}
+
+	offer.Status = "paused"
+	offer.UpdatedAt = time.Now()
+	h.db.Save(&offer)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Offer paused successfully",
+		"offer":   offer,
+	})
+}
+
+// GetPendingOffers returns all pending offers for admin review
+// GET /api/admin/offers/pending
+func (h *AdvertiserHandler) GetPendingOffers(c *gin.Context) {
+	var offers []models.Offer
+	if err := h.db.Preload("Advertiser").
+		Where("status = ?", "pending").
+		Order("created_at DESC").
+		Find(&offers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pending offers"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"offers": offers,
+		"total":  len(offers),
+	})
+}
+
+// ApproveOffer approves a pending offer
+// POST /api/admin/offers/:id/approve
+func (h *AdvertiserHandler) ApproveOffer(c *gin.Context) {
+	offerIDStr := c.Param("id")
+	offerID, err := uuid.Parse(offerIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offer ID"})
+		return
+	}
+
+	var offer models.Offer
+	if err := h.db.First(&offer, "id = ?", offerID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Offer not found"})
+		return
+	}
+
+	if offer.Status != "pending" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Only pending offers can be approved"})
+		return
+	}
+
+	offer.Status = "active"
+	offer.RejectionReason = ""
+	offer.UpdatedAt = time.Now()
+	h.db.Save(&offer)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Offer approved successfully",
+		"offer":   offer,
+	})
+}
+
+// RejectOfferRequest represents the reject offer request
+type RejectOfferRequest struct {
+	Reason string `json:"reason"`
+}
+
+// RejectOffer rejects a pending offer
+// POST /api/admin/offers/:id/reject
+func (h *AdvertiserHandler) RejectOffer(c *gin.Context) {
+	offerIDStr := c.Param("id")
+	offerID, err := uuid.Parse(offerIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offer ID"})
+		return
+	}
+
+	var req RejectOfferRequest
+	c.ShouldBindJSON(&req)
+
+	var offer models.Offer
+	if err := h.db.First(&offer, "id = ?", offerID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Offer not found"})
+		return
+	}
+
+	if offer.Status != "pending" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Only pending offers can be rejected"})
+		return
+	}
+
+	offer.Status = "rejected"
+	offer.RejectionReason = req.Reason
+	offer.UpdatedAt = time.Now()
+	h.db.Save(&offer)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Offer rejected",
+		"offer":   offer,
+	})
 }
 
 // CreateOfferRequest represents the request body for creating an offer
