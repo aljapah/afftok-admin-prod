@@ -122,6 +122,9 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Tenant{},
 		&models.TenantDomain{},
 		&models.TenantAuditLog{},
+		// Contests/Challenges
+		&models.Contest{},
+		&models.ContestParticipant{},
 	)
 
 	if err != nil {
