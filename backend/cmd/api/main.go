@@ -304,6 +304,7 @@ func main() {
 			// ========== Advertiser Routes ==========
 			advertiser := protected.Group("/advertiser")
 			{
+				advertiser.GET("/dashboard", advertiserHandler.GetDashboard)
 				advertiser.GET("/offers", advertiserHandler.GetMyOffers)
 				advertiser.POST("/offers", advertiserHandler.CreateOffer)
 				advertiser.PUT("/offers/:id", advertiserHandler.UpdateOffer)
