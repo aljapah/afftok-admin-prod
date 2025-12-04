@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"github.com/gin-gonic/gin"
