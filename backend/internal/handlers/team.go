@@ -36,6 +36,21 @@ func (h *TeamHandler) GetAllTeams(c *gin.Context) {
 		return
 	}
 
+	// Calculate team totals from members' actual stats
+	for i := range teams {
+		var totalClicks, totalConversions, totalPoints int
+		for _, member := range teams[i].Members {
+			if member.Status == "active" {
+				totalClicks += member.User.TotalClicks
+				totalConversions += member.User.TotalConversions
+				totalPoints += member.User.Points
+			}
+		}
+		teams[i].TotalClicks = totalClicks
+		teams[i].TotalConversions = totalConversions
+		teams[i].TotalPoints = totalPoints
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"teams": teams,
 	})
@@ -49,6 +64,19 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Team not found"})
 		return
 	}
+
+	// Calculate team totals from members' actual stats
+	var totalClicks, totalConversions, totalPoints int
+	for _, member := range team.Members {
+		if member.Status == "active" {
+			totalClicks += member.User.TotalClicks
+			totalConversions += member.User.TotalConversions
+			totalPoints += member.User.Points
+		}
+	}
+	team.TotalClicks = totalClicks
+	team.TotalConversions = totalConversions
+	team.TotalPoints = totalPoints
 
 	c.JSON(http.StatusOK, gin.H{
 		"team": team,
@@ -209,6 +237,19 @@ func (h *TeamHandler) GetMyTeam(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Team not found"})
 		return
 	}
+
+	// Calculate team totals from members' actual stats
+	var totalClicks, totalConversions, totalPoints int
+	for _, m := range team.Members {
+		if m.Status == "active" {
+			totalClicks += m.User.TotalClicks
+			totalConversions += m.User.TotalConversions
+			totalPoints += m.User.Points
+		}
+	}
+	team.TotalClicks = totalClicks
+	team.TotalConversions = totalConversions
+	team.TotalPoints = totalPoints
 
 	// Check if user is owner
 	isOwner := team.OwnerID == userID.(uuid.UUID)
