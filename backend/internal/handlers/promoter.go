@@ -180,8 +180,9 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 
 		body {
 			font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-			background: linear-gradient(135deg, var(--bg-dark) 0%%, #0f0f0f 100%%);
-			color: var(--text-primary);
+			background-color: #0a0a0a;
+			background: linear-gradient(135deg, #0a0a0a 0%%, #0f0f0f 100%%);
+			color: #ffffff;
 			line-height: 1.6;
 			min-height: 100vh;
 		}
