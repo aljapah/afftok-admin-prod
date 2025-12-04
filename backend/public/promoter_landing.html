@@ -974,23 +974,29 @@
         }
 
         function updateUILanguage() {
-            document.getElementById('lang-btn').textContent = t('lang_btn');
-            document.getElementById('offers-title').textContent = t('offers_title');
-            document.getElementById('offers-subtitle').textContent = t('offers_subtitle');
-            document.getElementById('download-title').textContent = t('download_title');
-            document.getElementById('download-subtitle').textContent = t('download_subtitle');
-            document.getElementById('social-title').textContent = t('social_title');
-            document.getElementById('support-text').textContent = t('support_text');
-            document.getElementById('rating-btn-text').textContent = t('add_rating');
-            document.getElementById('privacy-link').textContent = t('privacy_link');
-            document.getElementById('terms-link').textContent = t('terms_link');
-            document.getElementById('contact-link').textContent = t('contact_link');
-            document.getElementById('copyright').textContent = t('copyright');
-            document.getElementById('google-play-text').textContent = t('google_play');
-            document.getElementById('app-store-text').textContent = t('app_store');
-            document.getElementById('rating-title').textContent = t('rating_title');
-            document.getElementById('submit-rating-btn').textContent = t('submit_rating');
-            document.getElementById('cancel-rating-btn').textContent = t('cancel_rating');
+            // Safe element update helper
+            function safeUpdate(id, key) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = t(key);
+            }
+            
+            safeUpdate('lang-btn', 'lang_btn');
+            safeUpdate('offers-title', 'offers_title');
+            safeUpdate('offers-subtitle', 'offers_subtitle');
+            safeUpdate('download-title', 'download_title');
+            safeUpdate('download-subtitle', 'download_subtitle');
+            safeUpdate('social-title', 'social_title');
+            safeUpdate('support-text', 'support_text');
+            safeUpdate('rating-btn-text', 'add_rating');
+            safeUpdate('privacy-link', 'privacy_link');
+            safeUpdate('terms-link', 'terms_link');
+            safeUpdate('contact-link', 'contact_link');
+            safeUpdate('copyright', 'copyright');
+            safeUpdate('google-play-text', 'google_play');
+            safeUpdate('app-store-text', 'app_store');
+            safeUpdate('rating-title', 'rating_title');
+            safeUpdate('submit-rating-btn', 'submit_rating');
+            safeUpdate('cancel-rating-btn', 'cancel_rating');
         }
 
         function openRatingModal() {
