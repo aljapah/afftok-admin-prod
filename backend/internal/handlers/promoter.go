@@ -579,7 +579,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 	</script>
 </body>
 </html>
-		`, fullName, avatarLetter, user.Username,
+		`, avatarLetter, fullName, user.Username,
 		promoterRating, totalOffers, totalClicks, bioHTML, offersHTML)
 }
 
