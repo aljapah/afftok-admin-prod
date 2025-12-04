@@ -47,13 +47,18 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 		gormLogger = logger.Default.LogMode(logger.Info)
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+	// Use simple protocol to avoid "cached plan must not change result type" error
+	// This happens when schema changes and PostgreSQL has cached query plans
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true, // Disable prepared statement caching
+	}), &gorm.Config{
 		Logger: gormLogger,
 		NowFunc: func() time.Time {
 			return time.Now().UTC()
 		},
 		// Performance optimizations
-		PrepareStmt:                              true,  // Cache prepared statements
+		PrepareStmt:                              false, // Disabled to prevent cached plan errors
 		SkipDefaultTransaction:                   true,  // Skip default transaction for single queries
 		DisableForeignKeyConstraintWhenMigrating: false, // Keep FK constraints
 	})
