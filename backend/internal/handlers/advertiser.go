@@ -278,6 +278,12 @@ func (h *AdvertiserHandler) CreateOffer(c *gin.Context) {
 		return
 	}
 
+	// Auto-fix: If user has company_name but role is not advertiser, update it
+	if user.CompanyName != "" && user.Role != "advertiser" {
+		h.db.Model(&user).Update("role", "advertiser")
+		user.Role = "advertiser"
+	}
+
 	if user.Role != "advertiser" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Only advertisers can create offers"})
 		return
