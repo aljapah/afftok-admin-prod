@@ -325,6 +325,7 @@ func main() {
 			{
 				advertiser.GET("/dashboard", advertiserHandler.GetDashboard)
 				advertiser.GET("/offers", advertiserHandler.GetMyOffers)
+				advertiser.GET("/conversions", advertiserHandler.GetConversions)
 				advertiser.POST("/offers", advertiserHandler.CreateOffer)
 				advertiser.PUT("/offers/:id", advertiserHandler.UpdateOffer)
 				advertiser.DELETE("/offers/:id", advertiserHandler.DeleteOffer)
