@@ -11,7 +11,7 @@ import (
 type Invoice struct {
 	ID              uuid.UUID  `gorm:"type:uuid;primary_key" json:"id"`
 	AdvertiserID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"advertiser_id"`
-	Advertiser      *User      `gorm:"foreignKey:AdvertiserID" json:"advertiser,omitempty"`
+	Advertiser      *AfftokUser `gorm:"foreignKey:AdvertiserID" json:"advertiser,omitempty"`
 	
 	// Invoice period
 	Month           int        `json:"month"` // 1-12
