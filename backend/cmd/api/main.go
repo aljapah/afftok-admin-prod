@@ -91,6 +91,8 @@ func main() {
 	contestHandler := handlers.NewContestHandler(db)
 	promoterHandler := handlers.NewPromoterHandler(db)
 	advertiserHandler := handlers.NewAdvertiserHandler(db)
+	inviteHandler := handlers.NewInviteHandler(db)
+	invoiceHandler := handlers.NewInvoiceHandler(db)
 	observabilityHandler := handlers.NewObservabilityHandler()
 	
 	// Phase 7: Admin Observability Handlers
@@ -226,6 +228,10 @@ func main() {
 
 		// Advertiser Registration (public - no auth required)
 		api.POST("/advertiser/register", advertiserHandler.RegisterAdvertiser)
+		
+		// Team Invite System (public - for deferred deep linking)
+		api.GET("/invite/:code", inviteHandler.GetInviteInfo)
+		api.POST("/invite/:code/visit", inviteHandler.RecordInviteVisit)
 
 		// Click tracking with bot detection and rate limiting
 		api.GET("/c/:id", middleware.BotDetectionMiddleware(), clickHandler.TrackClick)
@@ -281,6 +287,16 @@ func main() {
 				teams.DELETE("/:id", teamHandler.DeleteTeam)
 			}
 
+			// Team Invite System (protected)
+			invite := protected.Group("/invite")
+			{
+				invite.GET("/my-link", inviteHandler.GetMyInviteLink)           // Get personal invite link
+				invite.POST("/check-pending", inviteHandler.CheckPendingInvite) // Check for pending invite
+				invite.POST("/auto-join", inviteHandler.AutoJoinByInvite)       // Auto-join after registration
+				invite.POST("/:id/claim", inviteHandler.ClaimInvite)            // Claim specific invite
+				invite.POST("/claim/:code", inviteHandler.ClaimInviteByCode)    // Claim by code directly
+			}
+
 			badges := protected.Group("/badges")
 			{
 				badges.GET("", badgeHandler.GetAllBadges)
@@ -314,6 +330,11 @@ func main() {
 				advertiser.DELETE("/offers/:id", advertiserHandler.DeleteOffer)
 				advertiser.POST("/offers/:id/pause", advertiserHandler.PauseOffer)
 				advertiser.GET("/offers/:id/stats", advertiserHandler.GetOfferStats)
+				
+				// Invoices for advertisers
+				advertiser.GET("/invoices", invoiceHandler.GetMyInvoices)
+				advertiser.GET("/invoices/:id", invoiceHandler.GetInvoice)
+				advertiser.POST("/invoices/:id/confirm-payment", invoiceHandler.ConfirmPayment)
 			}
 
 			admin := protected.Group("/admin")
@@ -346,6 +367,13 @@ func main() {
 				admin.PUT("/contests/:id", contestHandler.AdminUpdateContest)
 				admin.DELETE("/contests/:id", contestHandler.AdminDeleteContest)
 				admin.GET("/contests/:id/participants", contestHandler.AdminGetContestParticipants)
+
+				// Invoice Management
+				admin.GET("/invoices", invoiceHandler.AdminGetAllInvoices)
+				admin.GET("/invoices/summary", invoiceHandler.AdminGetInvoiceSummary)
+				admin.POST("/invoices/generate", invoiceHandler.AdminGenerateMonthlyInvoices)
+				admin.POST("/invoices/:id/confirm", invoiceHandler.AdminConfirmPayment)
+				admin.POST("/invoices/:id/reject", invoiceHandler.AdminRejectPayment)
 
 				admin.POST("/badges", badgeHandler.CreateBadge)
 			admin.PUT("/badges/:id", badgeHandler.UpdateBadge)

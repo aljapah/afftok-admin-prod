@@ -125,6 +125,9 @@ func AutoMigrate(db *gorm.DB) error {
 		// Contests/Challenges
 		&models.Contest{},
 		&models.ContestParticipant{},
+		// Invoices
+		&models.Invoice{},
+		&models.InvoiceItem{},
 	)
 
 	if err != nil {
