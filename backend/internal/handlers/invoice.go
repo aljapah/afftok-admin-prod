@@ -264,7 +264,7 @@ func (h *InvoiceHandler) AdminGenerateMonthlyInvoices(c *gin.Context) {
 	}
 
 	// Get all advertisers
-	var advertisers []models.User
+	var advertisers []models.AfftokUser
 	if err := h.db.Where("role = ? AND status = ?", "advertiser", "active").
 		Find(&advertisers).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch advertisers"})
