@@ -6,6 +6,7 @@ import '../role_selection_screen.dart';
 import 'create_offer_screen.dart';
 import 'invoices_screen.dart';
 import 'conversions_screen.dart';
+import 'promoters_screen.dart';
 
 class AdvertiserDashboardScreen extends StatefulWidget {
   const AdvertiserDashboardScreen({super.key});
@@ -353,12 +354,12 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
           children: [
             Expanded(
               child: _buildActionButton(
-                isArabic ? 'فواتيري' : 'My Invoices',
-                Icons.receipt_long,
-                const Color(0xFFE91E63),
+                isArabic ? 'المروجين' : 'Promoters',
+                Icons.people,
+                const Color(0xFF9C27B0),
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const InvoicesScreen()),
+                  MaterialPageRoute(builder: (_) => const PromotersScreen()),
                 ),
               ),
             ),
@@ -379,6 +380,18 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
         const SizedBox(height: 12),
         Row(
           children: [
+            Expanded(
+              child: _buildActionButton(
+                isArabic ? 'فواتيري' : 'My Invoices',
+                Icons.receipt_long,
+                const Color(0xFFE91E63),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const InvoicesScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildActionButton(
                 isArabic ? 'تحديث' : 'Refresh',

@@ -764,3 +764,67 @@ func (h *AdvertiserHandler) GetConversions(c *gin.Context) {
 	})
 }
 
+// GetPromoters returns all promoters who joined the advertiser's offers with their stats
+// GET /api/advertiser/promoters
+func (h *AdvertiserHandler) GetPromoters(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	advertiserID, ok := userID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Get all promoters who joined offers owned by this advertiser
+	var promoters []map[string]interface{}
+	
+	err := h.db.Table("user_offers").
+		Select(`
+			afftok_users.id,
+			afftok_users.username,
+			afftok_users.full_name,
+			afftok_users.email,
+			afftok_users.payment_method,
+			afftok_users.avatar_url,
+			offers.id as offer_id,
+			offers.title as offer_title,
+			user_offers.created_at as joined_at,
+			(SELECT COUNT(*) FROM clicks WHERE clicks.user_offer_id = user_offers.id) as clicks,
+			(SELECT COUNT(*) FROM conversions WHERE conversions.user_offer_id = user_offers.id) as conversions
+		`).
+		Joins("JOIN afftok_users ON user_offers.user_id = afftok_users.id").
+		Joins("JOIN offers ON user_offers.offer_id = offers.id").
+		Where("offers.advertiser_id = ?", advertiserID).
+		Order("user_offers.created_at DESC").
+		Find(&promoters).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch promoters"})
+		return
+	}
+
+	// Calculate totals
+	var totalClicks, totalConversions int64
+	for _, p := range promoters {
+		if clicks, ok := p["clicks"].(int64); ok {
+			totalClicks += clicks
+		}
+		if conversions, ok := p["conversions"].(int64); ok {
+			totalConversions += conversions
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"promoters": promoters,
+		"total":     len(promoters),
+		"summary": gin.H{
+			"total_clicks":      totalClicks,
+			"total_conversions": totalConversions,
+		},
+	})
+}
+

@@ -135,4 +135,25 @@ class AdvertiserService {
       throw Exception('Error deleting offer: $e');
     }
   }
+
+  /// Get all promoters who joined advertiser's offers with their stats
+  Future<Map<String, dynamic>> getPromoters(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/advertiser/promoters'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to load promoters: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error loading promoters: $e');
+    }
+  }
 }
