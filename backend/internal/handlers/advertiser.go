@@ -779,43 +779,79 @@ func (h *AdvertiserHandler) GetPromoters(c *gin.Context) {
 		return
 	}
 
-	// Get all promoters who joined offers owned by this advertiser
-	var promoters []map[string]interface{}
-	
+	// First, get user_offers for this advertiser's offers
+	type PromoterResult struct {
+		UserID        uuid.UUID `gorm:"column:user_id"`
+		Username      string    `gorm:"column:username"`
+		FullName      string    `gorm:"column:full_name"`
+		Email         string    `gorm:"column:email"`
+		PaymentMethod string    `gorm:"column:payment_method"`
+		AvatarURL     string    `gorm:"column:avatar_url"`
+		OfferID       uuid.UUID `gorm:"column:offer_id"`
+		OfferTitle    string    `gorm:"column:offer_title"`
+		JoinedAt      time.Time `gorm:"column:joined_at"`
+		UserOfferID   uuid.UUID `gorm:"column:user_offer_id"`
+	}
+
+	var results []PromoterResult
 	err := h.db.Table("user_offers").
 		Select(`
-			afftok_users.id,
+			user_offers.id as user_offer_id,
+			user_offers.user_id,
 			afftok_users.username,
-			afftok_users.full_name,
-			afftok_users.email,
-			afftok_users.payment_method,
-			afftok_users.avatar_url,
+			COALESCE(afftok_users.full_name, '') as full_name,
+			COALESCE(afftok_users.email, '') as email,
+			COALESCE(afftok_users.payment_method, '') as payment_method,
+			COALESCE(afftok_users.avatar_url, '') as avatar_url,
 			offers.id as offer_id,
 			offers.title as offer_title,
-			user_offers.created_at as joined_at,
-			(SELECT COUNT(*) FROM clicks WHERE clicks.user_offer_id = user_offers.id) as clicks,
-			(SELECT COUNT(*) FROM conversions WHERE conversions.user_offer_id = user_offers.id) as conversions
+			user_offers.created_at as joined_at
 		`).
 		Joins("JOIN afftok_users ON user_offers.user_id = afftok_users.id").
 		Joins("JOIN offers ON user_offers.offer_id = offers.id").
 		Where("offers.advertiser_id = ?", advertiserID).
 		Order("user_offers.created_at DESC").
-		Find(&promoters).Error
+		Find(&results).Error
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch promoters"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch promoters: " + err.Error()})
 		return
 	}
 
-	// Calculate totals
+	// Build response with click/conversion counts
+	var promoters []gin.H
 	var totalClicks, totalConversions int64
-	for _, p := range promoters {
-		if clicks, ok := p["clicks"].(int64); ok {
-			totalClicks += clicks
-		}
-		if conversions, ok := p["conversions"].(int64); ok {
-			totalConversions += conversions
-		}
+
+	for _, r := range results {
+		// Get clicks count
+		var clicksCount int64
+		h.db.Model(&models.Click{}).Where("user_offer_id = ?", r.UserOfferID).Count(&clicksCount)
+		
+		// Get conversions count
+		var conversionsCount int64
+		h.db.Model(&models.Conversion{}).Where("user_offer_id = ?", r.UserOfferID).Count(&conversionsCount)
+
+		totalClicks += clicksCount
+		totalConversions += conversionsCount
+
+		promoters = append(promoters, gin.H{
+			"id":             r.UserID,
+			"username":       r.Username,
+			"full_name":      r.FullName,
+			"email":          r.Email,
+			"payment_method": r.PaymentMethod,
+			"avatar_url":     r.AvatarURL,
+			"offer_id":       r.OfferID,
+			"offer_title":    r.OfferTitle,
+			"joined_at":      r.JoinedAt,
+			"clicks":         clicksCount,
+			"conversions":    conversionsCount,
+		})
+	}
+
+	// Return empty array if no promoters (not null)
+	if promoters == nil {
+		promoters = []gin.H{}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
