@@ -64,11 +64,17 @@ class _SplashScreenState extends State<SplashScreen> {
     
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
-    // Wait for auth to fully initialize
-    await authProvider.init();
-    
-    // Wait a bit more to ensure token validation completed
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Try to initialize with timeout (don't block on network issues)
+    try {
+      await authProvider.init().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          print('[SplashScreen] Auth init timeout - proceeding anyway');
+        },
+      );
+    } catch (e) {
+      print('[SplashScreen] Auth init error: $e');
+    }
     
     if (!mounted) return;
     

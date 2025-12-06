@@ -13,7 +13,6 @@ import 'teams_screen.dart';
 import 'home_feed_screen.dart';
 import 'webview_screen.dart';
 import 'promoter_public_page.dart';
-import 'ai_assistant_screen.dart';
 import 'advertiser/advertiser_dashboard_screen.dart';
 import 'role_selection_screen.dart';
 
@@ -142,51 +141,6 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                 icon: const Icon(Icons.refresh, color: Colors.white),
                 onPressed: () => _refreshData(),
               ),
-              // AI Assistant button - Glowing Orb with AffTok colors
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AIAssistantScreen()),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const RadialGradient(
-                      colors: [
-                        Color(0xFFFFFFFF),
-                        Color(0xFFFF8A80),
-                        Color(0xFFE53935),
-                        Color(0xFFFF006E),
-                      ],
-                      stops: [0.0, 0.3, 0.6, 1.0],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFE53935).withOpacity(0.6),
-                        blurRadius: 12,
-                        spreadRadius: 2,
-                      ),
-                      BoxShadow(
-                        color: const Color(0xFFFF006E).withOpacity(0.4),
-                        blurRadius: 20,
-                        spreadRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.auto_awesome,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
               IconButton(
                 icon: const Icon(Icons.settings, color: Colors.white),
                 onPressed: () {
@@ -234,8 +188,37 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     const SizedBox(height: 24),
                   ],
                   
-                  // Active Offers
-                  _buildActiveOffers(context, user, lang),
+                  // Add New Offers Button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        label: Text(
+                          lang.addMoreOffers,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF006E),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                   
                   const SizedBox(height: 32),
                 ],
@@ -422,6 +405,8 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   }
 
   Widget _buildPersonalLinkCard(BuildContext context, User user, AppLocalizations lang) {
+    final uniqueLink = user.personalLink;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -431,58 +416,115 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFFFF006E).withOpacity(0.2),
-              const Color(0xFFFF4D00).withOpacity(0.1),
+              const Color(0xFFFF006E).withOpacity(0.25),
+              const Color(0xFFFF4D00).withOpacity(0.15),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.white.withOpacity(0.1),
+            color: const Color(0xFFFF006E).withOpacity(0.4),
+            width: 1.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF006E).withOpacity(0.2),
+              blurRadius: 15,
+              spreadRadius: 0,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.link,
-                  color: Color(0xFFFF006E),
-                  size: 20,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF006E).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.link,
+                    color: Color(0xFFFF006E),
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  lang.yourPersonalLink,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        lang.locale.languageCode == 'ar' 
+                            ? '🔗 رابطك الفريد' 
+                            : '🔗 Your Unique Link',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        lang.locale.languageCode == 'ar'
+                            ? 'شاركه لكسب العمولات'
+                            : 'Share it to earn commissions',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      user.personalLink,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 13,
+            const SizedBox(height: 16),
+            // Clickable unique link
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PromoterPublicPage(username: user.username),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFFF006E).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.open_in_new,
+                      color: Color(0xFFFF006E),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        uniqueLink,
+                        style: const TextStyle(
+                          color: Color(0xFFFF006E),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Color(0xFFFF006E),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
@@ -490,7 +532,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     icon: Icons.copy,
                     label: lang.copy,
                     onTap: () {
-                      Clipboard.setData(ClipboardData(text: user.personalLink));
+                      Clipboard.setData(ClipboardData(text: uniqueLink));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(lang.linkCopied),
@@ -507,9 +549,8 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     icon: Icons.share,
                     label: lang.share,
                     onTap: () {
-                      final shareUrl = 'https://afftok.com/u/${user.username}';
                       Share.share(
-                        shareUrl,
+                        uniqueLink,
                         subject: 'Check out my AffTok profile!',
                       );
                     },
@@ -522,21 +563,6 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     label: 'QR',
                     onTap: () {
                       _showQRCodeDialog(context, user, lang);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ActionButton(
-                    icon: Icons.public,
-                    label: lang.myPublicPage,
-                    onTap: () async {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PromoterPublicPage(username: user.username),
-                        ),
-                      );
                     },
                   ),
                 ),
@@ -765,12 +791,12 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               // Text Field
               TextField(
                 controller: controller,
-                maxLines: 2,
+                maxLines: 3,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: isArabic
-                      ? 'مثال: PayPal: email@example.com\nأو STC Pay: 0551234567'
-                      : 'Example: PayPal: email@example.com\nor Bank: SA12345678901234567890',
+                      ? 'أدخل طريقة الدفع المفضلة لديك...'
+                      : 'Enter your preferred payment method...',
                   hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.05),
@@ -787,20 +813,6 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     borderSide: const BorderSide(color: Color(0xFF00FF88)),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Quick options
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildQuickOption('PayPal', controller),
-                  _buildQuickOption('STC Pay', controller),
-                  _buildQuickOption('Vodafone Cash', controller),
-                  _buildQuickOption(isArabic ? 'تحويل بنكي' : 'Bank Transfer', controller),
-                  _buildQuickOption('Wise', controller),
-                ],
               ),
               const SizedBox(height: 24),
               
@@ -831,32 +843,6 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               ),
               const SizedBox(height: 8),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickOption(String label, TextEditingController controller) {
-    return InkWell(
-      onTap: () {
-        controller.text = '$label: ';
-        controller.selection = TextSelection.fromPosition(
-          TextPosition(offset: controller.text.length),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
           ),
         ),
       ),
@@ -1152,221 +1138,9 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
     );
   }
 
-  Widget _buildActiveOffers(BuildContext context, User user, AppLocalizations lang) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        final userOffers = authProvider.userOffers;
-        final currentLang = lang;
-        
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    currentLang.myActiveOffers,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '(${userOffers.length})',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              userOffers.isEmpty
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(vertical: 32),
-                      child: Center(
-                        child: Text(
-                          currentLang.noOffersAdded,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    )
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1.1,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
-                      itemCount: userOffers.length,
-                      itemBuilder: (context, index) {
-                        final userOffer = userOffers[index];
-                        return _buildUserOfferCard(userOffer);
-                      },
-                    ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  label: Text(
-                    currentLang.addMoreOffers,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildUserOfferCard(UserOffer userOffer) {
-    // Use offer info from the backend response, fallback to title
-    final offerTitle = userOffer.offerInfo?.title ?? userOffer.offerTitle;
-    final offerLogo = userOffer.offerInfo?.logoUrl;
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              if (offerLogo != null && offerLogo.isNotEmpty) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    offerLogo,
-                    width: 24,
-                    height: 24,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: Text(
-                  offerTitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${userOffer.stats.conversions} conversions',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${userOffer.stats.clicks} clicks',
-                style: const TextStyle(
-                  color: Color(0xFF00FF88),
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOfferCard(String offerId, OfferStats stats) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            offerId.substring(0, 1).toUpperCase() + offerId.substring(1),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${stats.conversions} refs',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${stats.conversions}',
-                style: const TextStyle(
-                  color: Color(0xFF00FF88),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   static void _showQRCodeDialog(BuildContext context, User user, AppLocalizations lang) {
+    final uniqueLink = user.personalLink;
+    
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1377,12 +1151,12 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+              colors: [Color(0xFFFF006E), Color(0xFFFF4D00)],
             ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF8E2DE2).withOpacity(0.6),
+                color: const Color(0xFFFF006E).withOpacity(0.6),
                 blurRadius: 30,
                 spreadRadius: 5,
               ),
@@ -1391,15 +1165,15 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'QR Code',
-                style: TextStyle(
+              Text(
+                lang.locale.languageCode == 'ar' ? '🔗 رابطك الفريد' : '🔗 Your Unique Link',
+                style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1407,35 +1181,55 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: QrImageView(
-                  data: 'https://afftok.com/u/${user.username}',
+                  data: uniqueLink,
                   version: QrVersions.auto,
                   size: 200.0,
                   backgroundColor: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                'afftok.com/u/${user.username}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                textAlign: TextAlign.center,
+                child: Text(
+                  uniqueLink,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              const SizedBox(height: 24),
+              if (user.uniqueCode != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  lang.locale.languageCode == 'ar' 
+                      ? 'الكود: ${user.uniqueCode}' 
+                      : 'Code: ${user.uniqueCode}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.2),
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFFF006E),
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Close',
-                  style: TextStyle(
-                    color: Colors.white,
+                child: Text(
+                  lang.locale.languageCode == 'ar' ? 'إغلاق' : 'Close',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),

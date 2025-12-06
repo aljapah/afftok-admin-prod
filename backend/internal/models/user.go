@@ -1,6 +1,8 @@
 package models
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,6 +27,9 @@ type AfftokUser struct {
 	CreatedAt        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 
+	// Unique referral code for tracking (8 random hex chars, e.g., "a3f8k2m9")
+	UniqueCode string `gorm:"type:varchar(16);uniqueIndex" json:"unique_code,omitempty"`
+
 	// Payment method for receiving earnings (free text - e.g., "PayPal: email@example.com")
 	PaymentMethod string `gorm:"type:text" json:"payment_method,omitempty"`
 
@@ -39,6 +44,13 @@ type AfftokUser struct {
 	TeamMember       *TeamMember `gorm:"foreignKey:UserID" json:"team_member,omitempty"`
 	UserBadges       []UserBadge `gorm:"foreignKey:UserID" json:"user_badges,omitempty"`
 	AdvertiserOffers []Offer     `gorm:"foreignKey:AdvertiserID" json:"advertiser_offers,omitempty"` // Offers created by this advertiser
+}
+
+// GenerateUniqueCode creates a random 8-character hex code
+func GenerateUniqueCode() string {
+	bytes := make([]byte, 4)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 }
 
 // TableName specifies the table name
@@ -87,8 +99,11 @@ func (u *AfftokUser) ConversionRate() float64 {
 	return (float64(u.TotalConversions) / float64(u.TotalClicks)) * 100
 }
 
-// PersonalLink returns the user's personal link
+// PersonalLink returns the user's unique personal link
 func (u *AfftokUser) PersonalLink() string {
+	if u.UniqueCode != "" {
+		return "afftok.com/r/" + u.UniqueCode
+	}
 	return "afftok.com/u/" + u.Username
 }
 

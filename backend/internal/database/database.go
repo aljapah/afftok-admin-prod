@@ -134,11 +134,42 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to auto migrate: %w", err)
 	}
 
+	// Generate unique codes for existing users without one
+	generateUniqueCodesForExistingUsers(db)
+
 	// Create additional indexes for performance
 	createIndexes(db)
 
 	log.Println("✅ Database migration completed successfully")
 	return nil
+}
+
+// generateUniqueCodesForExistingUsers assigns unique codes to users who don't have one
+func generateUniqueCodesForExistingUsers(db *gorm.DB) {
+	var usersWithoutCode []models.AfftokUser
+	db.Where("unique_code IS NULL OR unique_code = ''").Find(&usersWithoutCode)
+
+	if len(usersWithoutCode) == 0 {
+		return
+	}
+
+	log.Printf("🔑 Generating unique codes for %d users...", len(usersWithoutCode))
+	
+	for _, user := range usersWithoutCode {
+		// Generate unique code
+		code := models.GenerateUniqueCode()
+		
+		// Ensure uniqueness
+		var existing models.AfftokUser
+		for db.Where("unique_code = ?", code).First(&existing).Error == nil {
+			code = models.GenerateUniqueCode()
+		}
+		
+		// Update user
+		db.Model(&user).Update("unique_code", code)
+	}
+	
+	log.Printf("✅ Generated unique codes for %d users", len(usersWithoutCode))
 }
 
 // createIndexes creates additional indexes for tracking performance
@@ -229,7 +260,10 @@ func createIndexes(db *gorm.DB) {
 		// Username for lookup
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON afftok_users(username)",
 		
-		// Referral code
+		// Unique referral code (critical for tracking)
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_users_unique_code ON afftok_users(unique_code) WHERE unique_code IS NOT NULL AND unique_code != ''",
+		
+		// Referral code (legacy)
 		"CREATE INDEX IF NOT EXISTS idx_users_referral ON afftok_users(referral_code) WHERE referral_code IS NOT NULL",
 	}
 

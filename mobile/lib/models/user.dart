@@ -12,6 +12,9 @@ class User {
   final String? teamId;
   final DateTime createdAt;
   
+  // Unique referral code for tracking (8 random hex chars)
+  final String? uniqueCode;
+  
   // Payment method for receiving earnings (optional, free text)
   final String? paymentMethod;
   
@@ -33,6 +36,7 @@ class User {
     required this.stats,
     this.teamId,
     required this.createdAt,
+    this.uniqueCode,
     this.paymentMethod,
     this.companyName,
     this.website,
@@ -84,6 +88,8 @@ class User {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      // Unique referral code
+      uniqueCode: json['unique_code'] ?? json['uniqueCode'],
       // Payment method
       paymentMethod: json['payment_method'] ?? json['paymentMethod'],
       // Advertiser fields
@@ -101,7 +107,16 @@ class User {
     return UserLevel.rookie;
   }
 
-  String get personalLink => 'afftok.com/u/$username';
+  // Returns the unique referral link using the unique code
+  String get personalLink {
+    if (uniqueCode != null && uniqueCode!.isNotEmpty) {
+      return 'https://afftok.com/r/$uniqueCode';
+    }
+    return 'https://afftok.com/u/$username';
+  }
+  
+  // Returns just the unique code or username for display
+  String get referralCode => uniqueCode ?? username;
   
   bool get isInTeam => teamId != null;
   

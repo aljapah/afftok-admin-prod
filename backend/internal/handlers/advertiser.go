@@ -75,6 +75,7 @@ func (h *AdvertiserHandler) RegisterAdvertiser(c *gin.Context) {
 		Country:      req.Country,
 		Role:         "advertiser",
 		Status:       "active",
+		UniqueCode:   models.GenerateUniqueCode(), // Generate unique referral code
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
