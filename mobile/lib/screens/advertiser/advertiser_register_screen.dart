@@ -41,7 +41,7 @@ class _AdvertiserRegisterScreenState extends State<AdvertiserRegisterScreen> {
     final savedPassword = prefs.getString('advertiser_saved_password');
     final rememberMe = prefs.getBool('advertiser_remember_me') ?? false;
 
-    if (rememberMe && savedUsername != null && savedPassword != null) {
+    if (rememberMe && savedUsername != null && savedPassword != null && mounted) {
       setState(() {
         _usernameController.text = savedUsername;
         _passwordController.text = savedPassword;
@@ -67,7 +67,7 @@ class _AdvertiserRegisterScreenState extends State<AdvertiserRegisterScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
@@ -90,7 +90,7 @@ class _AdvertiserRegisterScreenState extends State<AdvertiserRegisterScreen> {
       );
     }
 
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
 
     if (success && mounted) {
       // Save credentials if remember me is checked
