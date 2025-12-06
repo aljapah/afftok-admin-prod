@@ -109,10 +109,11 @@ class User {
 
   // Returns the unique referral link using the unique code
   String get personalLink {
+    const baseUrl = 'https://afftok-backend-prod-production.up.railway.app/api';
     if (uniqueCode != null && uniqueCode!.isNotEmpty) {
-      return 'https://afftok.com/r/$uniqueCode';
+      return '$baseUrl/r/$uniqueCode';
     }
-    return 'https://afftok.com/u/$username';
+    return '$baseUrl/promoter/user/$username';
   }
   
   // Returns just the unique code or username for display
