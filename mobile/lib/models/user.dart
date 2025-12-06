@@ -108,7 +108,7 @@ class User {
   }
 
   // Returns the unique referral link
-  String get personalLink => 'https://afftok.com/u/$username';
+  String get personalLink => 'https://afftok-backend-prod-production.up.railway.app/api/promoter/user/$username';
   
   bool get isInTeam => teamId != null;
   
