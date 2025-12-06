@@ -107,17 +107,8 @@ class User {
     return UserLevel.rookie;
   }
 
-  // Returns the unique referral link using the unique code
-  String get personalLink {
-    const baseUrl = 'https://afftok-backend-prod-production.up.railway.app/api';
-    if (uniqueCode != null && uniqueCode!.isNotEmpty) {
-      return '$baseUrl/r/$uniqueCode';
-    }
-    return '$baseUrl/promoter/user/$username';
-  }
-  
-  // Returns just the unique code or username for display
-  String get referralCode => uniqueCode ?? username;
+  // Returns the unique referral link
+  String get personalLink => 'https://afftok.com/u/$username';
   
   bool get isInTeam => teamId != null;
   
