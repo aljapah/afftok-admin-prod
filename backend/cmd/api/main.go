@@ -377,13 +377,6 @@ func main() {
 				admin.DELETE("/contests/:id", contestHandler.AdminDeleteContest)
 				admin.GET("/contests/:id/participants", contestHandler.AdminGetContestParticipants)
 
-				// Invoice Management
-				admin.GET("/invoices", invoiceHandler.AdminGetAllInvoices)
-				admin.GET("/invoices/summary", invoiceHandler.AdminGetInvoiceSummary)
-				admin.POST("/invoices/generate", invoiceHandler.AdminGenerateMonthlyInvoices)
-				admin.POST("/invoices/:id/confirm", invoiceHandler.AdminConfirmPayment)
-				admin.POST("/invoices/:id/reject", invoiceHandler.AdminRejectPayment)
-
 				admin.POST("/badges", badgeHandler.CreateBadge)
 			admin.PUT("/badges/:id", badgeHandler.UpdateBadge)
 			admin.DELETE("/badges/:id", badgeHandler.DeleteBadge)

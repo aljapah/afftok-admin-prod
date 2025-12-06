@@ -36,8 +36,19 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final dashboard = await _advertiserService.getDashboard(authProvider.token!);
-      final offersResponse = await _advertiserService.getMyOffers(authProvider.token!);
+      final token = authProvider.token;
+      
+      // Check if token is null or empty
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _error = 'Not authenticated. Please login again.';
+          _isLoading = false;
+        });
+        return;
+      }
+      
+      final dashboard = await _advertiserService.getDashboard(token);
+      final offersResponse = await _advertiserService.getMyOffers(token);
       
       setState(() {
         _dashboard = dashboard;

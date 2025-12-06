@@ -159,9 +159,11 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        // Save tokens
-        if (data['token'] != null) {
-          await _saveTokens(data['token'] as String, data['token'] as String);
+        // Save tokens - check for both 'token' and 'access_token' formats
+        final tokenValue = data['access_token'] ?? data['token'];
+        if (tokenValue != null) {
+          final refreshTokenValue = data['refresh_token'] ?? tokenValue;
+          await _saveTokens(tokenValue as String, refreshTokenValue as String);
         }
         
         return {
