@@ -50,7 +50,7 @@ func (h *PromoterHandler) GetPromoterPageByUsername(c *gin.Context) {
 	h.servePromoterPage(c, user)
 }
 
-// GetPromoterPageByCode returns the landing page for a promoter using their unique code
+// GetPromoterPageByCode serves landing page by unique code
 func (h *PromoterHandler) GetPromoterPageByCode(c *gin.Context) {
 	code := c.Param("code")
 
@@ -63,7 +63,7 @@ func (h *PromoterHandler) GetPromoterPageByCode(c *gin.Context) {
 	h.servePromoterPage(c, user)
 }
 
-// GetPromoterByCode returns JSON data for a promoter using their unique code (for Flutter app)
+// GetPromoterByCode returns JSON data for a promoter by unique code
 func (h *PromoterHandler) GetPromoterByCode(c *gin.Context) {
 	code := c.Param("code")
 
@@ -73,35 +73,13 @@ func (h *PromoterHandler) GetPromoterByCode(c *gin.Context) {
 		return
 	}
 
-	// Get user's active offers
-	var userOffers []models.UserOffer
-	h.db.Where("user_id = ? AND status = ?", user.ID, "active").
-		Preload("Offer").
-		Find(&userOffers)
-
-	// Get stats
-	var totalClicks int64
-	h.db.Model(&models.Click{}).
-		Joins("JOIN user_offers ON clicks.user_offer_id = user_offers.id").
-		Where("user_offers.user_id = ?", user.ID).
-		Count(&totalClicks)
-
 	c.JSON(http.StatusOK, gin.H{
-		"user": gin.H{
-			"id":          user.ID,
-			"username":    user.Username,
-			"full_name":   user.FullName,
-			"avatar_url":  user.AvatarURL,
-			"bio":         user.Bio,
-			"level":       user.UserLevel(),
-			"unique_code": user.UniqueCode,
-		},
-		"stats": gin.H{
-			"total_clicks":      totalClicks,
-			"total_conversions": user.TotalConversions,
-			"active_offers":     len(userOffers),
-		},
-		"offers": userOffers,
+		"id":          user.ID,
+		"username":    user.Username,
+		"full_name":   user.FullName,
+		"avatar_url":  user.AvatarURL,
+		"bio":         user.Bio,
+		"unique_code": user.UniqueCode,
 	})
 }
 

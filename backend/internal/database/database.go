@@ -134,42 +134,33 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to auto migrate: %w", err)
 	}
 
-	// Generate unique codes for existing users without one
-	generateUniqueCodesForExistingUsers(db)
-
 	// Create additional indexes for performance
 	createIndexes(db)
+	
+	// Generate unique codes for existing users who don't have one
+	generateMissingUniqueCodes(db)
 
 	log.Println("✅ Database migration completed successfully")
 	return nil
 }
 
-// generateUniqueCodesForExistingUsers assigns unique codes to users who don't have one
-func generateUniqueCodesForExistingUsers(db *gorm.DB) {
-	var usersWithoutCode []models.AfftokUser
-	db.Where("unique_code IS NULL OR unique_code = ''").Find(&usersWithoutCode)
-
-	if len(usersWithoutCode) == 0 {
-		return
-	}
-
-	log.Printf("🔑 Generating unique codes for %d users...", len(usersWithoutCode))
+// generateMissingUniqueCodes generates unique_code for users who don't have one
+func generateMissingUniqueCodes(db *gorm.DB) {
+	var users []models.AfftokUser
+	db.Where("unique_code IS NULL OR unique_code = ''").Find(&users)
 	
-	for _, user := range usersWithoutCode {
-		// Generate unique code
-		code := models.GenerateUniqueCode()
-		
-		// Ensure uniqueness
-		var existing models.AfftokUser
-		for db.Where("unique_code = ?", code).First(&existing).Error == nil {
-			code = models.GenerateUniqueCode()
+	for _, user := range users {
+		user.UniqueCode = models.GenerateUniqueCode()
+		if err := db.Model(&user).Update("unique_code", user.UniqueCode).Error; err != nil {
+			log.Printf("⚠️ Failed to generate unique code for user %s: %v", user.Username, err)
+		} else {
+			log.Printf("✅ Generated unique code %s for user %s", user.UniqueCode, user.Username)
 		}
-		
-		// Update user
-		db.Model(&user).Update("unique_code", code)
 	}
 	
-	log.Printf("✅ Generated unique codes for %d users", len(usersWithoutCode))
+	if len(users) > 0 {
+		log.Printf("✅ Generated unique codes for %d existing users", len(users))
+	}
 }
 
 // createIndexes creates additional indexes for tracking performance
@@ -260,10 +251,7 @@ func createIndexes(db *gorm.DB) {
 		// Username for lookup
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON afftok_users(username)",
 		
-		// Unique referral code (critical for tracking)
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_users_unique_code ON afftok_users(unique_code) WHERE unique_code IS NOT NULL AND unique_code != ''",
-		
-		// Referral code (legacy)
+		// Referral code
 		"CREATE INDEX IF NOT EXISTS idx_users_referral ON afftok_users(referral_code) WHERE referral_code IS NOT NULL",
 	}
 

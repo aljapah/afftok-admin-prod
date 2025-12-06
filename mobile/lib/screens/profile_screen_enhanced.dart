@@ -408,8 +408,8 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
     // Unique link with unique code (falls back to username if no code)
     final uniqueCode = user.uniqueCode;
     final uniqueLink = (uniqueCode != null && uniqueCode.isNotEmpty)
-        ? 'https://afftok-backend-prod-production.up.railway.app/api/r/$uniqueCode'
-        : 'https://afftok-backend-prod-production.up.railway.app/api/promoter/user/${user.username}';
+        ? 'https://go.afftokapp.com/api/r/$uniqueCode'
+        : 'https://go.afftokapp.com/api/promoter/user/${user.username}';
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1145,8 +1145,8 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   static void _showQRCodeDialog(BuildContext context, User user, AppLocalizations lang) {
     final uniqueCode = user.uniqueCode;
     final uniqueLink = (uniqueCode != null && uniqueCode.isNotEmpty)
-        ? 'https://afftok-backend-prod-production.up.railway.app/api/r/$uniqueCode'
-        : 'https://afftok-backend-prod-production.up.railway.app/api/promoter/user/${user.username}';
+        ? 'https://go.afftokapp.com/api/r/$uniqueCode'
+        : 'https://go.afftokapp.com/api/promoter/user/${user.username}';
     
     showDialog(
       context: context,

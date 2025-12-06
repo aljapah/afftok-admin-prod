@@ -224,33 +224,34 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.amber.withOpacity(0.5),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.star, color: Colors.amber, size: 16),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    widget.offer.rating.toString(),
-                                    style: const TextStyle(
-                                      color: Colors.amber,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            // TEMPORARILY HIDDEN - Rating widget (kept for future use)
+                            // const SizedBox(width: 8),
+                            // Container(
+                            //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            //   decoration: BoxDecoration(
+                            //     color: Colors.amber.withOpacity(0.2),
+                            //     borderRadius: BorderRadius.circular(12),
+                            //     border: Border.all(
+                            //       color: Colors.amber.withOpacity(0.5),
+                            //       width: 1,
+                            //     ),
+                            //   ),
+                            //   child: Row(
+                            //     mainAxisSize: MainAxisSize.min,
+                            //     children: [
+                            //       const Icon(Icons.star, color: Colors.amber, size: 16),
+                            //       const SizedBox(width: 4),
+                            //       Text(
+                            //         widget.offer.rating.toString(),
+                            //         style: const TextStyle(
+                            //           color: Colors.amber,
+                            //           fontSize: 14,
+                            //           fontWeight: FontWeight.bold,
+                            //         ),
+                            //       ),
+                            //     ],
+                            //   ),
+                            // ),
                           ],
                         ),
 
@@ -375,31 +376,29 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
                           ),
                         ),
 
-                        const SizedBox(height: 8),
-
-                        Center(
-                          child: Text(
-                            lang.redirectNotice,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: IconButton(
-                            icon: Icon(
-                              widget.offer.isRegistered ? Icons.favorite : Icons.favorite_border,
-                              color: widget.offer.isRegistered ? Colors.red : Colors.white,
-                            ),
-                            onPressed: widget.onFavoriteChanged,
-                          ),
-                        ),
+                        // TEMPORARILY HIDDEN - Redirect notice and favorite button (kept for future use)
+                        // const SizedBox(height: 8),
+                        // Center(
+                        //   child: Text(
+                        //     lang.redirectNotice,
+                        //     style: const TextStyle(
+                        //       color: Colors.white70,
+                        //       fontSize: 12,
+                        //     ),
+                        //   ),
+                        // ),
+                        // const SizedBox(height: 8),
+                        // SizedBox(
+                        //   width: double.infinity,
+                        //   height: 50,
+                        //   child: IconButton(
+                        //     icon: Icon(
+                        //       widget.offer.isRegistered ? Icons.favorite : Icons.favorite_border,
+                        //       color: widget.offer.isRegistered ? Colors.red : Colors.white,
+                        //     ),
+                        //     onPressed: widget.onFavoriteChanged,
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),

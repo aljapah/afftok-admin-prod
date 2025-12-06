@@ -3,6 +3,7 @@ import '../utils/app_localizations.dart';
 import 'signup_screen.dart';
 import 'home_feed_screen.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,6 +69,9 @@ class _SignInScreenState extends State<SignInScreen> {
           try {
             await _authService.login(savedEmail, savedPassword);
             
+            // IMPORTANT: Reload tokens into ApiService after login
+            await ApiService().init();
+            
             if (mounted) {
               await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
               Navigator.pushAndRemoveUntil(
@@ -114,6 +118,9 @@ class _SignInScreenState extends State<SignInScreen> {
           _passwordController.text.trim(),
         );
         
+        // IMPORTANT: Reload tokens into ApiService after login
+        await ApiService().init();
+        
         final prefs = await SharedPreferences.getInstance();
         if (_rememberMe) {
           await prefs.setString('saved_email', _emailController.text.trim());
@@ -158,6 +165,10 @@ class _SignInScreenState extends State<SignInScreen> {
     });
     try {
       await _authService.googleSignIn();
+      
+      // IMPORTANT: Reload tokens into ApiService after login
+      await ApiService().init();
+      
       if (mounted) {
         await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
         Navigator.pushAndRemoveUntil(

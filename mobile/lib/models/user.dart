@@ -110,9 +110,9 @@ class User {
   // Returns the unique referral link
   String get personalLink {
     if (uniqueCode != null && uniqueCode!.isNotEmpty) {
-      return 'https://afftok.com/r/$uniqueCode';
+      return 'https://go.afftokapp.com/api/r/$uniqueCode';
     }
-    return 'https://afftok.com/u/$username';
+    return 'https://go.afftokapp.com/api/promoter/user/$username';
   }
   
   bool get isInTeam => teamId != null;

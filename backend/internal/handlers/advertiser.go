@@ -75,7 +75,6 @@ func (h *AdvertiserHandler) RegisterAdvertiser(c *gin.Context) {
 		Country:      req.Country,
 		Role:         "advertiser",
 		Status:       "active",
-		UniqueCode:   models.GenerateUniqueCode(), // Generate unique referral code
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -761,106 +760,6 @@ func (h *AdvertiserHandler) GetConversions(c *gin.Context) {
 			"approved_count":   approvedCount,
 			"pending_count":    pendingCount,
 			"rejected_count":   rejectedCount,
-		},
-	})
-}
-
-// GetPromoters returns all promoters who joined the advertiser's offers with their stats
-// GET /api/advertiser/promoters
-func (h *AdvertiserHandler) GetPromoters(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-
-	advertiserID, ok := userID.(uuid.UUID)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	// First, get user_offers for this advertiser's offers
-	type PromoterResult struct {
-		UserID        uuid.UUID `gorm:"column:user_id"`
-		Username      string    `gorm:"column:username"`
-		FullName      string    `gorm:"column:full_name"`
-		Email         string    `gorm:"column:email"`
-		PaymentMethod string    `gorm:"column:payment_method"`
-		AvatarURL     string    `gorm:"column:avatar_url"`
-		OfferID       uuid.UUID `gorm:"column:offer_id"`
-		OfferTitle    string    `gorm:"column:offer_title"`
-		JoinedAt      time.Time `gorm:"column:joined_at"`
-		UserOfferID   uuid.UUID `gorm:"column:user_offer_id"`
-	}
-
-	var results []PromoterResult
-	err := h.db.Table("user_offers").
-		Select(`
-			user_offers.id as user_offer_id,
-			user_offers.user_id,
-			afftok_users.username,
-			COALESCE(afftok_users.full_name, '') as full_name,
-			COALESCE(afftok_users.email, '') as email,
-			COALESCE(afftok_users.payment_method, '') as payment_method,
-			COALESCE(afftok_users.avatar_url, '') as avatar_url,
-			offers.id as offer_id,
-			offers.title as offer_title,
-			user_offers.created_at as joined_at
-		`).
-		Joins("JOIN afftok_users ON user_offers.user_id = afftok_users.id").
-		Joins("JOIN offers ON user_offers.offer_id = offers.id").
-		Where("offers.advertiser_id = ?", advertiserID).
-		Order("user_offers.created_at DESC").
-		Find(&results).Error
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch promoters: " + err.Error()})
-		return
-	}
-
-	// Build response with click/conversion counts
-	var promoters []gin.H
-	var totalClicks, totalConversions int64
-
-	for _, r := range results {
-		// Get clicks count
-		var clicksCount int64
-		h.db.Model(&models.Click{}).Where("user_offer_id = ?", r.UserOfferID).Count(&clicksCount)
-		
-		// Get conversions count
-		var conversionsCount int64
-		h.db.Model(&models.Conversion{}).Where("user_offer_id = ?", r.UserOfferID).Count(&conversionsCount)
-
-		totalClicks += clicksCount
-		totalConversions += conversionsCount
-
-		promoters = append(promoters, gin.H{
-			"id":             r.UserID,
-			"username":       r.Username,
-			"full_name":      r.FullName,
-			"email":          r.Email,
-			"payment_method": r.PaymentMethod,
-			"avatar_url":     r.AvatarURL,
-			"offer_id":       r.OfferID,
-			"offer_title":    r.OfferTitle,
-			"joined_at":      r.JoinedAt,
-			"clicks":         clicksCount,
-			"conversions":    conversionsCount,
-		})
-	}
-
-	// Return empty array if no promoters (not null)
-	if promoters == nil {
-		promoters = []gin.H{}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"promoters": promoters,
-		"total":     len(promoters),
-		"summary": gin.H{
-			"total_clicks":      totalClicks,
-			"total_conversions": totalConversions,
 		},
 	})
 }
