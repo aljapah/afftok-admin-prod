@@ -362,6 +362,13 @@ func main() {
 				admin.POST("/offers/:id/approve", advertiserHandler.ApproveOffer)
 				admin.POST("/offers/:id/reject", advertiserHandler.RejectOffer)
 
+				// Invoice Management for Admin
+				admin.GET("/invoices", invoiceHandler.AdminGetAllInvoices)
+				admin.GET("/invoices/summary", invoiceHandler.AdminGetInvoiceSummary)
+				admin.POST("/invoices/generate", invoiceHandler.AdminGenerateMonthlyInvoices)
+				admin.POST("/invoices/:id/confirm", invoiceHandler.AdminConfirmPayment)
+				admin.POST("/invoices/:id/reject", invoiceHandler.AdminRejectPayment)
+
 				// Contests / Challenges Management
 				admin.GET("/contests", contestHandler.AdminGetAllContests)
 				admin.POST("/contests", contestHandler.AdminCreateContest)
