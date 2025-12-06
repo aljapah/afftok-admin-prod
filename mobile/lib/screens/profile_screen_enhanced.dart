@@ -405,10 +405,9 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   }
 
   Widget _buildPersonalLinkCard(BuildContext context, User user, AppLocalizations lang) {
-    // Short link for display
-    final displayLink = 'afftok.com/u/${user.username}';
-    // Working link for copy/share (leads to landing page)
-    final workingLink = 'https://afftok-backend-prod-production.up.railway.app/api/promoter/user/${user.username}';
+    // Unique link with unique code (falls back to username if no code)
+    final uniqueCode = user.uniqueCode ?? user.username;
+    final uniqueLink = 'https://afftok-backend-prod-production.up.railway.app/api/r/$uniqueCode';
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -513,7 +512,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        displayLink,
+                        uniqueLink,
                         style: const TextStyle(
                           color: Color(0xFFFF006E),
                           fontSize: 14,
@@ -535,7 +534,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     icon: Icons.copy,
                     label: lang.copy,
                     onTap: () {
-                      Clipboard.setData(ClipboardData(text: workingLink));
+                      Clipboard.setData(ClipboardData(text: uniqueLink));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(lang.linkCopied),
@@ -553,7 +552,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     label: lang.share,
                     onTap: () {
                       Share.share(
-                        workingLink,
+                        uniqueLink,
                         subject: 'Check out my AffTok profile!',
                       );
                     },
@@ -1142,8 +1141,8 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   }
 
   static void _showQRCodeDialog(BuildContext context, User user, AppLocalizations lang) {
-    final displayLink = 'afftok.com/u/${user.username}';
-    final workingLink = 'https://afftok-backend-prod-production.up.railway.app/api/promoter/user/${user.username}';
+    final uniqueCode = user.uniqueCode ?? user.username;
+    final uniqueLink = 'https://afftok-backend-prod-production.up.railway.app/api/r/$uniqueCode';
     
     showDialog(
       context: context,
@@ -1185,7 +1184,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: QrImageView(
-                  data: workingLink,
+                  data: uniqueLink,
                   version: QrVersions.auto,
                   size: 200.0,
                   backgroundColor: Colors.white,
@@ -1199,7 +1198,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  displayLink,
+                  uniqueLink,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
