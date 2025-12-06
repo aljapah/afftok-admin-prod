@@ -12,6 +12,9 @@ class User {
   final String? teamId;
   final DateTime createdAt;
   
+  // Payment method for receiving earnings (optional, free text)
+  final String? paymentMethod;
+  
   // Advertiser-specific fields
   final String? companyName;
   final String? website;
@@ -30,6 +33,7 @@ class User {
     required this.stats,
     this.teamId,
     required this.createdAt,
+    this.paymentMethod,
     this.companyName,
     this.website,
     this.country,
@@ -80,6 +84,8 @@ class User {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      // Payment method
+      paymentMethod: json['payment_method'] ?? json['paymentMethod'],
       // Advertiser fields
       companyName: json['company_name'] ?? json['companyName'],
       website: json['website'],

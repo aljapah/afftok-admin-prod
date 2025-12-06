@@ -25,6 +25,9 @@ type AfftokUser struct {
 	CreatedAt        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 
+	// Payment method for receiving earnings (free text - e.g., "PayPal: email@example.com")
+	PaymentMethod string `gorm:"type:text" json:"payment_method,omitempty"`
+
 	// Advertiser-specific fields (only used when Role = "advertiser")
 	CompanyName string `gorm:"type:varchar(100)" json:"company_name,omitempty"`
 	Phone       string `gorm:"type:varchar(30)" json:"phone,omitempty"`

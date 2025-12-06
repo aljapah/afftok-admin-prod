@@ -30,7 +30,7 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	limit := 20
 	offset := (page - 1) * limit
 
-	query := h.db.Select("id, username, email, full_name, avatar_url, role, status, points, level, total_clicks, total_conversions, total_earnings, created_at")
+	query := h.db.Select("id, username, email, full_name, avatar_url, role, status, points, level, total_clicks, total_conversions, total_earnings, payment_method, created_at")
 
 	sortBy := c.DefaultQuery("sort", "created_at")
 	order := c.DefaultQuery("order", "desc")
@@ -60,7 +60,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	var user models.AfftokUser
 	if err := h.db.
 		Preload("UserBadges.Badge").
-		Select("id, username, email, full_name, avatar_url, bio, role, status, points, level, total_clicks, total_conversions, total_earnings, created_at").
+		Select("id, username, email, full_name, avatar_url, bio, role, status, points, level, total_clicks, total_conversions, total_earnings, payment_method, created_at").
 		First(&user, "id = ?", userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -79,9 +79,10 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	type UpdateProfileRequest struct {
-		FullName  string `json:"full_name"`
-		Bio       string `json:"bio"`
-		AvatarURL string `json:"avatar_url"`
+		FullName      string `json:"full_name"`
+		Bio           string `json:"bio"`
+		AvatarURL     string `json:"avatar_url"`
+		PaymentMethod string `json:"payment_method"`
 	}
 
 	var req UpdateProfileRequest
@@ -100,6 +101,8 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	if req.AvatarURL != "" {
 		updates["avatar_url"] = req.AvatarURL
 	}
+	// PaymentMethod can be empty (to clear it) or have a value
+	updates["payment_method"] = req.PaymentMethod
 
 	if err := h.db.Model(&models.AfftokUser{}).Where("id = ?", userID).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,19 +82,166 @@ export default function Invoices() {
     // Show success message
   };
 
-  const handleSendInvoice = (invoice: typeof demoInvoices[0]) => {
-    // Send invoice to advertiser email
-    alert(`✅ تم إرسال الفاتورة إلى: ${invoice.email}`);
+  const handleSendInvoice = async (invoice: typeof demoInvoices[0]) => {
+    // Open email client with invoice details
+    const subject = encodeURIComponent(`Invoice ${invoice.id} - AffTok Platform Fee`);
+    const body = encodeURIComponent(`Dear ${invoice.advertiser},
+
+Please find attached your invoice ${invoice.id} for ${invoice.month}.
+
+Total Promoter Commissions: $${invoice.totalCommissions.toLocaleString()}
+Platform Fee (10%): $${invoice.platformFee.toLocaleString()}
+
+Due Date: ${invoice.dueDate}
+
+Payment Details:
+Bank: National Bank of Kuwait (NBK)
+Beneficiary: ABDULAZIZ S M ALJABAAH
+Account: 2003308649
+IBAN: KW55NBOK0000000000002003308649
+SWIFT: NBOKKWKW
+
+Thank you for your business.
+
+Best regards,
+AffTok Team`);
+    
+    window.open(`mailto:${invoice.email}?subject=${subject}&body=${body}`, '_blank');
   };
 
-  const handleResendInvoice = (invoice: typeof demoInvoices[0]) => {
-    // Resend invoice
-    alert(`🔄 تم إعادة إرسال الفاتورة إلى: ${invoice.email}`);
+  const handleResendInvoice = async (invoice: typeof demoInvoices[0]) => {
+    // Open email client for resend
+    const subject = encodeURIComponent(`[REMINDER] Invoice ${invoice.id} - AffTok Platform Fee`);
+    const body = encodeURIComponent(`Dear ${invoice.advertiser},
+
+This is a reminder for your pending invoice ${invoice.id} for ${invoice.month}.
+
+Total Promoter Commissions: $${invoice.totalCommissions.toLocaleString()}
+Platform Fee (10%): $${invoice.platformFee.toLocaleString()}
+
+Due Date: ${invoice.dueDate}
+
+Payment Details:
+Bank: National Bank of Kuwait (NBK)
+Beneficiary: ABDULAZIZ S M ALJABAAH
+Account: 2003308649
+IBAN: KW55NBOK0000000000002003308649
+SWIFT: NBOKKWKW
+
+Please process this payment at your earliest convenience.
+
+Best regards,
+AffTok Team`);
+    
+    window.open(`mailto:${invoice.email}?subject=${subject}&body=${body}`, '_blank');
   };
 
   const handleDownloadInvoice = (invoice: typeof demoInvoices[0]) => {
-    // Download invoice as PDF
-    alert(`📥 جاري تحميل الفاتورة: ${invoice.id}`);
+    // Generate and download invoice as HTML/PDF
+    const invoiceHTML = `
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice ${invoice.id}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; border-bottom: 3px solid #dc2626; padding-bottom: 20px; margin-bottom: 30px; }
+    .logo { font-size: 32px; font-weight: bold; color: #dc2626; }
+    .invoice-id { font-size: 24px; font-weight: bold; }
+    .details { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+    .section-title { font-weight: bold; color: #333; margin-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #f5f5f5; font-weight: bold; }
+    .total { background: #1a1a1a; color: white; }
+    .total td { font-size: 18px; font-weight: bold; }
+    .payment-info { background: #f9f9f9; padding: 20px; border-top: 4px solid #dc2626; margin-top: 20px; }
+    .payment-info h3 { margin-top: 0; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="logo">AffTok</div>
+      <div>Affiliate Marketing Platform</div>
+    </div>
+    <div style="text-align: right;">
+      <div class="invoice-id">${invoice.id}</div>
+      <div>INVOICE</div>
+    </div>
+  </div>
+
+  <div class="details">
+    <div>
+      <div class="section-title">BILL TO:</div>
+      <div style="font-size: 18px; font-weight: bold;">${invoice.advertiser}</div>
+      <div>${invoice.email}</div>
+    </div>
+    <div style="text-align: right;">
+      <div><strong>Issue Date:</strong> ${invoice.issuedAt}</div>
+      <div><strong>Due Date:</strong> <span style="color: #dc2626;">${invoice.dueDate}</span></div>
+      <div><strong>Period:</strong> ${invoice.month}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th style="text-align: right;">Amount (USD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <strong>Total Promoter Commissions</strong><br>
+          <small>Period: ${invoice.month}</small>
+        </td>
+        <td style="text-align: right;">$${invoice.totalCommissions.toLocaleString()}</td>
+      </tr>
+      <tr style="background: #fef2f2;">
+        <td>
+          <strong style="color: #dc2626;">Platform Fee (10%)</strong><br>
+          <small>As per agreement</small>
+        </td>
+        <td style="text-align: right; color: #dc2626; font-weight: bold; font-size: 18px;">$${invoice.platformFee.toLocaleString()}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="total">
+        <td>Total Amount Due</td>
+        <td style="text-align: right;">$${invoice.platformFee.toLocaleString()}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="payment-info">
+    <h3>💳 Payment Details:</h3>
+    <div><strong>Bank:</strong> National Bank of Kuwait (NBK)</div>
+    <div><strong>Beneficiary:</strong> ABDULAZIZ S M ALJABAAH</div>
+    <div><strong>Account:</strong> 2003308649</div>
+    <div><strong>IBAN:</strong> KW55NBOK0000000000002003308649</div>
+    <div><strong>SWIFT:</strong> NBOKKWKW</div>
+  </div>
+
+  <div class="footer">
+    <p><strong>⏰ Payment is due within 7 days of invoice date.</strong></p>
+    <p>For inquiries: billing@afftokapp.com</p>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([invoiceHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${invoice.id}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handlePreviewInvoice = (invoice: typeof demoInvoices[0]) => {

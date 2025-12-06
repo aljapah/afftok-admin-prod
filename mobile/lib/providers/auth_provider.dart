@@ -380,6 +380,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> updateProfile({
     String? fullName,
     String? bio,
+    String? paymentMethod,
   }) async {
     if (_currentUser == null) {
       print('[AuthProvider] Cannot update profile: user is null');
@@ -395,6 +396,7 @@ class AuthProvider with ChangeNotifier {
       final response = await _apiService.put('/api/profile', {
         if (fullName != null && fullName.isNotEmpty) 'full_name': fullName,
         if (bio != null) 'bio': bio,
+        if (paymentMethod != null) 'payment_method': paymentMethod,
       });
       print('[AuthProvider] Update response: $response');
 
