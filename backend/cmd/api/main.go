@@ -95,10 +95,6 @@ func main() {
 	router.GET("/ref/:code", promoterHandlerEarly.GetPromoterByCode) // JSON data
 	router.GET("/join/:code", teamHandlerEarly.GetTeamLandingPage)   // Team invite page
 	
-	// Static pages
-	router.StaticFile("/privacy", "./public/privacy.html")
-	router.StaticFile("/terms", "./public/terms.html")
-	
 	// Short click tracking URL: go.afftokapp.com/c/ABC123
 	clickHandlerEarly := handlers.NewClickHandler(db)
 	router.GET("/c/:id", middleware.BotDetectionMiddleware(), clickHandlerEarly.TrackClick)
