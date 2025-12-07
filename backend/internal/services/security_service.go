@@ -223,13 +223,30 @@ type BotDetectionResult struct {
 	RiskScore   int // 0-100
 }
 
-// Known bot patterns
+// Known bot patterns - Extended list for better fraud detection
 var botPatterns = []string{
+	// Generic bots
 	"bot", "crawler", "spider", "scraper", "curl", "wget", "python",
 	"java/", "httpclient", "okhttp", "axios", "node-fetch", "go-http",
-	"headless", "phantom", "selenium", "puppeteer", "playwright",
-	"googlebot", "bingbot", "yandex", "baiduspider", "facebookexternalhit",
-	"twitterbot", "linkedinbot", "slackbot", "telegrambot",
+	// Headless browsers
+	"headless", "phantom", "selenium", "puppeteer", "playwright", "nightmare",
+	"chromium", "webdriver", "chromedriver", "geckodriver",
+	// Search engine bots (legitimate but shouldn't click affiliate links)
+	"googlebot", "bingbot", "yandex", "baiduspider", "duckduckbot", "sogou",
+	"exabot", "ia_archiver", "archive.org", "wayback",
+	// Social media bots
+	"facebookexternalhit", "twitterbot", "linkedinbot", "slackbot", "telegrambot",
+	"whatsapp", "discordbot", "pinterest", "tumblr",
+	// HTTP libraries
+	"libwww", "lwp-", "guzzle", "aiohttp", "httpx", "requests/", "urllib",
+	"fetch/", "undici", "superagent", "needle", "got/", "ky/",
+	// Automation tools
+	"zapier", "ifttt", "make.com", "n8n", "automate.io",
+	// Monitoring/SEO tools
+	"ahrefs", "semrush", "majestic", "moz.com", "screaming", "sitebulb",
+	"uptimerobot", "pingdom", "gtmetrix", "pagespeed",
+	// Suspicious patterns
+	"anonymous", "proxy", "vpn", "tor", "scanner", "exploit",
 }
 
 // DetectBot analyzes request for bot-like behavior
@@ -304,17 +321,34 @@ func (s *SecurityService) isDatacenterIP(ipStr string) bool {
 		return false
 	}
 
-	// Common datacenter CIDR ranges (simplified)
+	// Common datacenter & VPN CIDR ranges - Extended list
 	datacenterRanges := []string{
-		"104.16.0.0/12",   // Cloudflare
-		"172.64.0.0/13",   // Cloudflare
-		"34.0.0.0/8",      // Google Cloud
-		"35.0.0.0/8",      // Google Cloud
-		"52.0.0.0/8",      // AWS
-		"54.0.0.0/8",      // AWS
-		"13.0.0.0/8",      // Azure
-		"20.0.0.0/8",      // Azure
-		"157.240.0.0/16",  // Facebook
+		// Cloudflare
+		"104.16.0.0/12", "172.64.0.0/13", "141.101.64.0/18", "190.93.240.0/20",
+		// Google Cloud
+		"34.0.0.0/8", "35.0.0.0/8", "8.34.208.0/20", "8.35.192.0/20",
+		// AWS
+		"52.0.0.0/8", "54.0.0.0/8", "3.0.0.0/8", "18.0.0.0/8",
+		// Azure
+		"13.0.0.0/8", "20.0.0.0/8", "40.0.0.0/8", "51.0.0.0/8",
+		// DigitalOcean
+		"167.99.0.0/16", "178.128.0.0/16", "206.189.0.0/16", "159.65.0.0/16",
+		// Linode
+		"45.33.0.0/16", "50.116.0.0/16", "69.164.192.0/18",
+		// Vultr
+		"45.32.0.0/16", "45.63.0.0/16", "45.76.0.0/16", "45.77.0.0/16",
+		// OVH
+		"51.68.0.0/16", "51.75.0.0/16", "51.77.0.0/16", "51.79.0.0/16",
+		// Hetzner
+		"95.216.0.0/16", "135.181.0.0/16", "65.21.0.0/16",
+		// Common VPN providers
+		"185.156.64.0/24",  // NordVPN
+		"104.223.0.0/16",   // ExpressVPN  
+		"209.141.32.0/19",  // ProtonVPN
+		"198.54.128.0/17",  // Surfshark
+		// Social platforms (should not click)
+		"157.240.0.0/16",   // Facebook
+		"199.16.156.0/22",  // Twitter
 	}
 
 	for _, cidr := range datacenterRanges {
@@ -565,5 +599,207 @@ func (s *SecurityService) ValidateUUID(input string) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("invalid UUID length")
 	}
 	return uuid.Parse(input)
+}
+
+// ============================================
+// ADVANCED FRAUD DETECTION
+// ============================================
+
+// FraudCheckResult represents comprehensive fraud check results
+type FraudCheckResult struct {
+	IsFraud      bool
+	RiskScore    int     // 0-100
+	Confidence   float64 // 0-1
+	Reasons      []string
+	ShouldBlock  bool
+	ShouldFlag   bool // Flag for review but allow
+}
+
+// ComprehensiveFraudCheck performs all fraud detection checks
+func (s *SecurityService) ComprehensiveFraudCheck(c *gin.Context, userOfferID uuid.UUID) FraudCheckResult {
+	result := FraudCheckResult{
+		Reasons: []string{},
+	}
+	
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	
+	// 1. Bot Detection
+	botResult := s.DetectBot(c)
+	if botResult.IsBot {
+		result.RiskScore += botResult.RiskScore
+		result.Reasons = append(result.Reasons, "bot:"+botResult.Reason)
+	}
+	
+	// 2. Rate Limit Check
+	rateResult := s.CheckClickRateLimit(ip, userOfferID)
+	if !rateResult.Allowed {
+		result.RiskScore += 80
+		result.Reasons = append(result.Reasons, "rate_limit:"+rateResult.Reason)
+	}
+	
+	// 3. Cookie Stuffing Detection (same IP, multiple offers in short time)
+	cookieStuffResult := s.detectCookieStuffing(ip)
+	if cookieStuffResult {
+		result.RiskScore += 70
+		result.Reasons = append(result.Reasons, "cookie_stuffing_suspected")
+	}
+	
+	// 4. Click Pattern Analysis
+	patternResult := s.analyzeClickPattern(ip, ua)
+	result.RiskScore += patternResult
+	if patternResult > 30 {
+		result.Reasons = append(result.Reasons, fmt.Sprintf("suspicious_pattern:%d", patternResult))
+	}
+	
+	// 5. Referer Analysis
+	referer := c.GetHeader("Referer")
+	refererRisk := s.analyzeReferer(referer)
+	result.RiskScore += refererRisk
+	if refererRisk > 20 {
+		result.Reasons = append(result.Reasons, "suspicious_referer")
+	}
+	
+	// Determine final verdict
+	result.Confidence = float64(result.RiskScore) / 100
+	if result.Confidence > 1 {
+		result.Confidence = 1
+	}
+	
+	if result.RiskScore >= 80 {
+		result.IsFraud = true
+		result.ShouldBlock = true
+	} else if result.RiskScore >= 50 {
+		result.ShouldFlag = true
+	}
+	
+	return result
+}
+
+// detectCookieStuffing checks for cookie stuffing patterns
+func (s *SecurityService) detectCookieStuffing(ip string) bool {
+	ctx := context.Background()
+	key := fmt.Sprintf("cookie_stuff:%s", s.hashIP(ip))
+	
+	if cache.RedisClient == nil {
+		return false
+	}
+	
+	// Check how many different offers this IP clicked in last 5 minutes
+	countStr, err := cache.Get(ctx, key)
+	if err != nil {
+		// First click, start counting
+		cache.Set(ctx, key, "1", 5*time.Minute)
+		return false
+	}
+	
+	count, _ := strconv.Atoi(countStr)
+	cache.Increment(ctx, key)
+	
+	// If more than 10 different offers in 5 minutes, likely cookie stuffing
+	return count > 10
+}
+
+// analyzeClickPattern analyzes click patterns for anomalies
+func (s *SecurityService) analyzeClickPattern(ip, ua string) int {
+	ctx := context.Background()
+	risk := 0
+	
+	// Check for rapid sequential clicks
+	key := fmt.Sprintf("click_seq:%s", s.hashIP(ip))
+	if cache.RedisClient != nil {
+		countStr, _ := cache.Get(ctx, key)
+		count, _ := strconv.Atoi(countStr)
+		
+		if count > 20 { // More than 20 clicks per minute
+			risk += 40
+		} else if count > 10 {
+			risk += 20
+		}
+		
+		cache.Increment(ctx, key)
+		cache.Expire(ctx, key, time.Minute)
+	}
+	
+	// Check for identical user agent patterns (bot farms use same UA)
+	uaKey := fmt.Sprintf("ua_pattern:%s", s.hashUserAgent(ua))
+	if cache.RedisClient != nil {
+		countStr, _ := cache.Get(ctx, uaKey)
+		count, _ := strconv.Atoi(countStr)
+		
+		if count > 100 { // Same UA from 100+ different actions
+			risk += 30
+		}
+		
+		cache.Increment(ctx, uaKey)
+		cache.Expire(ctx, uaKey, 10*time.Minute)
+	}
+	
+	return risk
+}
+
+// analyzeReferer checks referer for suspicious patterns
+func (s *SecurityService) analyzeReferer(referer string) int {
+	if referer == "" {
+		// Direct traffic - slightly suspicious for affiliate clicks
+		return 10
+	}
+	
+	referer = strings.ToLower(referer)
+	
+	// Suspicious referer patterns
+	suspiciousPatterns := []string{
+		"localhost", "127.0.0.1", "0.0.0.0",
+		".php", ".asp", "iframe",
+		"traffic", "clicks", "bot",
+		"proxy", "anonymizer",
+	}
+	
+	for _, pattern := range suspiciousPatterns {
+		if strings.Contains(referer, pattern) {
+			return 40
+		}
+	}
+	
+	return 0
+}
+
+// TrackConversionAnomaly tracks and detects conversion anomalies
+func (s *SecurityService) TrackConversionAnomaly(userOfferID uuid.UUID, conversionValue float64) bool {
+	ctx := context.Background()
+	
+	// Track average conversion value
+	avgKey := fmt.Sprintf("conv_avg:%s", userOfferID.String()[:8])
+	countKey := fmt.Sprintf("conv_count:%s", userOfferID.String()[:8])
+	
+	if cache.RedisClient == nil {
+		return false
+	}
+	
+	// Get current average and count
+	avgStr, _ := cache.Get(ctx, avgKey)
+	countStr, _ := cache.Get(ctx, countKey)
+	
+	avg, _ := strconv.ParseFloat(avgStr, 64)
+	count, _ := strconv.Atoi(countStr)
+	
+	if count > 10 && avg > 0 {
+		// If conversion value is 10x higher than average, flag as suspicious
+		if conversionValue > avg*10 {
+			return true
+		}
+		// If too many conversions too quickly
+		if count > 100 {
+			return true
+		}
+	}
+	
+	// Update rolling average
+	newAvg := (avg*float64(count) + conversionValue) / float64(count+1)
+	cache.Set(ctx, avgKey, fmt.Sprintf("%.2f", newAvg), 24*time.Hour)
+	cache.Increment(ctx, countKey)
+	cache.Expire(ctx, countKey, 24*time.Hour)
+	
+	return false
 }
 
