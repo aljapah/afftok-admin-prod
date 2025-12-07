@@ -7,6 +7,8 @@ import 'create_offer_screen.dart';
 import 'invoices_screen.dart';
 import 'conversions_screen.dart';
 import 'promoters_screen.dart';
+import 'integration_setup_screen.dart';
+import 'geo_targeting_screen.dart';
 
 class AdvertiserDashboardScreen extends StatefulWidget {
   const AdvertiserDashboardScreen({super.key});
@@ -409,6 +411,35 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
                 Icons.refresh,
                 const Color(0xFF4CAF50),
                 _loadDashboard,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Geo Targeting Button
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionButton(
+                isArabic ? '🎯 استهداف الدول' : '🎯 Geo Targeting',
+                Icons.public,
+                const Color(0xFFFF006E),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GeoTargetingScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionButton(
+                isArabic ? '⚙️ إعداد التكامل' : '⚙️ Integration Setup',
+                Icons.integration_instructions,
+                const Color(0xFF00BCD4),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const IntegrationSetupScreen()),
+                ),
               ),
             ),
           ],

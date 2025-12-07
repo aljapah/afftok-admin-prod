@@ -531,3 +531,133 @@ func (h *AdminGeoRulesHandler) TestGeoRule(c *gin.Context) {
 	})
 }
 
+// ============================================
+// ADVERTISER GEO RULES (Self-service)
+// ============================================
+
+// GetGeoRulesByAdvertiserSelf returns geo rules for the current advertiser
+// GET /api/advertiser/geo-rules
+func (h *AdminGeoRulesHandler) GetGeoRulesByAdvertiserSelf(c *gin.Context) {
+	correlationID := uuid.New().String()[:8]
+
+	// Get current user ID from context
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success":        false,
+			"correlation_id": correlationID,
+			"error":          "User not authenticated",
+		})
+		return
+	}
+
+	advertiserID, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success":        false,
+			"correlation_id": correlationID,
+			"error":          "Invalid user ID",
+		})
+		return
+	}
+
+	rules, err := h.geoRuleService.GetGeoRulesByAdvertiser(advertiserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success":        false,
+			"correlation_id": correlationID,
+			"error":          "Failed to fetch geo rules: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":        true,
+		"correlation_id": correlationID,
+		"rules":          rules,
+		"timestamp":      time.Now().UTC(),
+	})
+}
+
+// CreateGeoRuleForAdvertiser creates a geo rule for the current advertiser
+// POST /api/advertiser/geo-rules
+func (h *AdminGeoRulesHandler) CreateGeoRuleForAdvertiser(c *gin.Context) {
+	correlationID := uuid.New().String()[:8]
+
+	// Get current user ID from context
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success":        false,
+			"correlation_id": correlationID,
+			"error":          "User not authenticated",
+		})
+		return
+	}
+
+	var req models.CreateGeoRuleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success":        false,
+			"correlation_id": correlationID,
+			"error":          "Invalid request body: " + err.Error(),
+		})
+		return
+	}
+
+	// Force scope to advertiser and set current user as scope_id
+	req.ScopeType = "advertiser"
+	req.ScopeID = userID.(string)
+
+	// Validate mode
+	validModes := map[string]bool{"allow": true, "block": true}
+	if !validModes[req.Mode] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success":        false,
+			"correlation_id": correlationID,
+			"error":          "Invalid mode. Must be: allow or block",
+		})
+		return
+	}
+
+	// Validate countries
+	if len(req.Countries) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success":        false,
+			"correlation_id": correlationID,
+			"error":          "At least one country code is required",
+		})
+		return
+	}
+
+	valid, invalid := models.ValidateCountryCodes(req.Countries)
+	if len(invalid) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success":        false,
+			"correlation_id": correlationID,
+			"error":          "Invalid country codes",
+			"invalid_codes":  invalid,
+			"valid_codes":    valid,
+		})
+		return
+	}
+
+	rule, err := h.geoRuleService.CreateGeoRule(&req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success":        false,
+			"correlation_id": correlationID,
+			"error":          "Failed to create geo rule: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success":        true,
+		"correlation_id": correlationID,
+		"message":        "Geo targeting rule created successfully",
+		"rule":           rule,
+		"timestamp":      time.Now().UTC(),
+	})
+}
+

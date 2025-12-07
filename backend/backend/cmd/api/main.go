@@ -340,6 +340,13 @@ func main() {
 				advertiser.DELETE("/offers/:id", advertiserHandler.DeleteOffer)
 				advertiser.POST("/offers/:id/pause", advertiserHandler.PauseOffer)
 				advertiser.GET("/offers/:id/stats", advertiserHandler.GetOfferStats)
+				advertiser.GET("/promoters", advertiserHandler.GetPromoters)
+				
+				// Geo targeting for advertisers
+				advertiser.GET("/geo-rules", adminGeoRulesHandler.GetGeoRulesByAdvertiserSelf)
+				advertiser.POST("/geo-rules", adminGeoRulesHandler.CreateGeoRuleForAdvertiser)
+				advertiser.PUT("/geo-rules/:id", adminGeoRulesHandler.UpdateGeoRule)
+				advertiser.DELETE("/geo-rules/:id", adminGeoRulesHandler.DeleteGeoRule)
 			}
 
 			admin := protected.Group("/admin")

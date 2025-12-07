@@ -13,6 +13,7 @@ class OfferService {
     String? category,
     String? sort,
     String? order,
+    String? country, // Filter by user's country for geo targeting
   }) async {
     try {
       final queryParams = <String, String>{};
@@ -20,6 +21,7 @@ class OfferService {
       if (category != null) queryParams['category'] = category;
       if (sort != null) queryParams['sort'] = sort;
       if (order != null) queryParams['order'] = order;
+      if (country != null) queryParams['country'] = country;
       
       final uri = Uri.parse('${ApiConfig.baseUrl}/api/offers')
           .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);

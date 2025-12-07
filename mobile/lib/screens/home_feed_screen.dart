@@ -55,7 +55,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     
     try {
       final offerService = OfferService();
-      final result = await offerService.getAllOffers();
+      // Get user's country for geo targeting
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userCountry = authProvider.currentUser?.country;
+      
+      final result = await offerService.getAllOffers(
+        country: userCountry,
+      );
       
       setState(() {
         if (result['success'] == true) {

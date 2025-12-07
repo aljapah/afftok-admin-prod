@@ -325,7 +325,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _copyLink(context, userOffer.userReferralLink),
+                    onPressed: () => _copyLink(context, userOffer.trackingUrl ?? userOffer.userReferralLink),
                     icon: const Icon(Icons.copy, size: 18),
                     label: Text(lang.copyLink),
                     style: OutlinedButton.styleFrom(
@@ -343,7 +343,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _shareOffer(
                       offerTitle,
-                      userOffer.userReferralLink,
+                      userOffer.trackingUrl ?? userOffer.userReferralLink,
                     ),
                     icon: const Icon(Icons.share, size: 18),
                     label: Text(lang.share),

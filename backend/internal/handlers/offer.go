@@ -62,6 +62,12 @@ func (h *OfferHandler) GetAllOffers(c *gin.Context) {
         return
     }
 
+    // Filter offers by geo targeting if country is provided
+    userCountry := c.Query("country")
+    if userCountry != "" {
+        offers = h.filterOffersByGeo(offers, userCountry)
+    }
+
     var total int64
     h.db.Model(&models.Offer{}).Where("status = ?", "active").Count(&total)
 
@@ -73,6 +79,56 @@ func (h *OfferHandler) GetAllOffers(c *gin.Context) {
             "total": total,
         },
     })
+}
+
+// filterOffersByGeo filters offers based on geo targeting rules
+func (h *OfferHandler) filterOffersByGeo(offers []models.Offer, userCountry string) []models.Offer {
+    if userCountry == "" {
+        return offers
+    }
+
+    filteredOffers := make([]models.Offer, 0)
+
+    for _, offer := range offers {
+        // Check if offer has geo rules
+        var geoRules []models.GeoRule
+        h.db.Where("scope_type = ? AND scope_id = ? AND status = ?", "offer", offer.ID, "active").Find(&geoRules)
+
+        // If no offer-specific rules, check advertiser rules
+        if len(geoRules) == 0 {
+            h.db.Where("scope_type = ? AND scope_id = ? AND status = ?", "advertiser", offer.AdvertiserID, "active").Find(&geoRules)
+        }
+
+        // If no rules at all, include the offer (no restrictions)
+        if len(geoRules) == 0 {
+            filteredOffers = append(filteredOffers, offer)
+            continue
+        }
+
+        // Check if user's country is allowed
+        allowed := true
+        for _, rule := range geoRules {
+            if rule.ContainsCountry(userCountry) {
+                if rule.Mode == models.GeoRuleModeBlock {
+                    allowed = false
+                    break
+                }
+            } else {
+                // Country not in list
+                if rule.Mode == models.GeoRuleModeAllow {
+                    // "Allow only" mode - if country not in list, block
+                    allowed = false
+                    break
+                }
+            }
+        }
+
+        if allowed {
+            filteredOffers = append(filteredOffers, offer)
+        }
+    }
+
+    return filteredOffers
 }
 
 func (h *OfferHandler) GetOffer(c *gin.Context) {

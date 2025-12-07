@@ -22,6 +22,7 @@ class OfferProvider with ChangeNotifier {
     String? category,
     String? sort,
     String? order,
+    String? country, // Filter by user's country for geo targeting
   }) async {
     _setLoading(true);
     _error = null;
@@ -32,6 +33,7 @@ class OfferProvider with ChangeNotifier {
         category: category,
         sort: sort,
         order: order,
+        country: country,
       );
 
       _setLoading(false);
