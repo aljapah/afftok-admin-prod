@@ -9,15 +9,19 @@ let _db: ReturnType<typeof drizzle> | null = null;
 let _client: ReturnType<typeof postgres> | null = null;
 
 export async function getDb() {
+  console.log("[DB] getDb called, DATABASE_URL exists:", !!process.env.DATABASE_URL);
   if (!_db && process.env.DATABASE_URL) {
     try {
+      console.log("[DB] Creating new database connection...");
       _client = postgres(process.env.DATABASE_URL);
       _db = drizzle(_client);
+      console.log("[DB] Database connection created successfully");
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
     }
   }
+  console.log("[DB] Returning db:", !!_db);
   return _db;
 }
 
@@ -396,14 +400,53 @@ export async function deleteBadge(id: string) {
 // ============ CONTESTS / CHALLENGES ============
 
 export async function getAllContests() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  console.log("[DB] getAllContests called");
   
-  const result = await db.execute(sql`
-    SELECT * FROM contests ORDER BY created_at DESC
-  `);
+  if (!process.env.DATABASE_URL) {
+    console.log("[DB] ERROR: DATABASE_URL not set");
+    throw new Error("Database not available");
+  }
   
-  return result.rows || [];
+  try {
+    // Use postgres directly for this query
+    const client = postgres(process.env.DATABASE_URL);
+    const result = await client`SELECT * FROM contests ORDER BY created_at DESC`;
+    await client.end();
+    
+    console.log("[DB] getAllContests result:", result.length, "contests");
+    
+    // Transform snake_case to camelCase for frontend
+    return result.map((c: any) => ({
+      id: c.id,
+      title: c.title,
+      titleAr: c.title_ar,
+      description: c.description,
+      descriptionAr: c.description_ar,
+      imageUrl: c.image_url,
+      prizeTitle: c.prize_title,
+      prizeTitleAr: c.prize_title_ar,
+      prizeDescription: c.prize_description,
+      prizeDescriptionAr: c.prize_description_ar,
+      prizeAmount: c.prize_amount,
+      prizeCurrency: c.prize_currency,
+      contestType: c.contest_type,
+      targetType: c.target_type,
+      targetValue: c.target_value,
+      minClicks: c.min_clicks,
+      minConversions: c.min_conversions,
+      minMembers: c.min_members,
+      maxParticipants: c.max_participants,
+      startDate: c.start_date,
+      endDate: c.end_date,
+      status: c.status,
+      participantsCount: c.participants_count,
+      createdAt: c.created_at,
+      updatedAt: c.updated_at,
+    }));
+  } catch (error) {
+    console.log("[DB] getAllContests ERROR:", error);
+    throw error;
+  }
 }
 
 export async function createContest(data: any) {

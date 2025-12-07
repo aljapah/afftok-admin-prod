@@ -351,10 +351,10 @@ export default function Contests() {
                       <div className="text-xs">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {format(new Date(contest.startDate), 'dd/MM/yyyy')}
+                          {contest.startDate ? format(new Date(contest.startDate), 'dd/MM/yyyy') : '-'}
                         </div>
                         <div className="text-muted-foreground">
-                          → {format(new Date(contest.endDate), 'dd/MM/yyyy')}
+                          → {contest.endDate ? format(new Date(contest.endDate), 'dd/MM/yyyy') : '-'}
                         </div>
                       </div>
                     </TableCell>
