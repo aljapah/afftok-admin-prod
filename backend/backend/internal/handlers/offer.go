@@ -303,20 +303,20 @@ func (h *OfferHandler) JoinOffer(c *gin.Context) {
     // Get base URL from environment or use production default
     baseURL := os.Getenv("BASE_URL")
     if baseURL == "" {
-        baseURL = "https://afftok-backend-prod-production.up.railway.app"
+        baseURL = "https://go.afftokapp.com"
     }
     
     if trackingCode != "" && h.linkSigningService != nil {
         // Generate signed tracking link
         signedLink = h.linkSigningService.GenerateSignedLink(trackingCode)
-        trackingURL = fmt.Sprintf("%s/api/c/%s", baseURL, signedLink)
+        trackingURL = fmt.Sprintf("%s/c/%s", baseURL, signedLink)
     } else if shortLink != "" {
         // Fallback to unsigned link (legacy mode)
-        trackingURL = fmt.Sprintf("%s/api/c/%s", baseURL, shortLink)
+        trackingURL = fmt.Sprintf("%s/c/%s", baseURL, shortLink)
         signedLink = shortLink
     } else {
         // Ultimate fallback
-        trackingURL = fmt.Sprintf("%s/api/c/%s?promoter=%s", baseURL, offer.ID.String(), userUUID.String())
+        trackingURL = fmt.Sprintf("%s/c/%s?promoter=%s", baseURL, offer.ID.String(), userUUID.String())
         signedLink = ""
     }
 
@@ -483,16 +483,16 @@ func (h *OfferHandler) GetMyOffers(c *gin.Context) {
         // Build tracking URL with full base URL
         baseURL := os.Getenv("BASE_URL")
         if baseURL == "" {
-            baseURL = "https://afftok-backend-prod-production.up.railway.app"
+            baseURL = "https://go.afftokapp.com"
         }
         
         trackingURL := ""
         if uo.ShortLink != "" {
-            trackingURL = baseURL + "/api/c/" + uo.ShortLink
+            trackingURL = baseURL + "/c/" + uo.ShortLink
         } else if uo.TrackingCode != "" {
-            trackingURL = baseURL + "/api/c/" + uo.TrackingCode
+            trackingURL = baseURL + "/c/" + uo.TrackingCode
         } else {
-            trackingURL = fmt.Sprintf("%s/api/c/%s?promoter=%s", baseURL, uo.OfferID.String(), uo.UserID.String())
+            trackingURL = fmt.Sprintf("%s/c/%s?promoter=%s", baseURL, uo.OfferID.String(), uo.UserID.String())
         }
 
         response = append(response, UserOfferResponse{
