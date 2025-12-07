@@ -417,7 +417,7 @@ export async function getAllContests() {
   
   try {
     // Use postgres directly for this query
-    const client = postgres(process.env.DATABASE_URL);
+    const client = postgres(process.env.DATABASE_URL, { prepare: false });
     const result = await client`SELECT * FROM contests ORDER BY created_at DESC`;
     await client.end();
     
@@ -583,7 +583,7 @@ export async function getAllIntegrations() {
   }
   
   try {
-    const client = postgres(process.env.DATABASE_URL);
+    const client = postgres(process.env.DATABASE_URL, { prepare: false });
     
     // Check if table exists, create if not
     await client`
@@ -651,7 +651,7 @@ export async function createIntegration(data: {
     throw new Error("Database not available");
   }
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   
   // Generate webhook URL and secret
   const webhookUrl = `https://go.afftokapp.com/webhook/${data.platform}/${data.advertiserId}`;
@@ -675,7 +675,7 @@ export async function updateIntegrationStatus(id: string, status: string) {
     throw new Error("Database not available");
   }
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   await client`
     UPDATE advertiser_integrations 
     SET status = ${status}, updated_at = NOW() 
@@ -691,7 +691,7 @@ export async function deleteIntegration(id: string) {
     throw new Error("Database not available");
   }
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   await client`DELETE FROM advertiser_integrations WHERE id = ${id}::uuid`;
   await client.end();
   
@@ -703,7 +703,7 @@ export async function testIntegration(id: string) {
     throw new Error("Database not available");
   }
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   
   // Get integration details
   const result = await client`
@@ -742,22 +742,35 @@ export async function testIntegration(id: string) {
 
 // ============ ADMIN USERS (RBAC) ============
 
+let adminTablesInitialized = false;
+
 export async function initAdminTables() {
+  if (adminTablesInitialized) return;
+  
   if (!process.env.DATABASE_URL) {
     throw new Error("Database not available");
   }
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   
   try {
-    // Drop old table if it has wrong schema and recreate
-    await client`DROP TABLE IF EXISTS admin_users CASCADE`;
+    // Check if admin_users table has correct schema
+    const tableCheck = await client`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'admin_users' AND column_name = 'username'
+    `;
     
-    // Create admin_users table
+    if (tableCheck.length === 0) {
+      // Table doesn't have username column - drop and recreate
+      console.log("[DB] Recreating admin_users table with correct schema...");
+      await client`DROP TABLE IF EXISTS admin_users CASCADE`;
+    }
+    
+    // Create admin_users table if not exists
     await client`
-      CREATE TABLE admin_users (
+      CREATE TABLE IF NOT EXISTS admin_users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        username VARCHAR(50) NOT NULL UNIQUE,
+        username VARCHAR(50) NOT NULL,
         email VARCHAR(255) NOT NULL UNIQUE,
         password_hash VARCHAR(255) NOT NULL,
         full_name VARCHAR(100),
@@ -785,14 +798,20 @@ export async function initAdminTables() {
       )
     `;
     
-    // Insert Super Admin
-    const passwordHash = Buffer.from('Az55666682').toString('base64');
-    await client`
-      INSERT INTO admin_users (username, email, password_hash, full_name, role, status)
-      VALUES ('superadmin', 'aljapah.a@gmail.com', ${passwordHash}, 'Super Admin', 'super_admin', 'active')
-      ON CONFLICT (email) DO NOTHING
-    `;
+    // Check if Super Admin exists
+    const existing = await client`SELECT id FROM admin_users WHERE email = 'aljapah.a@gmail.com'`;
     
+    if (existing.length === 0) {
+      // Insert Super Admin
+      const passwordHash = Buffer.from('Az55666682').toString('base64');
+      await client`
+        INSERT INTO admin_users (username, email, password_hash, full_name, role, status)
+        VALUES ('superadmin', 'aljapah.a@gmail.com', ${passwordHash}, 'Super Admin', 'super_admin', 'active')
+      `;
+      console.log("[DB] Super Admin created: aljapah.a@gmail.com");
+    }
+    
+    adminTablesInitialized = true;
     console.log("[DB] Admin tables initialized successfully");
   } catch (error) {
     console.error("[DB] Error initializing admin tables:", error);
@@ -808,7 +827,7 @@ export async function getAllAdminUsers() {
   
   await initAdminTables();
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   const result = await client`
     SELECT id, username, email, full_name, role, status, last_login_at, created_at
     FROM admin_users
@@ -842,7 +861,7 @@ export async function createAdminUser(data: {
   
   await initAdminTables();
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   
   // Simple hash (in production use bcrypt)
   const passwordHash = Buffer.from(data.password).toString('base64');
@@ -866,7 +885,7 @@ export async function updateAdminUser(id: string, data: {
     throw new Error("Database not available");
   }
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   
   await client`
     UPDATE admin_users 
@@ -887,7 +906,7 @@ export async function deleteAdminUser(id: string) {
     throw new Error("Database not available");
   }
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   await client`DELETE FROM admin_users WHERE id = ${id}::uuid`;
   await client.end();
   
@@ -901,7 +920,7 @@ export async function loginAdminUser(email: string, password: string) {
   
   await initAdminTables();
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   
   const passwordHash = Buffer.from(password).toString('base64');
   
@@ -939,7 +958,7 @@ export async function ensureSuperAdmin() {
   
   await initAdminTables();
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   
   // Check if super admin exists
   const existing = await client`
@@ -974,7 +993,7 @@ export async function logAudit(data: {
     throw new Error("Database not available");
   }
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   
   await client`
     INSERT INTO audit_logs (admin_user_id, action, resource, resource_id, details, ip_address, user_agent)
@@ -989,7 +1008,7 @@ export async function getAuditLogs(limit: number = 100) {
     throw new Error("Database not available");
   }
   
-  const client = postgres(process.env.DATABASE_URL);
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   
   const result = await client`
     SELECT 
