@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>انضم للفريق - AffTok</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF006E;
+            --secondary: #FF4D00;
+            --accent: #8E2DE2;
+            --dark-accent: #4A00E0;
+            --bg-dark: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --bg-light: #242424;
+            --border-color: #333333;
+            --text-primary: #ffffff;
+            --text-secondary: #a8a8a8;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f0f0f 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        body.en {
+            direction: ltr;
+        }
+
+        body.en * {
+            direction: ltr;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: rgba(15, 15, 15, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            order: 2;
+        }
+
+        .language-toggle {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .language-toggle:hover {
+            background: rgba(255, 0, 110, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .team-section {
+            text-align: center;
+            padding: 60px 0 40px;
+            background: linear-gradient(180deg, rgba(255, 0, 110, 0.08) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .team-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 30px;
+            margin: 0 auto 24px;
+            border: 4px solid var(--primary);
+            object-fit: cover;
+            box-shadow: 0 0 40px rgba(255, 0, 110, 0.4);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            overflow: hidden;
+        }
+
+        .team-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .team-name {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .team-description {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 30px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        .team-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border: 2px solid var(--secondary);
+            border-radius: 25px;
+            color: var(--secondary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .stats-section {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .join-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 18px 60px;
+            font-size: 20px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 30px 0;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 40px rgba(255, 0, 110, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .join-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 50px rgba(255, 0, 110, 0.5);
+        }
+
+        .members-section {
+            padding: 50px 0;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .member-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .member-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 0, 110, 0.15);
+        }
+
+        .member-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .member-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .member-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .member-username {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .owner-badge {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: black;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .download-section {
+            background: linear-gradient(135deg, rgba(255, 0, 110, 0.08), rgba(255, 77, 0, 0.08));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 50px 40px;
+            text-align: center;
+            margin: 50px auto;
+            max-width: 800px;
+        }
+
+        .download-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .download-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            background: white;
+            color: black;
+            padding: 14px 28px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            text-decoration: none;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .download-btn i {
+            font-size: 20px;
+        }
+
+        .social-section {
+            text-align: center;
+            padding: 50px 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 40px;
+        }
+
+        .social-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 24px;
+        }
+
+        .social-link:hover {
+            transform: scale(1.15);
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 8px 20px rgba(255, 0, 110, 0.3);
+        }
+
+        .support-email {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .support-email a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .support-email a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--primary);
+        }
+
+        footer {
+            background: rgba(15, 15, 15, 0.5);
+            border-top: 1px solid var(--border-color);
+            padding: 40px 0;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .team-name {
+                font-size: 28px;
+            }
+
+            .stats-section {
+                gap: 20px;
+            }
+
+            .stat-card {
+                padding: 15px 20px;
+                min-width: 100px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .join-btn {
+                padding: 16px 40px;
+                font-size: 18px;
+            }
+
+            .members-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .download-section {
+                padding: 40px 20px;
+                margin: 30px 20px;
+            }
+
+            .download-buttons {
+                flex-direction: column;
+            }
+
+            .download-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .social-icons {
+                gap: 16px;
+            }
+
+            .social-link {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div style="width: 100px;"></div>
+                <div class="logo">AffTok</div>
+                <button class="language-toggle" onclick="toggleLanguage()" id="lang-btn">English</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="team-section">
+        <div class="container">
+            <div class="team-logo" id="team-logo">👥</div>
+            <h1 class="team-name" id="team-name">جاري التحميل...</h1>
+            <p class="team-description" id="team-description"></p>
+            <div class="team-badge" id="team-badge">فريق نشط ⚡</div>
+            
+            <div class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-value" id="members-count">0</div>
+                    <div class="stat-label" id="members-label">الأعضاء</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="conversions-count">0</div>
+                    <div class="stat-label" id="conversions-label">التحويلات</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="clicks-count">0</div>
+                    <div class="stat-label" id="clicks-label">النقرات</div>
+                </div>
+            </div>
+            
+            <a href="#" class="join-btn" id="join-btn" onclick="joinTeam(event)">
+                <i class="fas fa-users"></i>
+                <span id="join-btn-text">انضم للفريق الآن</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="members-section">
+        <div class="container">
+            <h2 class="section-title" id="members-title">أعضاء الفريق</h2>
+            <p class="section-subtitle" id="members-subtitle">تعرّف على أعضاء هذا الفريق المميز</p>
+            <div class="members-grid" id="members-grid">
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="download-section">
+            <h3 class="download-title" id="download-title">📱 حمّل تطبيق AffTok</h3>
+            <p class="download-subtitle" id="download-subtitle">انضم لآلاف المروجين واكسب من عروض الأفلييت</p>
+            <div class="download-buttons">
+                <a href="https://play.google.com/store/apps/details?id=com.afftok.app" class="download-btn" target="_blank">
+                    <i class="fab fa-google-play"></i>
+                    <span id="google-play-text">Google Play</span>
+                </a>
+                <a href="https://apps.apple.com/app/afftok" class="download-btn" target="_blank">
+                    <i class="fab fa-apple"></i>
+                    <span id="app-store-text">App Store</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="social-section">
+            <h3 class="social-title" id="social-title">تابعنا على وسائل التواصل</h3>
+            <div class="social-icons">
+                <a href="https://afftokapp.com" target="_blank" class="social-link" title="Website">
+                    <i class="fas fa-globe"></i>
+                </a>
+                <a href="https://www.instagram.com/afftok_app" target="_blank" class="social-link" title="Instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="https://www.tiktok.com/@afftok_app" target="_blank" class="social-link" title="TikTok">
+                    <i class="fab fa-tiktok"></i>
+                </a>
+                <a href="https://twitter.com/afftokapp" target="_blank" class="social-link" title="X">
+                    <i class="fab fa-x-twitter"></i>
+                </a>
+                <a href="https://www.youtube.com/@afftok" target="_blank" class="social-link" title="YouTube">
+                    <i class="fab fa-youtube"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="support-email">
+                <p id="support-text">للدعم والاستفسارات:</p>
+                <a href="mailto:support@afftokapp.com">support@afftokapp.com</a>
+            </div>
+            <div class="footer-links">
+                <a href="https://afftokapp.com/privacy" class="footer-link" id="privacy-link">سياسة الخصوصية</a>
+                <a href="https://afftokapp.com/terms" class="footer-link" id="terms-link">شروط الاستخدام</a>
+                <a href="mailto:support@afftokapp.com" class="footer-link" id="contact-link">تواصل معنا</a>
+            </div>
+            <p id="copyright">© 2025 AffTok. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentLang = 'ar';
+        let teamData = null;
+        let inviteCode = null;
+
+        const translations = {
+            ar: {
+                loading: 'جاري التحميل...',
+                team_badge: 'فريق نشط ⚡',
+                members_label: 'الأعضاء',
+                conversions_label: 'التحويلات',
+                clicks_label: 'النقرات',
+                join_btn: 'انضم للفريق الآن',
+                members_title: 'أعضاء الفريق',
+                members_subtitle: 'تعرّف على أعضاء هذا الفريق المميز',
+                download_title: '📱 حمّل تطبيق AffTok',
+                download_subtitle: 'انضم لآلاف المروجين واكسب من عروض الأفلييت',
+                social_title: 'تابعنا على وسائل التواصل',
+                support_text: 'للدعم والاستفسارات:',
+                privacy_link: 'سياسة الخصوصية',
+                terms_link: 'شروط الاستخدام',
+                contact_link: 'تواصل معنا',
+                copyright: '© 2025 AffTok. جميع الحقوق محفوظة.',
+                google_play: 'Google Play',
+                app_store: 'App Store',
+                lang_btn: 'English',
+                owner_badge: '👑 القائد'
+            },
+            en: {
+                loading: 'Loading...',
+                team_badge: 'Active Team ⚡',
+                members_label: 'Members',
+                conversions_label: 'Conversions',
+                clicks_label: 'Clicks',
+                join_btn: 'Join Team Now',
+                members_title: 'Team Members',
+                members_subtitle: 'Meet the members of this amazing team',
+                download_title: '📱 Download AffTok App',
+                download_subtitle: 'Join thousands of promoters and earn from affiliate offers',
+                social_title: 'Follow us on social media',
+                support_text: 'For support and inquiries:',
+                privacy_link: 'Privacy Policy',
+                terms_link: 'Terms of Use',
+                contact_link: 'Contact Us',
+                copyright: '© 2025 AffTok. All rights reserved.',
+                google_play: 'Google Play',
+                app_store: 'App Store',
+                lang_btn: 'العربية',
+                owner_badge: '👑 Leader'
+            }
+        };
+
+        function t(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            const html = document.documentElement;
+            const body = document.body;
+
+            if (currentLang === 'ar') {
+                html.setAttribute('lang', 'ar');
+                html.setAttribute('dir', 'rtl');
+                body.classList.remove('en');
+            } else {
+                html.setAttribute('lang', 'en');
+                html.setAttribute('dir', 'ltr');
+                body.classList.add('en');
+            }
+
+            updateUILanguage();
+        }
+
+        function updateUILanguage() {
+            document.getElementById('lang-btn').textContent = t('lang_btn');
+            document.getElementById('team-badge').textContent = t('team_badge');
+            document.getElementById('members-label').textContent = t('members_label');
+            document.getElementById('conversions-label').textContent = t('conversions_label');
+            document.getElementById('clicks-label').textContent = t('clicks_label');
+            document.getElementById('join-btn-text').textContent = t('join_btn');
+            document.getElementById('members-title').textContent = t('members_title');
+            document.getElementById('members-subtitle').textContent = t('members_subtitle');
+            document.getElementById('download-title').textContent = t('download_title');
+            document.getElementById('download-subtitle').textContent = t('download_subtitle');
+            document.getElementById('social-title').textContent = t('social_title');
+            document.getElementById('support-text').textContent = t('support_text');
+            document.getElementById('privacy-link').textContent = t('privacy_link');
+            document.getElementById('terms-link').textContent = t('terms_link');
+            document.getElementById('contact-link').textContent = t('contact_link');
+            document.getElementById('copyright').textContent = t('copyright');
+            document.getElementById('google-play-text').textContent = t('google_play');
+            document.getElementById('app-store-text').textContent = t('app_store');
+            
+            // Re-render members if data available
+            if (teamData && teamData.members) {
+                renderMembers(teamData.members);
+            }
+        }
+
+        function renderMembers(members) {
+            const grid = document.getElementById('members-grid');
+            grid.innerHTML = '';
+            
+            members.forEach(member => {
+                const card = document.createElement('div');
+                card.className = 'member-card';
+                
+                const initial = (member.name || member.username || 'U').charAt(0).toUpperCase();
+                const ownerBadge = member.isOwner ? `<span class="owner-badge">${t('owner_badge')}</span>` : '';
+                
+                card.innerHTML = `
+                    <div class="member-avatar">${initial}</div>
+                    <div class="member-info">
+                        <div class="member-name">${member.name || member.username}</div>
+                        <div class="member-username">@${member.username}</div>
+                    </div>
+                    ${ownerBadge}
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function joinTeam(e) {
+            e.preventDefault();
+            const appUrl = 'afftok://join/' + inviteCode;
+            const storeUrl = /iPhone|iPad|iPod/i.test(navigator.userAgent) 
+                ? 'https://apps.apple.com/app/afftok'
+                : 'https://play.google.com/store/apps/details?id=com.afftok.app';
+            
+            window.location = appUrl;
+            setTimeout(function() { window.location = storeUrl; }, 1500);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Data will be injected by the server
+            if (window.teamData) {
+                teamData = window.teamData;
+                inviteCode = window.inviteCode;
+                
+                // Update UI with team data
+                document.getElementById('team-name').textContent = teamData.name;
+                document.getElementById('team-description').textContent = teamData.description || '';
+                document.getElementById('members-count').textContent = teamData.membersCount || 0;
+                document.getElementById('conversions-count').textContent = teamData.conversions || 0;
+                document.getElementById('clicks-count').textContent = teamData.clicks || 0;
+                
+                // Set logo
+                const logoEl = document.getElementById('team-logo');
+                if (teamData.logoUrl) {
+                    logoEl.innerHTML = `<img src="${teamData.logoUrl}" alt="${teamData.name}">`;
+                }
+                
+                // Render members
+                if (teamData.members) {
+                    renderMembers(teamData.members);
+                }
+            }
+            
+            updateUILanguage();
+        });
+    </script>
+</body>
+</html>
+
