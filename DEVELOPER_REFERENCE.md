@@ -1058,5 +1058,5 @@ app.listen(3000);
 
 *Last updated: December 2025*
 *Version: 2.0*
-Abdul aziz aljapah
+Abdul Aziz Aljapah
 

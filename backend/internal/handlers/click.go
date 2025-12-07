@@ -143,6 +143,16 @@ func (h *ClickHandler) TrackClick(c *gin.Context) {
 				goto trackAndRedirect
 			}
 		}
+		
+		// Try as user_offer_id (UUID format with dashes)
+		parsedUUID, uuidErr := uuid.Parse(idOrCode)
+		if uuidErr == nil {
+			// First try as user_offer_id
+			if err := h.db.Preload("Offer").First(&userOffer, "id = ?", parsedUUID).Error; err == nil {
+				offer = *userOffer.Offer
+				goto trackAndRedirect
+			}
+		}
 	}
 
 	// Try as offer ID (legacy format)
@@ -153,7 +163,13 @@ func (h *ClickHandler) TrackClick(c *gin.Context) {
 			return
 		}
 
-		// Get the offer
+		// First try as user_offer_id
+		if err := h.db.Preload("Offer").First(&userOffer, "id = ?", offerID).Error; err == nil {
+			offer = *userOffer.Offer
+			goto trackAndRedirect
+		}
+
+		// Then try as offer ID
 		if err := h.db.First(&offer, "id = ?", offerID).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Offer not found"})
 			return
