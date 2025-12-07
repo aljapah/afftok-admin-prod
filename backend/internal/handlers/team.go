@@ -793,5 +793,5 @@ func (h *TeamHandler) GetTeamLandingPage(c *gin.Context) {
 </html>`
 
 	c.Header("Content-Type", "text/html; charset=utf-8")
-	c.String(http.StatusOK, html)
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
 }
