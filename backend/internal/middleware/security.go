@@ -120,9 +120,9 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		// Content Security Policy
 		// Allow inline styles/scripts for HTML pages, restrict for API
 		path := c.Request.URL.Path
-		if strings.Contains(path, "/promoter/") {
+		if strings.Contains(path, "/promoter/") || strings.Contains(path, "/r/") || strings.Contains(path, "/@") || strings.Contains(path, "/join/") || strings.Contains(path, "/invite/") {
 			// HTML pages need inline styles and external fonts
-			c.Header("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' https: data:; frame-ancestors 'none'")
+			c.Header("Content-Security-Policy", "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; img-src * data: blob: https:; font-src * data: https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'none'")
 		} else {
 			// API endpoints - strict policy
 			c.Header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
