@@ -145,11 +145,19 @@ export const appRouter = router({
         return z.object({
           title: z.string().min(1),
           description: z.string().optional(),
-          imageUrl: z.string().url().optional(),
+          // Arabic fields
+          titleAr: z.string().optional(),
+          descriptionAr: z.string().optional(),
+          termsAr: z.string().optional(),
+          // Images
+          imageUrl: z.string().url().optional().or(z.literal('')),
+          logoUrl: z.string().url().optional().or(z.literal('')),
+          // Settings
           destinationUrl: z.string().url(),
           category: z.string().optional(),
           payout: z.number().int().min(0),
           commission: z.number().int().min(0),
+          payoutType: z.enum(['cpa', 'cpl', 'cps', 'cpi']).optional(),
           networkId: z.string().optional(),
         }).parse(input);
       })
@@ -163,11 +171,19 @@ export const appRouter = router({
           id: z.string(),
           title: z.string().min(1).optional(),
           description: z.string().optional(),
-          imageUrl: z.string().url().optional(),
+          // Arabic fields
+          titleAr: z.string().optional(),
+          descriptionAr: z.string().optional(),
+          termsAr: z.string().optional(),
+          // Images
+          imageUrl: z.string().url().optional().or(z.literal('')),
+          logoUrl: z.string().url().optional().or(z.literal('')),
+          // Settings
           destinationUrl: z.string().url().optional(),
           category: z.string().optional(),
           payout: z.number().int().min(0).optional(),
           commission: z.number().int().min(0).optional(),
+          payoutType: z.enum(['cpa', 'cpl', 'cps', 'cpi']).optional(),
           status: z.enum(['active', 'inactive', 'suspended', 'pending']).optional(),
         }).parse(input);
       })

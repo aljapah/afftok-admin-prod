@@ -213,11 +213,19 @@ export async function createOffer(data: any) {
   const newOffer = {
     title: data.title,
     description: data.description || null,
+    // Arabic fields
+    titleAr: data.titleAr || null,
+    descriptionAr: data.descriptionAr || null,
+    termsAr: data.termsAr || null,
+    // Images
     imageUrl: data.imageUrl || null,
+    logoUrl: data.logoUrl || null,
+    // URLs & Settings
     destinationUrl: data.destinationUrl,
     category: data.category || null,
     payout: data.payout,
     commission: data.commission,
+    payoutType: data.payoutType || 'cpa',
     networkId: data.networkId || null,
   };
 

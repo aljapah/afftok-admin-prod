@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Plus, Globe, Languages } from "lucide-react";
+import { Plus, Globe, Languages, Upload, Image, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -29,6 +29,30 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 
+// ImgBB API for image uploads
+const IMGBB_API_KEY = '6d207e02198a847aa98d0a2a901485a5';
+
+async function uploadToImgBB(file: File): Promise<string | null> {
+  try {
+    const formData = new FormData();
+    formData.append('key', IMGBB_API_KEY);
+    formData.append('image', file);
+
+    const response = await fetch('https://api.imgbb.com/1/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      return data.data.url;
+    }
+    return null;
+  } catch (error) {
+    console.error('ImgBB upload error:', error);
+    return null;
+  }
+}
 
 export function CreateOfferDialog() {
   const [open, setOpen] = useState(false);
@@ -39,11 +63,18 @@ export function CreateOfferDialog() {
     descriptionAr: "",
     termsAr: "",
     imageUrl: "",
+    logoUrl: "",
     destinationUrl: "",
     category: "",
     payout: 0,
     commission: 0,
+    payoutType: "cpa",
   });
+  
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const utils = trpc.useUtils();
   const createMutation = trpc.offers.create.useMutation({
@@ -58,16 +89,63 @@ export function CreateOfferDialog() {
         descriptionAr: "",
         termsAr: "",
         imageUrl: "",
+        logoUrl: "",
         destinationUrl: "",
         category: "",
         payout: 0,
         commission: 0,
+        payoutType: "cpa",
       });
     },
     onError: (error) => {
       toast.error(`Failed to create offer: ${error.message}`);
     },
   });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'logo') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    if (type === 'image') {
+      setUploadingImage(true);
+    } else {
+      setUploadingLogo(true);
+    }
+
+    try {
+      const url = await uploadToImgBB(file);
+      if (url) {
+        if (type === 'image') {
+          setFormData({ ...formData, imageUrl: url });
+        } else {
+          setFormData({ ...formData, logoUrl: url });
+        }
+        toast.success(`${type === 'image' ? 'Image' : 'Logo'} uploaded successfully`);
+      } else {
+        toast.error('Failed to upload image');
+      }
+    } catch (error) {
+      toast.error('Upload error');
+    } finally {
+      if (type === 'image') {
+        setUploadingImage(false);
+      } else {
+        setUploadingLogo(false);
+      }
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +160,7 @@ export function CreateOfferDialog() {
           Create Offer
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Offer</DialogTitle>
@@ -164,20 +242,90 @@ export function CreateOfferDialog() {
             </TabsContent>
           </Tabs>
           
+          {/* Images Section */}
+          <div className="grid gap-4 py-4 border-t mt-4 pt-4">
+            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Images
+            </h4>
+            
+            {/* Offer Image */}
+            <div className="grid gap-2">
+              <Label>Offer Image</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  placeholder="https://example.com/image.png or upload"
+                  className="flex-1"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={imageInputRef}
+                  onChange={(e) => handleImageUpload(e, 'image')}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImage}
+                >
+                  {uploadingImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {formData.imageUrl && (
+                <img src={formData.imageUrl} alt="Preview" className="h-20 w-20 object-cover rounded border" />
+              )}
+            </div>
+            
+            {/* Logo */}
+            <div className="grid gap-2">
+              <Label>Logo</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  value={formData.logoUrl}
+                  onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+                  placeholder="https://example.com/logo.png or upload"
+                  className="flex-1"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={logoInputRef}
+                  onChange={(e) => handleImageUpload(e, 'logo')}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                >
+                  {uploadingLogo ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {formData.logoUrl && (
+                <img src={formData.logoUrl} alt="Logo Preview" className="h-16 w-16 object-cover rounded border" />
+              )}
+            </div>
+          </div>
+          
           {/* Common Fields */}
           <div className="grid gap-4 py-4 border-t mt-4 pt-4">
-            <h4 className="text-sm font-medium text-muted-foreground">Common Settings</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">Settings</h4>
             
-            <div className="grid gap-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input
-                id="imageUrl"
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                placeholder="https://example.com/image.png"
-              />
-            </div>
             <div className="grid gap-2">
               <Label htmlFor="destinationUrl">Destination URL *</Label>
               <Input
@@ -189,24 +337,44 @@ export function CreateOfferDialog() {
                 required
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="category">Category *</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Cashback">Cashback</SelectItem>
-                  <SelectItem value="E-commerce">E-commerce</SelectItem>
-                  <SelectItem value="Finance">Finance</SelectItem>
-                  <SelectItem value="Travel">Travel</SelectItem>
-                  <SelectItem value="Education">Education</SelectItem>
-                  <SelectItem value="Technology">Technology</SelectItem>
-                  <SelectItem value="Utilities">Utilities</SelectItem>
-                  <SelectItem value="Food & Restaurants">Food & Restaurants</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="finance">Finance / مالية</SelectItem>
+                    <SelectItem value="ecommerce">E-Commerce / تجارة إلكترونية</SelectItem>
+                    <SelectItem value="gaming">Gaming / ألعاب</SelectItem>
+                    <SelectItem value="health">Health / صحة</SelectItem>
+                    <SelectItem value="education">Education / تعليم</SelectItem>
+                    <SelectItem value="technology">Technology / تقنية</SelectItem>
+                    <SelectItem value="travel">Travel / سفر</SelectItem>
+                    <SelectItem value="food">Food & Delivery / طعام وتوصيل</SelectItem>
+                    <SelectItem value="entertainment">Entertainment / ترفيه</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="payoutType">Payout Type *</Label>
+                <Select value={formData.payoutType} onValueChange={(value) => setFormData({ ...formData, payoutType: value })} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cpa">CPA (Cost Per Action)</SelectItem>
+                    <SelectItem value="cpl">CPL (Cost Per Lead)</SelectItem>
+                    <SelectItem value="cps">CPS (Cost Per Sale)</SelectItem>
+                    <SelectItem value="cpi">CPI (Cost Per Install)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="payout">Payout (cents) *</Label>
