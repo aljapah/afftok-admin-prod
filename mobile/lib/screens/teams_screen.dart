@@ -38,13 +38,15 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   }
 
   Future<void> _loadContests() async {
-    final apiService = Provider.of<ApiService>(context, listen: false);
+    final apiService = ApiService();
     _contestService = ContestService(apiService);
     
     setState(() => _loadingContests = true);
     
     try {
+      print('[TeamsScreen] Loading contests...');
       final contests = await _contestService.getActiveContests();
+      print('[TeamsScreen] Loaded ${contests.length} contests');
       if (mounted) {
         setState(() {
           _activeContests = contests;
@@ -52,6 +54,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
         });
       }
     } catch (e) {
+      print('[TeamsScreen] Error loading contests: $e');
       if (mounted) {
         setState(() => _loadingContests = false);
       }
