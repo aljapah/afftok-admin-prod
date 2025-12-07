@@ -41,7 +41,7 @@ class _PromoterPublicPageState extends State<PromoterPublicPage> {
             print('[PromoterPublicPage] Navigation request: ${request.url}');
             
             // Allow initial page load and base URL
-            if (request.url == 'https://afftok-backend-prod-production.up.railway.app/' ||
+            if (request.url == 'https://go.afftokapp.com/' ||
                 request.url == 'about:blank') {
               return NavigationDecision.navigate;
             }
@@ -114,7 +114,7 @@ class _PromoterPublicPageState extends State<PromoterPublicPage> {
       print('[PromoterPublicPage] Loaded HTML from assets');
       _webViewController.loadHtmlString(
         htmlContent, 
-        baseUrl: 'https://afftok-backend-prod-production.up.railway.app/'
+        baseUrl: 'https://go.afftokapp.com/'
       );
     } catch (e) {
       print('[PromoterPublicPage] Error loading HTML from assets: $e');
@@ -232,7 +232,7 @@ class _PromoterPublicPageState extends State<PromoterPublicPage> {
         window.offersData = [$offersJson];
         
         // Update offers grid
-        const API_BASE = 'https://afftok-backend-prod-production.up.railway.app';
+        const API_BASE = 'https://go.afftokapp.com';
         const offersGrid = document.getElementById('offers-grid');
         if (offersGrid && window.offersData && window.offersData.length > 0) {
           offersGrid.innerHTML = '';

@@ -14,6 +14,9 @@ class AddOfferScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context);
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final offerTitle = offer.getTitle(languageCode);
+    final offerDescription = offer.getDescription(languageCode);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -75,21 +78,32 @@ class AddOfferScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.all(8),
-                    child: Image.network(
-                      offer.logoUrl,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
+                    child: offer.logoUrl.isNotEmpty
+                      ? Image.network(
+                          offer.logoUrl,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Text(
+                                offerTitle.isNotEmpty ? offerTitle[0] : '?',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Center(
                           child: Text(
-                            offer.companyName[0],
+                            offerTitle.isNotEmpty ? offerTitle[0] : '?',
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
                             ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -97,7 +111,7 @@ class AddOfferScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          offer.companyName,
+                          offerTitle,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 22,
@@ -215,7 +229,7 @@ class AddOfferScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                offer.description,
+                offerDescription,
                 style: TextStyle(
                   color: Colors.grey[300],
                   fontSize: 15,
@@ -346,7 +360,7 @@ class AddOfferScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => WebViewScreen(
                         url: offer.offerUrl,
-                        title: offer.companyName,
+                        title: offerTitle,
                         offerId: offer.id,
                       ),
                     ),

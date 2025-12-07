@@ -46,6 +46,10 @@ class SideActionBar extends StatelessWidget {
   }
 
   void _showInfoBottomSheet(BuildContext context, AppLocalizations lang) {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final offerTitle = offer.getTitle(languageCode);
+    final offerDescription = offer.getDescription(languageCode);
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1a1a1a),
@@ -75,7 +79,7 @@ class SideActionBar extends StatelessWidget {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Center(
                               child: Text(
-                                offer.companyName.isNotEmpty ? offer.companyName[0] : '?',
+                                offerTitle.isNotEmpty ? offerTitle[0] : '?',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -87,7 +91,7 @@ class SideActionBar extends StatelessWidget {
                         )
                       : Center(
                           child: Text(
-                            offer.companyName.isNotEmpty ? offer.companyName[0] : '?',
+                            offerTitle.isNotEmpty ? offerTitle[0] : '?',
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -102,7 +106,7 @@ class SideActionBar extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        offer.companyName,
+                        offerTitle,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -144,7 +148,7 @@ class SideActionBar extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              offer.description,
+              offerDescription,
               style: TextStyle(
                 color: Colors.white.withOpacity(0.8),
                 fontSize: 14,

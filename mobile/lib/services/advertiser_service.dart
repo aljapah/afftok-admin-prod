@@ -159,6 +159,9 @@ class AdvertiserService {
   /// Get all promoters who joined advertiser's offers with their stats
   Future<Map<String, dynamic>> getPromoters(String token) async {
     try {
+      print('[AdvertiserService] Getting promoters...');
+      print('[AdvertiserService] URL: $_baseUrl/api/advertiser/promoters');
+      
       final response = await http.get(
         Uri.parse('$_baseUrl/api/advertiser/promoters'),
         headers: {
@@ -166,6 +169,9 @@ class AdvertiserService {
           'Content-Type': 'application/json',
         },
       ).timeout(const Duration(seconds: 30));
+
+      print('[AdvertiserService] Response status: ${response.statusCode}');
+      print('[AdvertiserService] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
@@ -177,9 +183,11 @@ class AdvertiserService {
         final errorBody = response.body.isNotEmpty ? json.decode(response.body) : {};
         throw Exception(errorBody['error'] ?? 'Failed to load promoters: ${response.statusCode}');
       }
-    } on http.ClientException {
+    } on http.ClientException catch (e) {
+      print('[AdvertiserService] ClientException: $e');
       throw Exception('Network error. Please check your connection.');
     } catch (e) {
+      print('[AdvertiserService] Error: $e');
       if (e.toString().contains('TimeoutException')) {
         throw Exception('Request timed out. Please try again.');
       }

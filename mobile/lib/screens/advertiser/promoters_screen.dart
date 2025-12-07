@@ -51,6 +51,7 @@ class _PromotersScreenState extends State<PromotersScreen> {
         });
       }
     } catch (e) {
+      print('[PromotersScreen] Error: $e');
       if (mounted) {
         setState(() {
           _error = e.toString().replaceAll('Exception: ', '');

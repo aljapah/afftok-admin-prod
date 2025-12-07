@@ -72,9 +72,11 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
 
   void _shareOffer() {
     final offer = _latestOfferData ?? widget.offer;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final offerTitle = offer.getTitle(languageCode);
     // Use tracking URL for sharing so clicks are tracked
     Share.share(
-      'Check out this amazing offer from ${offer.companyName}! 🎁\n${widget.userOffer.shareableLink}',
+      'Check out this amazing offer from $offerTitle! 🎁\n${widget.userOffer.shareableLink}',
       subject: 'Amazing offer on AffTok',
     );
   }
@@ -90,7 +92,10 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context);
+    final languageCode = Localizations.localeOf(context).languageCode;
     final offer = _latestOfferData ?? widget.offer;
+    final offerTitle = offer.getTitle(languageCode);
+    final offerDescription = offer.getDescription(languageCode);
     final conversionRate = widget.userOffer.conversionRate;
 
     return Scaffold(
@@ -173,21 +178,32 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               padding: const EdgeInsets.all(8),
-                              child: Image.network(
-                                offer.logoUrl,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
+                              child: offer.logoUrl.isNotEmpty
+                                ? Image.network(
+                                    offer.logoUrl,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Center(
+                                        child: Text(
+                                          offerTitle.isNotEmpty ? offerTitle[0] : '?',
+                                          style: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Center(
                                     child: Text(
-                                      offer.companyName[0],
+                                      offerTitle.isNotEmpty ? offerTitle[0] : '?',
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.black87,
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
+                                  ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -195,7 +211,7 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    offer.companyName,
+                                    offerTitle,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 24,
@@ -300,7 +316,7 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          offer.description,
+                          offerDescription,
                           style: TextStyle(
                             color: Colors.grey[300],
                             fontSize: 15,

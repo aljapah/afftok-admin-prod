@@ -877,30 +877,26 @@ Termination
                   () => _showOfferPreview(offer, isArabic),
                 ),
               ),
-              // Edit Button (only for pending offers)
-              if (status == 'pending') ...[
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildActionButton(
-                    isArabic ? 'تعديل' : 'Edit',
-                    Icons.edit_outlined,
-                    const Color(0xFFFF9800),
-                    () => _editOffer(offer, isArabic),
-                  ),
+              // Edit Button (for all offers)
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildActionButton(
+                  isArabic ? 'تعديل' : 'Edit',
+                  Icons.edit_outlined,
+                  const Color(0xFFFF9800),
+                  () => _editOffer(offer, isArabic),
                 ),
-              ],
-              // Delete Button (only for pending offers)
-              if (status == 'pending') ...[
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildActionButton(
-                    isArabic ? 'حذف' : 'Delete',
-                    Icons.delete_outline,
-                    Colors.red,
-                    () => _confirmDeleteOffer(offer, isArabic),
-                  ),
+              ),
+              // Delete Button (for all offers)
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildActionButton(
+                  isArabic ? 'حذف' : 'Delete',
+                  Icons.delete_outline,
+                  Colors.red,
+                  () => _confirmDeleteOffer(offer, isArabic),
                 ),
-              ],
+              ),
             ],
           ),
         ],
@@ -956,79 +952,89 @@ Termination
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Offer Image
-                    if (offer['image_url'] != null && offer['image_url'].toString().isNotEmpty)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          offer['image_url'],
-                          width: double.infinity,
-                          height: 180,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 180,
-                            color: Colors.white10,
-                            child: const Icon(Icons.image, color: Colors.white24, size: 50),
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    // Title
-                    Text(
-                      offer['title'] ?? '',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Category & Payout
-                    Row(
+                child: Builder(
+                  builder: (context) {
+                    // Get localized title and description
+                    final title = isArabic && offer['title_ar'] != null && offer['title_ar'].toString().isNotEmpty
+                        ? offer['title_ar']
+                        : offer['title'] ?? '';
+                    final description = isArabic && offer['description_ar'] != null && offer['description_ar'].toString().isNotEmpty
+                        ? offer['description_ar']
+                        : offer['description'] ?? '';
+                    
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6C63FF).withOpacity(0.2),
+                        // Offer Image
+                        if (offer['image_url'] != null && offer['image_url'].toString().isNotEmpty)
+                          ClipRRect(
                             borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              offer['image_url'],
+                              width: double.infinity,
+                              height: 180,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 180,
+                                color: Colors.white10,
+                                child: const Icon(Icons.image, color: Colors.white24, size: 50),
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            offer['category'] ?? '',
-                            style: const TextStyle(color: Color(0xFF6C63FF), fontSize: 12),
+                        const SizedBox(height: 16),
+                        // Title
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '\$${offer['payout'] ?? 0}',
-                            style: const TextStyle(color: Colors.green, fontSize: 12),
+                        const SizedBox(height: 8),
+                        // Category & Payout
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6C63FF).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                offer['category'] ?? '',
+                                style: const TextStyle(color: Color(0xFF6C63FF), fontSize: 12),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '\$${offer['payout'] ?? 0}',
+                                style: const TextStyle(color: Colors.green, fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Description
+                        Text(
+                          isArabic ? 'الوصف' : 'Description',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Description
-                    Text(
-                      isArabic ? 'الوصف' : 'Description',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      offer['description'] ?? '',
-                      style: const TextStyle(color: Colors.white54, fontSize: 14),
-                    ),
+                        const SizedBox(height: 8),
+                        Text(
+                          description,
+                          style: const TextStyle(color: Colors.white54, fontSize: 14),
+                        ),
                     const SizedBox(height: 16),
                     // Offer URL
                     Text(
@@ -1039,12 +1045,14 @@ Termination
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      offer['url'] ?? '',
-                      style: const TextStyle(color: Color(0xFF6C63FF), fontSize: 14),
-                    ),
-                  ],
+                        const SizedBox(height: 8),
+                        Text(
+                          offer['destination_url'] ?? offer['url'] ?? '',
+                          style: const TextStyle(color: Color(0xFF6C63FF), fontSize: 14),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

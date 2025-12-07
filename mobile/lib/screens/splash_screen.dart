@@ -145,29 +145,29 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               color: Colors.black,
             ),
-          if (_isVideoInitialized && !_hasError)
-            Positioned(
-              top: 50,
-              right: 20,
-              child: TextButton(
-                onPressed: _navigateToHome,
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.black.withOpacity(0.5),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+          // Always show skip button
+          Positioned(
+            top: 50,
+            right: 20,
+            child: TextButton(
+              onPressed: _navigateToHome,
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.black.withOpacity(0.5),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
-                  localizations.skip,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+              child: Text(
+                localizations.skip,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
+          ),
         ],
       ),
     );

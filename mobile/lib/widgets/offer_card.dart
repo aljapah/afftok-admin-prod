@@ -97,10 +97,11 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
       // Open the registration URL
       await launchUrl(uri, mode: LaunchMode.externalApplication);
 
+      final snackTitle = widget.offer.getTitle(Localizations.localeOf(context).languageCode);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${widget.offer.companyName} ${AppLocalizations.of(context)!.offerAdded}',
+            '$snackTitle ${AppLocalizations.of(context)!.offerAdded}',
           ),
           backgroundColor: Colors.green,
         ),
@@ -118,6 +119,9 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context)!;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final offerTitle = widget.offer.getTitle(languageCode);
+    final offerDescription = widget.offer.getDescription(languageCode);
     final gradients = [
       [const Color(0xFF8E2DE2), const Color(0xFF4A00E0)],
       [const Color(0xFFFF006E), const Color(0xFFFF4D00)],
@@ -125,7 +129,7 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
       [const Color(0xFF00FF88), const Color(0xFF00CC66)],
     ];
 
-    final gradientIndex = widget.offer.companyName.hashCode % gradients.length;
+    final gradientIndex = offerTitle.hashCode % gradients.length;
     final gradient = gradients[gradientIndex];
 
     return AnimatedBuilder(
@@ -136,18 +140,25 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(
-                widget.offer.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
+              widget.offer.imageUrl.isNotEmpty
+                ? Image.network(
+                    widget.offer.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[900],
+                        child: const Center(
+                          child: Icon(Icons.image_not_supported, size: 50, color: Colors.white30),
+                        ),
+                      );
+                    },
+                  )
+                : Container(
                     color: Colors.grey[900],
                     child: const Center(
                       child: Icon(Icons.image_not_supported, size: 50, color: Colors.white30),
                     ),
-                  );
-                },
-              ),
+                  ),
 
               Container(
                 decoration: BoxDecoration(
@@ -190,21 +201,32 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
                             ],
                           ),
                           padding: const EdgeInsets.all(8),
-                          child: Image.network(
-                            widget.offer.logoUrl,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Center(
+                          child: widget.offer.logoUrl.isNotEmpty
+                            ? Image.network(
+                                widget.offer.logoUrl,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Text(
+                                      offerTitle.isNotEmpty ? offerTitle[0] : '?',
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : Center(
                                 child: Text(
-                                  widget.offer.companyName[0],
+                                  offerTitle.isNotEmpty ? offerTitle[0] : '?',
                                   style: const TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black87,
                                   ),
                                 ),
-                              );
-                            },
-                          ),
+                              ),
                         ),
 
                         const SizedBox(height: 16),
@@ -214,7 +236,7 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
                           children: [
                             Expanded(
                               child: Text(
-                                widget.offer.companyName,
+                                offerTitle,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -296,7 +318,7 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
                         const SizedBox(height: 12),
 
                         Text(
-                          widget.offer.description,
+                          offerDescription,
                           style: const TextStyle(color: Colors.white, fontSize: 15),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

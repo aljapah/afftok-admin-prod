@@ -676,7 +676,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   }
   
   Widget _buildInviteSection(BuildContext context, Team team, bool isArabic) {
-    final inviteUrl = team.inviteUrl ?? 'https://go.afftokapp.com/api/invite/${team.inviteCode ?? team.id}';
+    final inviteUrl = 'https://go.afftokapp.com/api/invite/${team.inviteCode ?? team.id}';
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -862,7 +862,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   }
   
   void _showQRCodeDialog(BuildContext context, Team team, bool isArabic) {
-    final inviteUrl = team.inviteUrl ?? 'https://go.afftokapp.com/api/invite/${team.inviteCode ?? team.id}';
+    final inviteUrl = 'https://go.afftokapp.com/api/invite/${team.inviteCode ?? team.id}';
     
     showDialog(
       context: context,
@@ -1718,7 +1718,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   }
 
   void _shareTeamInvite(Team team) {
-    final inviteLink = team.inviteUrl ?? 'https://go.afftokapp.com/api/invite/${team.inviteCode ?? team.id}';
+    final inviteLink = 'https://go.afftokapp.com/api/invite/${team.inviteCode ?? team.id}';
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     
     final message = isArabic

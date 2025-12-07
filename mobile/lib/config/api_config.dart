@@ -1,7 +1,7 @@
 /// API configuration for AffTok mobile app
 /// Updated to match the new backend tracking engine
 class ApiConfig {
-  static const String baseUrl = 'https://afftok-backend-prod-production.up.railway.app';
+  static const String baseUrl = 'https://go.afftokapp.com';
   
   static const String apiPrefix = '/api';
   

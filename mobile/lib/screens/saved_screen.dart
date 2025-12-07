@@ -153,6 +153,9 @@ class _SavedScreenState extends State<SavedScreen> {
                   itemCount: _savedOffers.length,
                   itemBuilder: (context, index) {
                     final offer = _savedOffers[index];
+                    final languageCode = Localizations.localeOf(context).languageCode;
+                    final offerTitle = offer.getTitle(languageCode);
+                    final offerDescription = offer.getDescription(languageCode);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: GestureDetector(
@@ -237,7 +240,7 @@ class _SavedScreenState extends State<SavedScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      offer.companyName,
+                                      offerTitle,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
@@ -248,7 +251,7 @@ class _SavedScreenState extends State<SavedScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      offer.description,
+                                      offerDescription,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(

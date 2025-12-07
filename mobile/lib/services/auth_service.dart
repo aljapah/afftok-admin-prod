@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
-  final String _baseUrl = 'https://afftok-backend-prod-production.up.railway.app/api/auth';
+  final String _baseUrl = 'https://go.afftokapp.com/api/auth';
   late GoogleSignIn _googleSignIn;
 
   AuthService() {

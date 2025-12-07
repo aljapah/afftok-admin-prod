@@ -262,6 +262,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       }
                       
                       final offer = _filteredOffers[index];
+                      final languageCode = Localizations.localeOf(context).languageCode;
+                      final offerTitle = offer.getTitle(languageCode);
                       return GestureDetector(
                         onTap: () => _launchUrl(offer.offerUrl),
                         child: Container(
@@ -332,8 +334,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                                 errorBuilder: (context, error, stackTrace) {
                                                   return Center(
                                                     child: Text(
-                                                      offer.companyName.isNotEmpty
-                                                          ? offer.companyName[0]
+                                                      offerTitle.isNotEmpty
+                                                          ? offerTitle[0]
                                                           : '?',
                                                       style: const TextStyle(
                                                         fontSize: 16,
@@ -346,8 +348,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                               )
                                             : Center(
                                                 child: Text(
-                                                  offer.companyName.isNotEmpty
-                                                      ? offer.companyName[0]
+                                                  offerTitle.isNotEmpty
+                                                      ? offerTitle[0]
                                                       : '?',
                                                   style: const TextStyle(
                                                     fontSize: 16,
@@ -392,7 +394,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      offer.companyName,
+                                      offerTitle,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(

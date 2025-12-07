@@ -36,7 +36,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+    // _checkAuth(); // التحقق يتم في SplashScreen
     _loadOffers();
   }
   
