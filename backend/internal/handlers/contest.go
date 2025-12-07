@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -25,6 +26,10 @@ func (h *ContestHandler) GetActiveContests(c *gin.Context) {
 	var contests []models.Contest
 	
 	now := time.Now()
+	
+	// Debug: Log the query parameters
+	fmt.Printf("[Contest] Fetching active contests at: %v\n", now)
+	
 	if err := h.db.Where("status = ? AND start_date <= ? AND end_date >= ?", 
 		models.ContestStatusActive, now, now).
 		Order("end_date ASC").
@@ -32,10 +37,26 @@ func (h *ContestHandler) GetActiveContests(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch contests"})
 		return
 	}
+	
+	fmt.Printf("[Contest] Found %d active contests\n", len(contests))
+
+	// If no active contests, also return upcoming contests for debugging
+	var allContests []models.Contest
+	h.db.Order("created_at DESC").Limit(10).Find(&allContests)
+	
+	// Log all contests status for debugging
+	for _, ct := range allContests {
+		fmt.Printf("[Contest] ID: %s, Status: %s, Start: %v, End: %v\n", 
+			ct.ID, ct.Status, ct.StartDate, ct.EndDate)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"contests": contests,
 		"count":    len(contests),
+		"debug": gin.H{
+			"server_time": now,
+			"total_in_db": len(allContests),
+		},
 	})
 }
 
