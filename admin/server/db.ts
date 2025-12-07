@@ -739,3 +739,264 @@ export async function testIntegration(id: string) {
     return { success: false, error: "Integration test failed" };
   }
 }
+
+// ============ ADMIN USERS (RBAC) ============
+
+export async function initAdminTables() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  const client = postgres(process.env.DATABASE_URL);
+  
+  // Create admin_users table if not exists
+  await client`
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      username VARCHAR(50) NOT NULL UNIQUE,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password_hash VARCHAR(255) NOT NULL,
+      full_name VARCHAR(100),
+      role VARCHAR(30) DEFAULT 'viewer' NOT NULL,
+      status VARCHAR(20) DEFAULT 'active' NOT NULL,
+      last_login_at TIMESTAMP,
+      created_by UUID,
+      created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+    )
+  `;
+  
+  // Create audit_logs table if not exists
+  await client`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      admin_user_id UUID NOT NULL,
+      action VARCHAR(50) NOT NULL,
+      resource VARCHAR(50) NOT NULL,
+      resource_id UUID,
+      details TEXT,
+      ip_address VARCHAR(45),
+      user_agent TEXT,
+      created_at TIMESTAMP DEFAULT NOW() NOT NULL
+    )
+  `;
+  
+  await client.end();
+}
+
+export async function getAllAdminUsers() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  await initAdminTables();
+  
+  const client = postgres(process.env.DATABASE_URL);
+  const result = await client`
+    SELECT id, username, email, full_name, role, status, last_login_at, created_at
+    FROM admin_users
+    ORDER BY created_at DESC
+  `;
+  await client.end();
+  
+  return result.map((row: any) => ({
+    id: row.id,
+    username: row.username,
+    email: row.email,
+    fullName: row.full_name,
+    role: row.role,
+    status: row.status,
+    lastLoginAt: row.last_login_at,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function createAdminUser(data: {
+  username: string;
+  email: string;
+  password: string;
+  fullName?: string;
+  role: string;
+  createdBy?: string;
+}) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  await initAdminTables();
+  
+  const client = postgres(process.env.DATABASE_URL);
+  
+  // Simple hash (in production use bcrypt)
+  const passwordHash = Buffer.from(data.password).toString('base64');
+  
+  const result = await client`
+    INSERT INTO admin_users (username, email, password_hash, full_name, role, created_by)
+    VALUES (${data.username}, ${data.email}, ${passwordHash}, ${data.fullName || null}, ${data.role}, ${data.createdBy || null}::uuid)
+    RETURNING id, username, email, full_name, role, status, created_at
+  `;
+  await client.end();
+  
+  return result[0];
+}
+
+export async function updateAdminUser(id: string, data: {
+  fullName?: string;
+  role?: string;
+  status?: string;
+}) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  const client = postgres(process.env.DATABASE_URL);
+  
+  await client`
+    UPDATE admin_users 
+    SET 
+      full_name = COALESCE(${data.fullName || null}, full_name),
+      role = COALESCE(${data.role || null}, role),
+      status = COALESCE(${data.status || null}, status),
+      updated_at = NOW()
+    WHERE id = ${id}::uuid
+  `;
+  await client.end();
+  
+  return { success: true };
+}
+
+export async function deleteAdminUser(id: string) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  const client = postgres(process.env.DATABASE_URL);
+  await client`DELETE FROM admin_users WHERE id = ${id}::uuid`;
+  await client.end();
+  
+  return { success: true };
+}
+
+export async function loginAdminUser(email: string, password: string) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  await initAdminTables();
+  
+  const client = postgres(process.env.DATABASE_URL);
+  
+  const passwordHash = Buffer.from(password).toString('base64');
+  
+  const result = await client`
+    SELECT id, username, email, full_name, role, status
+    FROM admin_users
+    WHERE email = ${email} AND password_hash = ${passwordHash} AND status = 'active'
+  `;
+  
+  if (result.length === 0) {
+    await client.end();
+    return { success: false, error: "Invalid credentials" };
+  }
+  
+  // Update last login
+  await client`UPDATE admin_users SET last_login_at = NOW() WHERE id = ${result[0].id}::uuid`;
+  await client.end();
+  
+  return {
+    success: true,
+    user: {
+      id: result[0].id,
+      username: result[0].username,
+      email: result[0].email,
+      fullName: result[0].full_name,
+      role: result[0].role,
+    }
+  };
+}
+
+export async function ensureSuperAdmin() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  await initAdminTables();
+  
+  const client = postgres(process.env.DATABASE_URL);
+  
+  // Check if super admin exists
+  const existing = await client`
+    SELECT id FROM admin_users WHERE email = 'aljapah.a@gmail.com'
+  `;
+  
+  if (existing.length === 0) {
+    // Create super admin
+    const passwordHash = Buffer.from('Az55666682').toString('base64');
+    await client`
+      INSERT INTO admin_users (username, email, password_hash, full_name, role, status)
+      VALUES ('superadmin', 'aljapah.a@gmail.com', ${passwordHash}, 'Super Admin', 'super_admin', 'active')
+    `;
+    console.log("[DB] Super Admin created: aljapah.a@gmail.com");
+  }
+  
+  await client.end();
+}
+
+// ============ AUDIT LOG ============
+
+export async function logAudit(data: {
+  adminUserId: string;
+  action: string;
+  resource: string;
+  resourceId?: string;
+  details?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  const client = postgres(process.env.DATABASE_URL);
+  
+  await client`
+    INSERT INTO audit_logs (admin_user_id, action, resource, resource_id, details, ip_address, user_agent)
+    VALUES (${data.adminUserId}::uuid, ${data.action}, ${data.resource}, ${data.resourceId || null}::uuid, ${data.details || null}, ${data.ipAddress || null}, ${data.userAgent || null})
+  `;
+  
+  await client.end();
+}
+
+export async function getAuditLogs(limit: number = 100) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  const client = postgres(process.env.DATABASE_URL);
+  
+  const result = await client`
+    SELECT 
+      al.*,
+      au.username as admin_username,
+      au.full_name as admin_name
+    FROM audit_logs al
+    LEFT JOIN admin_users au ON al.admin_user_id = au.id
+    ORDER BY al.created_at DESC
+    LIMIT ${limit}
+  `;
+  
+  await client.end();
+  
+  return result.map((row: any) => ({
+    id: row.id,
+    adminUserId: row.admin_user_id,
+    adminUsername: row.admin_username,
+    adminName: row.admin_name,
+    action: row.action,
+    resource: row.resource,
+    resourceId: row.resource_id,
+    details: row.details,
+    ipAddress: row.ip_address,
+    createdAt: row.created_at,
+  }));
+}

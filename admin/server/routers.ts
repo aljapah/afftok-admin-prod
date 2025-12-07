@@ -402,6 +402,91 @@ export const appRouter = router({
       }),
   }),
 
+  // ============ ADMIN USERS (RBAC) ============
+  adminUsers: router({
+    list: publicProcedure.query(async () => {
+      const { getAllAdminUsers, ensureSuperAdmin } = await import("./db");
+      await ensureSuperAdmin();
+      return getAllAdminUsers();
+    }),
+    create: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          username: z.string().min(3),
+          email: z.string().email(),
+          password: z.string().min(6),
+          fullName: z.string().optional(),
+          role: z.enum(['super_admin', 'finance_admin', 'tech_admin', 'advertiser_manager', 'promoter_support', 'fraud_reviewer', 'viewer']),
+          createdBy: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { createAdminUser } = await import("./db");
+        return createAdminUser(input);
+      }),
+    update: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          id: z.string(),
+          fullName: z.string().optional(),
+          role: z.enum(['super_admin', 'finance_admin', 'tech_admin', 'advertiser_manager', 'promoter_support', 'fraud_reviewer', 'viewer']).optional(),
+          status: z.enum(['active', 'inactive', 'suspended']).optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { updateAdminUser } = await import("./db");
+        return updateAdminUser(input.id, input);
+      }),
+    delete: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { deleteAdminUser } = await import("./db");
+        return deleteAdminUser(input.id);
+      }),
+    login: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          email: z.string().email(),
+          password: z.string(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { loginAdminUser, ensureSuperAdmin } = await import("./db");
+        await ensureSuperAdmin();
+        return loginAdminUser(input.email, input.password);
+      }),
+  }),
+
+  // ============ AUDIT LOG ============
+  auditLog: router({
+    list: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          limit: z.number().min(1).max(500).optional(),
+        }).parse(input);
+      })
+      .query(async ({ input }) => {
+        const { getAuditLogs } = await import("./db");
+        return getAuditLogs(input.limit || 100);
+      }),
+    create: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          adminUserId: z.string(),
+          action: z.string(),
+          resource: z.string(),
+          resourceId: z.string().optional(),
+          details: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { logAudit } = await import("./db");
+        return logAudit(input);
+      }),
+  }),
+
   // ============ INTEGRATIONS ============
   integrations: router({
     list: publicProcedure.query(async () => {

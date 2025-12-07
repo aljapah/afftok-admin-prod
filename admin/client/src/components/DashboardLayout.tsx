@@ -1,10 +1,10 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
@@ -19,8 +19,9 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
+import { APP_LOGO, APP_TITLE } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useAdmin } from "@/App";
 import { 
   LayoutDashboard, 
   LogOut, 
@@ -39,35 +40,53 @@ import {
   Webhook,
   Receipt,
   Trophy,
-  Plug
+  Plug,
+  UserCog,
+  History
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
-import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 
+// All menu items with role access
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: Users, label: "Users", path: "/users" },
-  { icon: Tag, label: "Offers", path: "/offers" },
-  { icon: Network, label: "Networks", path: "/networks" },
-  { icon: UsersRound, label: "Teams", path: "/teams" },
-  { icon: Trophy, label: "Contests", path: "/contests" },
-  { icon: Award, label: "Badges", path: "/badges" },
-  { icon: Receipt, label: "Invoices", path: "/invoices" },
-  { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: LayoutDashboard, label: "Dashboard", labelAr: "الرئيسية", path: "/", roles: ['*'] },
+  { icon: Users, label: "Users", labelAr: "المستخدمون", path: "/users", roles: ['super_admin', 'promoter_support'] },
+  { icon: Tag, label: "Offers", labelAr: "العروض", path: "/offers", roles: ['super_admin', 'finance_admin', 'advertiser_manager'] },
+  { icon: Network, label: "Networks", labelAr: "الشبكات", path: "/networks", roles: ['super_admin', 'advertiser_manager'] },
+  { icon: UsersRound, label: "Teams", labelAr: "الفرق", path: "/teams", roles: ['super_admin', 'advertiser_manager', 'promoter_support'] },
+  { icon: Trophy, label: "Contests", labelAr: "المسابقات", path: "/contests", roles: ['super_admin', 'finance_admin', 'advertiser_manager', 'promoter_support'] },
+  { icon: Award, label: "Badges", labelAr: "الشارات", path: "/badges", roles: ['super_admin', 'advertiser_manager'] },
+  { icon: Receipt, label: "Invoices", labelAr: "الفواتير", path: "/invoices", roles: ['super_admin', 'finance_admin'] },
+  { icon: BarChart3, label: "Analytics", labelAr: "التحليلات", path: "/analytics", roles: ['super_admin', 'finance_admin', 'advertiser_manager'] },
 ];
 
 const systemMenuItems = [
-  { icon: Plug, label: "Integrations", path: "/integrations" },
-  { icon: Activity, label: "Monitoring", path: "/monitoring" },
-  { icon: Building2, label: "Tenants", path: "/tenants" },
-  { icon: Globe, label: "Geo Rules", path: "/geo-rules" },
-  { icon: Shield, label: "Fraud Detection", path: "/fraud" },
-  { icon: FileText, label: "Logs", path: "/logs" },
-  { icon: Webhook, label: "Webhooks", path: "/webhooks" },
+  { icon: Plug, label: "Integrations", labelAr: "التكاملات", path: "/integrations", roles: ['super_admin', 'tech_admin', 'advertiser_manager'] },
+  { icon: Activity, label: "Monitoring", labelAr: "المراقبة", path: "/monitoring", roles: ['super_admin', 'tech_admin'] },
+  { icon: Building2, label: "Tenants", labelAr: "المستأجرون", path: "/tenants", roles: ['super_admin'] },
+  { icon: Globe, label: "Geo Rules", labelAr: "قواعد الدول", path: "/geo-rules", roles: ['super_admin', 'tech_admin', 'fraud_reviewer'] },
+  { icon: Shield, label: "Fraud Detection", labelAr: "كشف الاحتيال", path: "/fraud", roles: ['super_admin', 'tech_admin', 'fraud_reviewer'] },
+  { icon: FileText, label: "Logs", labelAr: "السجلات", path: "/logs", roles: ['super_admin', 'tech_admin', 'fraud_reviewer'] },
+  { icon: Webhook, label: "Webhooks", labelAr: "ويب هوك", path: "/webhooks", roles: ['super_admin', 'tech_admin'] },
 ];
+
+const adminMenuItems = [
+  { icon: UserCog, label: "Admin Users", labelAr: "المستخدمون الإداريون", path: "/admin-users", roles: ['super_admin'] },
+  { icon: History, label: "Audit Log", labelAr: "سجل العمليات", path: "/audit-log", roles: ['super_admin'] },
+];
+
+const roleLabels: Record<string, string> = {
+  super_admin: 'مدير عام',
+  finance_admin: 'مدير مالي',
+  tech_admin: 'مدير تقني',
+  advertiser_manager: 'مدير معلنين',
+  promoter_support: 'دعم المروجين',
+  fraud_reviewer: 'مراجع احتيال',
+  viewer: 'مشاهد',
+};
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
@@ -83,51 +102,10 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-  const { loading, user } = useAuth();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
-
-  if (loading) {
-    return <DashboardLayoutSkeleton />
-  }
-
-  // Auth temporarily disabled for development
-  // if (!user) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-  //         <div className="flex flex-col items-center gap-6">
-  //           <div className="relative group">
-  //             <div className="relative">
-  //               <img
-  //                 src={APP_LOGO}
-  //                 alt={APP_TITLE}
-  //                 className="h-20 w-20 rounded-xl object-cover shadow"
-  //               />
-  //             </div>
-  //           </div>
-  //           <div className="text-center space-y-2">
-  //             <h1 className="text-2xl font-bold tracking-tight">{APP_TITLE}</h1>
-  //             <p className="text-sm text-muted-foreground">
-  //               Please sign in to continue
-  //             </p>
-  //           </div>
-  //         </div>
-  //         <Button
-  //           onClick={() => {
-  //             window.location.href = getLoginUrl();
-  //           }}
-  //           size="lg"
-  //           className="w-full shadow-lg hover:shadow-xl transition-all"
-  //         >
-  //           Sign in
-  //         </Button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   return (
     <SidebarProvider
@@ -153,14 +131,28 @@ function DashboardLayoutContent({
   children,
   setSidebarWidth,
 }: DashboardLayoutContentProps) {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAdmin();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = [...menuItems, ...systemMenuItems].find(item => item.path === location);
   const isMobile = useIsMobile();
+
+  // Filter menu items based on user role
+  const canAccess = (roles: string[]) => {
+    if (!user) return false;
+    if (roles.includes('*')) return true;
+    if (user.role === 'super_admin') return true;
+    return roles.includes(user.role);
+  };
+
+  const filteredMenuItems = menuItems.filter(item => canAccess(item.roles));
+  const filteredSystemItems = systemMenuItems.filter(item => canAccess(item.roles));
+  const filteredAdminItems = adminMenuItems.filter(item => canAccess(item.roles));
+
+  const allItems = [...filteredMenuItems, ...filteredSystemItems, ...filteredAdminItems];
+  const activeMenuItem = allItems.find(item => item.path === location);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -246,8 +238,9 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
+            {/* Main Menu */}
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
+              {filteredMenuItems.map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -268,33 +261,70 @@ function DashboardLayoutContent({
             </SidebarMenu>
             
             {/* System Section */}
-            <div className="px-4 py-2">
-              <Separator />
-              <p className="text-xs font-medium text-muted-foreground mt-3 mb-1 group-data-[collapsible=icon]:hidden">
-                System
-              </p>
-            </div>
-            
-            <SidebarMenu className="px-2 py-1">
-              {systemMenuItems.map(item => {
-                const isActive = location === item.path;
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      onClick={() => setLocation(item.path)}
-                      tooltip={item.label}
-                      className={`h-10 transition-all font-normal`}
-                    >
-                      <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
-                      />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            {filteredSystemItems.length > 0 && (
+              <>
+                <div className="px-4 py-2">
+                  <Separator />
+                  <p className="text-xs font-medium text-muted-foreground mt-3 mb-1 group-data-[collapsible=icon]:hidden">
+                    System
+                  </p>
+                </div>
+                
+                <SidebarMenu className="px-2 py-1">
+                  {filteredSystemItems.map(item => {
+                    const isActive = location === item.path;
+                    return (
+                      <SidebarMenuItem key={item.path}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          onClick={() => setLocation(item.path)}
+                          tooltip={item.label}
+                          className={`h-10 transition-all font-normal`}
+                        >
+                          <item.icon
+                            className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                          />
+                          <span>{item.label}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </>
+            )}
+
+            {/* Admin Section - Super Admin Only */}
+            {filteredAdminItems.length > 0 && (
+              <>
+                <div className="px-4 py-2">
+                  <Separator />
+                  <p className="text-xs font-medium text-muted-foreground mt-3 mb-1 group-data-[collapsible=icon]:hidden">
+                    Admin
+                  </p>
+                </div>
+                
+                <SidebarMenu className="px-2 py-1">
+                  {filteredAdminItems.map(item => {
+                    const isActive = location === item.path;
+                    return (
+                      <SidebarMenuItem key={item.path}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          onClick={() => setLocation(item.path)}
+                          tooltip={item.label}
+                          className={`h-10 transition-all font-normal`}
+                        >
+                          <item.icon
+                            className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                          />
+                          <span>{item.label}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </>
+            )}
           </SidebarContent>
 
           <SidebarFooter className="p-3">
@@ -303,26 +333,34 @@ function DashboardLayoutContent({
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-9 w-9 border shrink-0">
                     <AvatarFallback className="text-xs font-medium">
-                      {user?.name?.charAt(0).toUpperCase()}
+                      {user?.fullName?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || 'A'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
+                      {user?.fullName || user?.username || "-"}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate mt-1.5">
-                      {user?.email || "-"}
+                    <p className="text-xs text-muted-foreground truncate mt-1">
+                      {roleLabels[user?.role || ''] || user?.role}
                     </p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-2">
+                  <p className="text-sm font-medium">{user?.fullName || user?.username}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <Badge variant="outline" className="mt-2 text-xs">
+                    {roleLabels[user?.role || ''] || user?.role}
+                  </Badge>
+                </div>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
+                  <span>تسجيل الخروج</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

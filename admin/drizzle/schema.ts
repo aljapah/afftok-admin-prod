@@ -19,15 +19,33 @@ export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 export const statusEnum = pgEnum("status", ["active", "inactive", "suspended", "pending"]);
 export const payoutTypeEnum = pgEnum("payout_type", ["cpa", "cps", "cpl"]);
 
+// Admin Users with RBAC - نظام صلاحيات الإدارة
 export const adminUsers = pgTable("admin_users", {
   id: uuid("id").primaryKey().defaultRandom(),
   username: varchar("username", { length: 50 }).notNull().unique(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   fullName: varchar("full_name", { length: 100 }),
-  role: varchar("role", { length: 20 }).default("admin").notNull(),
+  // Roles: super_admin, finance_admin, tech_admin, advertiser_manager, promoter_support, fraud_reviewer
+  role: varchar("role", { length: 30 }).default("viewer").notNull(),
+  status: varchar("status", { length: 20 }).default("active").notNull(),
+  lastLoginAt: timestamp("last_login_at"),
+  createdBy: uuid("created_by"), // من أنشأ هذا المستخدم
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Audit Log - سجل العمليات
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adminUserId: uuid("admin_user_id").notNull(),
+  action: varchar("action", { length: 50 }).notNull(), // create, update, delete, view, login, logout
+  resource: varchar("resource", { length: 50 }).notNull(), // users, offers, invoices, etc.
+  resourceId: uuid("resource_id"),
+  details: text("details"), // JSON with old/new values
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const afftokUsers = pgTable("afftok_users", {
