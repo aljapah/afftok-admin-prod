@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -113,6 +114,38 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Profile updated successfully",
 		"user":    user,
+	})
+}
+
+// UpdateAudienceCountries updates the user's audience countries for geo targeting
+func (h *UserHandler) UpdateAudienceCountries(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	type UpdateAudienceRequest struct {
+		AudienceCountries []string `json:"audience_countries"`
+	}
+
+	var req UpdateAudienceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Convert to JSON for storage
+	countriesJSON, _ := json.Marshal(req.AudienceCountries)
+
+	if err := h.db.Model(&models.AfftokUser{}).Where("id = ?", userID).Update("audience_countries", string(countriesJSON)).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update audience countries"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":            "Audience countries updated successfully",
+		"audience_countries": req.AudienceCountries,
 	})
 }
 

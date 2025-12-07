@@ -10,6 +10,7 @@ import 'security_screen.dart';
 import 'terms_screen.dart';
 import 'about_screen.dart';
 import 'role_selection_screen.dart';
+import 'audience_countries_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -111,6 +112,22 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                             context,
                             MaterialPageRoute(builder: (context) => const SecurityScreen()),
                           );
+                        },
+                      ),
+                      
+                      // Audience countries for promoters
+                      _AnimatedSettingsTile(
+                        icon: Icons.public,
+                        title: isArabic ? 'دول جمهورك' : 'Your Audience',
+                        subtitle: isArabic ? 'اختر الدول لرؤية عروضها' : 'Select countries to see their offers',
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AudienceCountriesScreen()),
+                          );
+                          if (result == true && mounted) {
+                            Provider.of<AuthProvider>(context, listen: false).loadCurrentUser(forceRefresh: true);
+                          }
                         },
                       ),
                       

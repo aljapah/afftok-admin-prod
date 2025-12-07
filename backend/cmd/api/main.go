@@ -270,6 +270,7 @@ func main() {
 		{
 			protected.GET("/auth/me", authHandler.GetMe)
 			protected.PUT("/profile", userHandler.UpdateProfile)
+			protected.PUT("/users/me/audience-countries", userHandler.UpdateAudienceCountries)
 
 			protected.GET("/users", userHandler.GetAllUsers)
 			protected.GET("/users/:id", userHandler.GetUser)

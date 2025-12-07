@@ -22,6 +22,9 @@ class User {
   final String? companyName;
   final String? website;
   final String? country;
+  
+  // Promoter audience countries (for geo targeting)
+  final List<String> audienceCountries;
 
   User({
     required this.id,
@@ -41,6 +44,7 @@ class User {
     this.companyName,
     this.website,
     this.country,
+    this.audienceCountries = const [],
   });
   
   // Check if user is advertiser by role OR has company name
@@ -96,7 +100,17 @@ class User {
       companyName: json['company_name'] ?? json['companyName'],
       website: json['website'],
       country: json['country'],
+      // Audience countries for promoters
+      audienceCountries: _parseAudienceCountries(json['audience_countries'] ?? json['audienceCountries']),
     );
+  }
+  
+  static List<String> _parseAudienceCountries(dynamic value) {
+    if (value == null) return [];
+    if (value is List) {
+      return value.map((e) => e.toString()).toList();
+    }
+    return [];
   }
   
   static UserLevel _getLevelFromConversions(int conversions) {

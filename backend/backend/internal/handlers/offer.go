@@ -63,9 +63,10 @@ func (h *OfferHandler) GetAllOffers(c *gin.Context) {
     }
 
     // Filter offers by geo targeting if country is provided
-    userCountry := c.Query("country")
-    if userCountry != "" {
-        offers = h.filterOffersByGeo(offers, userCountry)
+    // Supports multiple countries as comma-separated values
+    userCountries := c.Query("country")
+    if userCountries != "" {
+        offers = h.filterOffersByGeo(offers, userCountries)
     }
 
     var total int64
@@ -82,9 +83,16 @@ func (h *OfferHandler) GetAllOffers(c *gin.Context) {
 }
 
 // filterOffersByGeo filters offers based on geo targeting rules
-func (h *OfferHandler) filterOffersByGeo(offers []models.Offer, userCountry string) []models.Offer {
-    if userCountry == "" {
+// Supports multiple countries as comma-separated string
+func (h *OfferHandler) filterOffersByGeo(offers []models.Offer, userCountries string) []models.Offer {
+    if userCountries == "" {
         return offers
+    }
+
+    // Parse comma-separated countries
+    countries := strings.Split(userCountries, ",")
+    for i := range countries {
+        countries[i] = strings.TrimSpace(countries[i])
     }
 
     filteredOffers := make([]models.Offer, 0)
@@ -105,21 +113,28 @@ func (h *OfferHandler) filterOffersByGeo(offers []models.Offer, userCountry stri
             continue
         }
 
-        // Check if user's country is allowed
-        allowed := true
-        for _, rule := range geoRules {
-            if rule.ContainsCountry(userCountry) {
-                if rule.Mode == models.GeoRuleModeBlock {
-                    allowed = false
-                    break
+        // Check if any of user's countries is allowed
+        allowed := false
+        for _, userCountry := range countries {
+            countryAllowed := true
+            for _, rule := range geoRules {
+                if rule.ContainsCountry(userCountry) {
+                    if rule.Mode == models.GeoRuleModeBlock {
+                        countryAllowed = false
+                        break
+                    }
+                } else {
+                    // Country not in list
+                    if rule.Mode == models.GeoRuleModeAllow {
+                        // "Allow only" mode - if country not in list, block
+                        countryAllowed = false
+                        break
+                    }
                 }
-            } else {
-                // Country not in list
-                if rule.Mode == models.GeoRuleModeAllow {
-                    // "Allow only" mode - if country not in list, block
-                    allowed = false
-                    break
-                }
+            }
+            if countryAllowed {
+                allowed = true
+                break // At least one country is allowed
             }
         }
 
@@ -544,9 +559,9 @@ func (h *OfferHandler) GetMyOffers(c *gin.Context) {
         
         trackingURL := ""
         if uo.ShortLink != "" {
-            trackingURL = baseURL + "/c/" + uo.ShortLink
+            trackingURL = baseURL + "/api/c/" + uo.ShortLink
         } else if uo.TrackingCode != "" {
-            trackingURL = baseURL + "/c/" + uo.TrackingCode
+            trackingURL = baseURL + "/api/c/" + uo.TrackingCode
         } else {
             trackingURL = fmt.Sprintf("%s/c/%s?promoter=%s", baseURL, uo.OfferID.String(), uo.UserID.String())
         }

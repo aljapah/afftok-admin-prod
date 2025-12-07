@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -30,7 +31,7 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	limit := 20
 	offset := (page - 1) * limit
 
-	query := h.db.Select("id, username, email, full_name, avatar_url, role, status, points, level, total_clicks, total_conversions, total_earnings, payment_method, created_at")
+	query := h.db.Select("id, username, email, full_name, avatar_url, role, status, points, level, total_clicks, total_conversions, total_earnings, created_at")
 
 	sortBy := c.DefaultQuery("sort", "created_at")
 	order := c.DefaultQuery("order", "desc")
@@ -60,7 +61,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	var user models.AfftokUser
 	if err := h.db.
 		Preload("UserBadges.Badge").
-		Select("id, username, email, full_name, avatar_url, bio, role, status, points, level, total_clicks, total_conversions, total_earnings, payment_method, created_at").
+		Select("id, username, email, full_name, avatar_url, bio, role, status, points, level, total_clicks, total_conversions, total_earnings, created_at").
 		First(&user, "id = ?", userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -79,10 +80,9 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	type UpdateProfileRequest struct {
-		FullName      string `json:"full_name"`
-		Bio           string `json:"bio"`
-		AvatarURL     string `json:"avatar_url"`
-		PaymentMethod string `json:"payment_method"`
+		FullName  string `json:"full_name"`
+		Bio       string `json:"bio"`
+		AvatarURL string `json:"avatar_url"`
 	}
 
 	var req UpdateProfileRequest
@@ -101,8 +101,6 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	if req.AvatarURL != "" {
 		updates["avatar_url"] = req.AvatarURL
 	}
-	// PaymentMethod can be empty (to clear it) or have a value
-	updates["payment_method"] = req.PaymentMethod
 
 	if err := h.db.Model(&models.AfftokUser{}).Where("id = ?", userID).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
@@ -116,6 +114,38 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Profile updated successfully",
 		"user":    user,
+	})
+}
+
+// UpdateAudienceCountries updates the user's audience countries for geo targeting
+func (h *UserHandler) UpdateAudienceCountries(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	type UpdateAudienceRequest struct {
+		AudienceCountries []string `json:"audience_countries"`
+	}
+
+	var req UpdateAudienceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Convert to JSON for storage
+	countriesJSON, _ := json.Marshal(req.AudienceCountries)
+
+	if err := h.db.Model(&models.AfftokUser{}).Where("id = ?", userID).Update("audience_countries", string(countriesJSON)).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update audience countries"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":            "Audience countries updated successfully",
+		"audience_countries": req.AudienceCountries,
 	})
 }
 

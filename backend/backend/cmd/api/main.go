@@ -270,6 +270,7 @@ func main() {
 		{
 			protected.GET("/auth/me", authHandler.GetMe)
 			protected.PUT("/profile", userHandler.UpdateProfile)
+			protected.PUT("/users/me/audience-countries", userHandler.UpdateAudienceCountries)
 
 			protected.GET("/users", userHandler.GetAllUsers)
 			protected.GET("/users/:id", userHandler.GetUser)
@@ -333,20 +334,20 @@ func main() {
 			// ========== Advertiser Routes ==========
 			advertiser := protected.Group("/advertiser")
 			{
-				advertiser.GET("/dashboard", advertiserHandler.GetDashboard)
-				advertiser.GET("/offers", advertiserHandler.GetMyOffers)
-				advertiser.POST("/offers", advertiserHandler.CreateOffer)
-				advertiser.PUT("/offers/:id", advertiserHandler.UpdateOffer)
-				advertiser.DELETE("/offers/:id", advertiserHandler.DeleteOffer)
-				advertiser.POST("/offers/:id/pause", advertiserHandler.PauseOffer)
-				advertiser.GET("/offers/:id/stats", advertiserHandler.GetOfferStats)
-				advertiser.GET("/promoters", advertiserHandler.GetPromoters)
-				
-				// Geo targeting for advertisers
-				advertiser.GET("/geo-rules", adminGeoRulesHandler.GetGeoRulesByAdvertiserSelf)
-				advertiser.POST("/geo-rules", adminGeoRulesHandler.CreateGeoRuleForAdvertiser)
-				advertiser.PUT("/geo-rules/:id", adminGeoRulesHandler.UpdateGeoRule)
-				advertiser.DELETE("/geo-rules/:id", adminGeoRulesHandler.DeleteGeoRule)
+			advertiser.GET("/dashboard", advertiserHandler.GetDashboard)
+			advertiser.GET("/offers", advertiserHandler.GetMyOffers)
+			advertiser.POST("/offers", advertiserHandler.CreateOffer)
+			advertiser.PUT("/offers/:id", advertiserHandler.UpdateOffer)
+			advertiser.DELETE("/offers/:id", advertiserHandler.DeleteOffer)
+			advertiser.POST("/offers/:id/pause", advertiserHandler.PauseOffer)
+			advertiser.GET("/offers/:id/stats", advertiserHandler.GetOfferStats)
+			advertiser.GET("/promoters", advertiserHandler.GetPromoters)
+			
+			// Geo targeting for advertisers
+			advertiser.GET("/geo-rules", adminGeoRulesHandler.GetGeoRulesByAdvertiserSelf)
+			advertiser.POST("/geo-rules", adminGeoRulesHandler.CreateGeoRuleForAdvertiser)
+			advertiser.PUT("/geo-rules/:id", adminGeoRulesHandler.UpdateGeoRule)
+			advertiser.DELETE("/geo-rules/:id", adminGeoRulesHandler.DeleteGeoRule)
 			}
 
 			admin := protected.Group("/admin")

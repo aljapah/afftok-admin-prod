@@ -1,0 +1,466 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
+
+class AudienceCountriesScreen extends StatefulWidget {
+  const AudienceCountriesScreen({super.key});
+
+  @override
+  State<AudienceCountriesScreen> createState() => _AudienceCountriesScreenState();
+}
+
+class _AudienceCountriesScreenState extends State<AudienceCountriesScreen> {
+  final ApiService _apiService = ApiService();
+  bool _isLoading = true;
+  bool _isSaving = false;
+  
+  // Selected countries
+  Set<String> _selectedCountries = {};
+  String _searchQuery = '';
+  
+  // All countries with Arabic names
+  static const Map<String, Map<String, String>> _countries = {
+    'SA': {'en': 'Saudi Arabia', 'ar': 'السعودية', 'flag': '🇸🇦'},
+    'AE': {'en': 'UAE', 'ar': 'الإمارات', 'flag': '🇦🇪'},
+    'KW': {'en': 'Kuwait', 'ar': 'الكويت', 'flag': '🇰🇼'},
+    'QA': {'en': 'Qatar', 'ar': 'قطر', 'flag': '🇶🇦'},
+    'BH': {'en': 'Bahrain', 'ar': 'البحرين', 'flag': '🇧🇭'},
+    'OM': {'en': 'Oman', 'ar': 'عُمان', 'flag': '🇴🇲'},
+    'EG': {'en': 'Egypt', 'ar': 'مصر', 'flag': '🇪🇬'},
+    'JO': {'en': 'Jordan', 'ar': 'الأردن', 'flag': '🇯🇴'},
+    'LB': {'en': 'Lebanon', 'ar': 'لبنان', 'flag': '🇱🇧'},
+    'IQ': {'en': 'Iraq', 'ar': 'العراق', 'flag': '🇮🇶'},
+    'SY': {'en': 'Syria', 'ar': 'سوريا', 'flag': '🇸🇾'},
+    'PS': {'en': 'Palestine', 'ar': 'فلسطين', 'flag': '🇵🇸'},
+    'YE': {'en': 'Yemen', 'ar': 'اليمن', 'flag': '🇾🇪'},
+    'LY': {'en': 'Libya', 'ar': 'ليبيا', 'flag': '🇱🇾'},
+    'TN': {'en': 'Tunisia', 'ar': 'تونس', 'flag': '🇹🇳'},
+    'DZ': {'en': 'Algeria', 'ar': 'الجزائر', 'flag': '🇩🇿'},
+    'MA': {'en': 'Morocco', 'ar': 'المغرب', 'flag': '🇲🇦'},
+    'SD': {'en': 'Sudan', 'ar': 'السودان', 'flag': '🇸🇩'},
+    'US': {'en': 'United States', 'ar': 'أمريكا', 'flag': '🇺🇸'},
+    'GB': {'en': 'United Kingdom', 'ar': 'بريطانيا', 'flag': '🇬🇧'},
+    'CA': {'en': 'Canada', 'ar': 'كندا', 'flag': '🇨🇦'},
+    'AU': {'en': 'Australia', 'ar': 'أستراليا', 'flag': '🇦🇺'},
+    'DE': {'en': 'Germany', 'ar': 'ألمانيا', 'flag': '🇩🇪'},
+    'FR': {'en': 'France', 'ar': 'فرنسا', 'flag': '🇫🇷'},
+    'IT': {'en': 'Italy', 'ar': 'إيطاليا', 'flag': '🇮🇹'},
+    'ES': {'en': 'Spain', 'ar': 'إسبانيا', 'flag': '🇪🇸'},
+    'NL': {'en': 'Netherlands', 'ar': 'هولندا', 'flag': '🇳🇱'},
+    'TR': {'en': 'Turkey', 'ar': 'تركيا', 'flag': '🇹🇷'},
+    'IN': {'en': 'India', 'ar': 'الهند', 'flag': '🇮🇳'},
+    'PK': {'en': 'Pakistan', 'ar': 'باكستان', 'flag': '🇵🇰'},
+    'BD': {'en': 'Bangladesh', 'ar': 'بنغلاديش', 'flag': '🇧🇩'},
+    'ID': {'en': 'Indonesia', 'ar': 'إندونيسيا', 'flag': '🇮🇩'},
+    'MY': {'en': 'Malaysia', 'ar': 'ماليزيا', 'flag': '🇲🇾'},
+    'SG': {'en': 'Singapore', 'ar': 'سنغافورة', 'flag': '🇸🇬'},
+    'TH': {'en': 'Thailand', 'ar': 'تايلاند', 'flag': '🇹🇭'},
+    'PH': {'en': 'Philippines', 'ar': 'الفلبين', 'flag': '🇵🇭'},
+    'JP': {'en': 'Japan', 'ar': 'اليابان', 'flag': '🇯🇵'},
+    'KR': {'en': 'South Korea', 'ar': 'كوريا الجنوبية', 'flag': '🇰🇷'},
+    'CN': {'en': 'China', 'ar': 'الصين', 'flag': '🇨🇳'},
+    'BR': {'en': 'Brazil', 'ar': 'البرازيل', 'flag': '🇧🇷'},
+    'MX': {'en': 'Mexico', 'ar': 'المكسيك', 'flag': '🇲🇽'},
+    'ZA': {'en': 'South Africa', 'ar': 'جنوب أفريقيا', 'flag': '🇿🇦'},
+    'NG': {'en': 'Nigeria', 'ar': 'نيجيريا', 'flag': '🇳🇬'},
+    'KE': {'en': 'Kenya', 'ar': 'كينيا', 'flag': '🇰🇪'},
+  };
+
+  // Quick select groups
+  static const List<String> _gulfCountries = ['SA', 'AE', 'KW', 'QA', 'BH', 'OM'];
+  static const List<String> _arabCountries = ['SA', 'AE', 'KW', 'QA', 'BH', 'OM', 'EG', 'JO', 'LB', 'IQ', 'SY', 'PS', 'YE', 'LY', 'TN', 'DZ', 'MA', 'SD'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentCountries();
+  }
+
+  Future<void> _loadCurrentCountries() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final user = authProvider.currentUser;
+      
+      if (user != null) {
+        // Load user's current audience countries
+        setState(() {
+          _selectedCountries = Set<String>.from(user.audienceCountries);
+          // If no audience countries set, add user's home country
+          if (_selectedCountries.isEmpty && user.country != null) {
+            _selectedCountries.add(user.country!);
+          }
+        });
+      }
+      
+      setState(() => _isLoading = false);
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _saveCountries() async {
+    if (_selectedCountries.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isArabic ? 'اختر دولة واحدة على الأقل' : 'Select at least one country'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      await _apiService.put('/users/me/audience-countries', {
+        'audience_countries': _selectedCountries.toList(),
+      });
+
+      // Refresh user data
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.loadCurrentUser();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isArabic ? 'تم حفظ دول الجمهور ✅' : 'Audience countries saved ✅'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isArabic ? 'فشل الحفظ: $e' : 'Save failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  bool get _isArabic => Localizations.localeOf(context).languageCode == 'ar';
+
+  List<MapEntry<String, Map<String, String>>> get _filteredCountries {
+    if (_searchQuery.isEmpty) {
+      return _countries.entries.toList();
+    }
+    
+    final query = _searchQuery.toLowerCase();
+    return _countries.entries.where((entry) {
+      final nameEn = entry.value['en']!.toLowerCase();
+      final nameAr = entry.value['ar']!;
+      return nameEn.contains(query) || nameAr.contains(query) || entry.key.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = _isArabic;
+    
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        title: Text(
+          isArabic ? '🌍 دول جمهورك' : '🌍 Your Audience',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          if (!_isLoading)
+            TextButton(
+              onPressed: _isSaving ? null : _saveCountries,
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(
+                      isArabic ? 'حفظ' : 'Save',
+                      style: const TextStyle(
+                        color: Color(0xFFFF006E),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+            ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF006E)))
+          : Column(
+              children: [
+                // Info card
+                _buildInfoCard(isArabic),
+                
+                // Quick select buttons
+                _buildQuickSelect(isArabic),
+                
+                // Search
+                _buildSearchBar(isArabic),
+                
+                // Selected count
+                _buildSelectedCount(isArabic),
+                
+                // Countries list
+                Expanded(
+                  child: _buildCountriesList(isArabic),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildInfoCard(bool isArabic) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFFF006E).withOpacity(0.2),
+            const Color(0xFF8B5CF6).withOpacity(0.2),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFF006E).withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Text('💡', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              isArabic 
+                  ? 'اختر الدول التي يتواجد فيها جمهورك لرؤية العروض المناسبة لهم'
+                  : 'Select countries where your audience is located to see relevant offers',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickSelect(bool isArabic) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          _buildQuickButton(
+            isArabic ? '🏜️ الخليج' : '🏜️ Gulf',
+            _gulfCountries,
+            const Color(0xFFFFD700),
+          ),
+          const SizedBox(width: 8),
+          _buildQuickButton(
+            isArabic ? '🌍 العرب' : '🌍 Arab',
+            _arabCountries,
+            const Color(0xFF4CAF50),
+          ),
+          const SizedBox(width: 8),
+          _buildQuickButton(
+            isArabic ? '🌐 الكل' : '🌐 All',
+            _countries.keys.toList(),
+            const Color(0xFF2196F3),
+          ),
+          const SizedBox(width: 8),
+          _buildQuickButton(
+            isArabic ? '❌ مسح' : '❌ Clear',
+            [],
+            Colors.grey,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickButton(String label, List<String> countries, Color color) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            if (countries.isEmpty) {
+              _selectedCountries.clear();
+            } else {
+              // Add to existing selection
+              _selectedCountries.addAll(countries);
+            }
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withOpacity(0.5)),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(bool isArabic) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: TextField(
+        onChanged: (value) => setState(() => _searchQuery = value),
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: isArabic ? '🔍 ابحث عن دولة...' : '🔍 Search country...',
+          hintStyle: TextStyle(color: Colors.grey[600]),
+          filled: true,
+          fillColor: Colors.grey[900],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedCount(bool isArabic) {
+    final count = _selectedCountries.length;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF006E).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              isArabic 
+                  ? '$count دولة مختارة'
+                  : '$count countries selected',
+              style: const TextStyle(
+                color: Color(0xFFFF006E),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const Spacer(),
+          Text(
+            isArabic ? 'سترى عروض هذه الدول' : 'You\'ll see offers for these',
+            style: TextStyle(
+              color: Colors.grey[500],
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCountriesList(bool isArabic) {
+    final countries = _filteredCountries;
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: countries.length,
+      itemBuilder: (context, index) {
+        final entry = countries[index];
+        final code = entry.key;
+        final data = entry.value;
+        final isSelected = _selectedCountries.contains(code);
+        
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              if (isSelected) {
+                _selectedCountries.remove(code);
+              } else {
+                _selectedCountries.add(code);
+              }
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isSelected 
+                  ? const Color(0xFFFF006E).withOpacity(0.2)
+                  : Colors.grey[900],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected 
+                    ? const Color(0xFFFF006E)
+                    : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  data['flag']!,
+                  style: const TextStyle(fontSize: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isArabic ? data['ar']! : data['en']!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        code,
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  isSelected ? Icons.check_circle : Icons.circle_outlined,
+                  color: isSelected 
+                      ? const Color(0xFFFF006E)
+                      : Colors.grey,
+                  size: 28,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+

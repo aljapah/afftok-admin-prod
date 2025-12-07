@@ -55,12 +55,23 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     
     try {
       final offerService = OfferService();
-      // Get user's country for geo targeting
+      // Get user's audience countries for geo targeting
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userCountry = authProvider.currentUser?.country;
+      final user = authProvider.currentUser;
+      
+      // Use audience countries if set, otherwise fall back to user's country
+      String? countriesParam;
+      if (user != null) {
+        if (user.audienceCountries.isNotEmpty) {
+          // Send multiple countries as comma-separated
+          countriesParam = user.audienceCountries.join(',');
+        } else if (user.country != null) {
+          countriesParam = user.country;
+        }
+      }
       
       final result = await offerService.getAllOffers(
-        country: userCountry,
+        country: countriesParam,
       );
       
       setState(() {
