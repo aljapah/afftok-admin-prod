@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"github.com/gin-gonic/gin"
@@ -514,284 +517,168 @@ func (h *TeamHandler) GetTeamLandingPage(c *gin.Context) {
 	// Find team by invite code
 	var team models.Team
 	if err := h.db.Preload("Owner").Preload("Members.User").Where("invite_code = ?", code).First(&team).Error; err != nil {
-		c.Data(http.StatusNotFound, "text/html; charset=utf-8", []byte(`
+		h.serveTeamErrorPage(c)
+		return
+	}
+
+	// Calculate team stats and build members list
+	var totalClicks, totalConversions int
+	activeMembers := 0
+	members := []map[string]interface{}{}
+
+	for _, member := range team.Members {
+		if member.Status == "active" {
+			totalClicks += member.User.TotalClicks
+			totalConversions += member.User.TotalConversions
+			activeMembers++
+
+			name := member.User.FullName
+			if name == "" {
+				name = member.User.Username
+			}
+
+			members = append(members, map[string]interface{}{
+				"name":     name,
+				"username": member.User.Username,
+				"isOwner":  member.Role == "owner",
+			})
+		}
+	}
+
+	// Build team data for JavaScript
+	teamData := map[string]interface{}{
+		"name":         team.Name,
+		"description":  team.Description,
+		"logoUrl":      team.LogoURL,
+		"membersCount": activeMembers,
+		"conversions":  totalConversions,
+		"clicks":       totalClicks,
+		"members":      members,
+	}
+
+	teamDataJSON, _ := json.Marshal(teamData)
+
+	// Read the template file
+	html := h.readTeamTemplate()
+	if html == "" {
+		h.serveTeamErrorPage(c)
+		return
+	}
+
+	// Inject data script before </head>
+	dataScript := fmt.Sprintf(`<script>
+		window.teamData = %s;
+		window.inviteCode = "%s";
+	</script>`, string(teamDataJSON), code)
+
+	html = strings.Replace(html, "</head>", dataScript+"</head>", 1)
+
+	// Update page title
+	html = strings.Replace(html, "<title>انضم للفريق - AffTok</title>",
+		fmt.Sprintf("<title>انضم لفريق %s - AffTok</title>", team.Name), 1)
+
+	// Add Open Graph meta tags
+	ogTags := fmt.Sprintf(`
+	<meta property="og:title" content="انضم لفريق %s على AffTok">
+	<meta property="og:description" content="%s">
+	<meta property="og:image" content="%s">
+	<meta property="og:type" content="website">
+	`, team.Name, team.Description, team.LogoURL)
+
+	html = strings.Replace(html, "<meta charset=\"UTF-8\">",
+		"<meta charset=\"UTF-8\">"+ogTags, 1)
+
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+}
+
+func (h *TeamHandler) readTeamTemplate() string {
+	// Try multiple paths
+	paths := []string{
+		"public/team_invite_landing.html",
+		"./public/team_invite_landing.html",
+		"../public/team_invite_landing.html",
+	}
+
+	for _, path := range paths {
+		data, err := ioutil.ReadFile(path)
+		if err == nil {
+			return string(data)
+		}
+	}
+
+	return ""
+}
+
+func (h *TeamHandler) serveTeamErrorPage(c *gin.Context) {
+	errorHTML := `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>رابط غير صالح - AffTok</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
         }
-        .container { text-align: center; padding: 40px; }
-        h1 { font-size: 48px; margin-bottom: 20px; }
-        p { font-size: 18px; opacity: 0.8; }
+        .container { 
+            text-align: center; 
+            padding: 60px 40px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #333;
+            border-radius: 24px;
+            max-width: 400px;
+        }
+        .icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #FF006E, #FF4D00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h1 { 
+            font-size: 28px; 
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+        p { 
+            font-size: 16px; 
+            color: #888;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .btn {
+            background: linear-gradient(135deg, #FF006E, #FF4D00);
+            color: white;
+            padding: 14px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255,0,110,0.4);
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>❌</h1>
-        <h2>رابط الدعوة غير صالح</h2>
-        <p>هذا الرابط غير موجود أو منتهي الصلاحية</p>
+        <div class="icon"><i class="fas fa-link-slash"></i></div>
+        <h1>رابط الدعوة غير صالح</h1>
+        <p>هذا الرابط غير موجود أو منتهي الصلاحية. تأكد من صحة الرابط أو تواصل مع صاحب الدعوة.</p>
+        <a href="https://afftokapp.com" class="btn">زيارة الموقع</a>
     </div>
-</body>
-</html>`))
-		return
-	}
-
-	// Calculate team stats
-	var totalClicks, totalConversions int
-	activeMembers := 0
-	for _, member := range team.Members {
-		if member.Status == "active" {
-			totalClicks += member.User.TotalClicks
-			totalConversions += member.User.TotalConversions
-			activeMembers++
-		}
-	}
-
-	// Serve beautiful landing page
-	html := `
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>انضم لفريق ` + team.Name + ` - AffTok</title>
-    <meta property="og:title" content="انضم لفريق ` + team.Name + ` على AffTok">
-    <meta property="og:description" content="` + team.Description + `">
-    <meta property="og:image" content="` + team.LogoURL + `">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            color: white;
-        }
-        .hero {
-            padding: 60px 20px;
-            text-align: center;
-            background: linear-gradient(180deg, rgba(255,0,110,0.2) 0%, transparent 100%);
-        }
-        .team-logo {
-            width: 120px;
-            height: 120px;
-            border-radius: 30px;
-            background: linear-gradient(135deg, #ff006e, #ff4d00);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 24px;
-            font-size: 48px;
-            box-shadow: 0 20px 60px rgba(255,0,110,0.4);
-        }
-        .team-logo img {
-            width: 100%;
-            height: 100%;
-            border-radius: 30px;
-            object-fit: cover;
-        }
-        h1 { font-size: 32px; margin-bottom: 12px; }
-        .description { font-size: 16px; opacity: 0.8; max-width: 400px; margin: 0 auto 30px; }
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin: 30px 0;
-        }
-        .stat { text-align: center; }
-        .stat-value { 
-            font-size: 36px; 
-            font-weight: bold; 
-            background: linear-gradient(135deg, #ff006e, #ff4d00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .stat-label { font-size: 14px; opacity: 0.7; }
-        .join-btn {
-            background: linear-gradient(135deg, #ff006e, #ff4d00);
-            color: white;
-            border: none;
-            padding: 18px 60px;
-            font-size: 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 30px 0;
-            text-decoration: none;
-            display: inline-block;
-            box-shadow: 0 10px 40px rgba(255,0,110,0.4);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        .join-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 50px rgba(255,0,110,0.5);
-        }
-        .members {
-            padding: 40px 20px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        .members h3 { text-align: center; margin-bottom: 20px; opacity: 0.9; }
-        .member {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 16px;
-            margin-bottom: 12px;
-        }
-        .member-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-        }
-        .member-info { flex: 1; }
-        .member-name { font-weight: 600; }
-        .member-role { font-size: 12px; opacity: 0.6; }
-        .owner-badge {
-            background: gold;
-            color: black;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .download-section {
-            background: rgba(0,0,0,0.3);
-            padding: 50px 20px;
-            text-align: center;
-        }
-        .download-section h3 { margin-bottom: 15px; }
-        .download-section p { opacity: 0.7; margin-bottom: 25px; }
-        .store-buttons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        .store-btn {
-            background: white;
-            color: black;
-            padding: 12px 24px;
-            border-radius: 12px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-        }
-        .footer {
-            text-align: center;
-            padding: 30px;
-            opacity: 0.6;
-            font-size: 14px;
-        }
-        .footer a { color: #ff006e; text-decoration: none; }
-    </style>
-</head>
-<body>
-    <div class="hero">
-        <div class="team-logo">
-            ` + func() string {
-		if team.LogoURL != "" {
-			return `<img src="` + team.LogoURL + `" alt="` + team.Name + `">`
-		}
-		return "👥"
-	}() + `
-        </div>
-        <h1>` + team.Name + `</h1>
-        <p class="description">` + team.Description + `</p>
-        
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value">` + fmt.Sprintf("%d", activeMembers) + `</div>
-                <div class="stat-label">الأعضاء</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">` + fmt.Sprintf("%d", totalConversions) + `</div>
-                <div class="stat-label">التحويلات</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">` + fmt.Sprintf("%d", totalClicks) + `</div>
-                <div class="stat-label">النقرات</div>
-            </div>
-        </div>
-        
-        <a href="afftok://join/` + code + `" class="join-btn">🚀 انضم للفريق الآن</a>
-    </div>
-    
-    <div class="members">
-        <h3>أعضاء الفريق</h3>
-        ` + func() string {
-		membersHTML := ""
-		for _, member := range team.Members {
-			if member.Status == "active" {
-				roleHTML := ""
-				if member.Role == "owner" {
-					roleHTML = `<span class="owner-badge">👑 القائد</span>`
-				}
-				membersHTML += `
-                <div class="member">
-                    <div class="member-avatar"></div>
-                    <div class="member-info">
-                        <div class="member-name">` + member.User.FullName + `</div>
-                        <div class="member-role">@` + member.User.Username + `</div>
-                    </div>
-                    ` + roleHTML + `
-                </div>`
-			}
-		}
-		return membersHTML
-	}() + `
-    </div>
-    
-    <div class="download-section">
-        <h3>📱 حمّل تطبيق AffTok</h3>
-        <p>انضم لآلاف المروجين واكسب من عروض الأفلييت</p>
-        <div class="store-buttons">
-            <a href="https://apps.apple.com/app/afftok" class="store-btn">
-                🍎 App Store
-            </a>
-            <a href="https://play.google.com/store/apps/details?id=com.afftok.app" class="store-btn">
-                ▶️ Google Play
-            </a>
-        </div>
-    </div>
-    
-    <div class="footer">
-        <p>© 2025 AffTok - جميع الحقوق محفوظة</p>
-        <p><a href="https://afftokapp.com">afftokapp.com</a></p>
-    </div>
-    
-    <script>
-        // Try to open app, fallback to store
-        document.querySelector('.join-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            var appUrl = 'afftok://join/` + code + `';
-            var storeUrl = /iPhone|iPad|iPod/i.test(navigator.userAgent) 
-                ? 'https://apps.apple.com/app/afftok'
-                : 'https://play.google.com/store/apps/details?id=com.afftok.app';
-            
-            var start = Date.now();
-            window.location = appUrl;
-            
-            setTimeout(function() {
-                if (Date.now() - start < 2000) {
-                    window.location = storeUrl;
-                }
-            }, 1500);
-        });
-    </script>
 </body>
 </html>`
-
-	c.Header("Content-Type", "text/html; charset=utf-8")
-	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+	c.Data(http.StatusNotFound, "text/html; charset=utf-8", []byte(errorHTML))
 }
