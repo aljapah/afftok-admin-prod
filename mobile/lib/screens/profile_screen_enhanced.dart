@@ -96,12 +96,14 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
           );
         }
         
-        // If user is null and not loading, go back
+        // If user is null and not loading, redirect to login
         if (user == null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+              (route) => false,
+            );
           });
           return Scaffold(
             backgroundColor: Colors.black,
@@ -408,8 +410,8 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
     // Unique link with unique code (falls back to username if no code)
     final uniqueCode = user.uniqueCode;
     final uniqueLink = (uniqueCode != null && uniqueCode.isNotEmpty)
-        ? 'https://go.afftokapp.com/api/r/$uniqueCode'
-        : 'https://go.afftokapp.com/api/promoter/user/${user.username}';
+        ? 'https://go.afftokapp.com/r/$uniqueCode'
+        : 'https://go.afftokapp.com/@${user.username}';
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1145,8 +1147,8 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   static void _showQRCodeDialog(BuildContext context, User user, AppLocalizations lang) {
     final uniqueCode = user.uniqueCode;
     final uniqueLink = (uniqueCode != null && uniqueCode.isNotEmpty)
-        ? 'https://go.afftokapp.com/api/r/$uniqueCode'
-        : 'https://go.afftokapp.com/api/promoter/user/${user.username}';
+        ? 'https://go.afftokapp.com/r/$uniqueCode'
+        : 'https://go.afftokapp.com/@${user.username}';
     
     showDialog(
       context: context,
