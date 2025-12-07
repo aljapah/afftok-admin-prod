@@ -749,37 +749,54 @@ export async function initAdminTables() {
   
   const client = postgres(process.env.DATABASE_URL);
   
-  // Create admin_users table if not exists
-  await client`
-    CREATE TABLE IF NOT EXISTS admin_users (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      username VARCHAR(50) NOT NULL UNIQUE,
-      email VARCHAR(255) NOT NULL UNIQUE,
-      password_hash VARCHAR(255) NOT NULL,
-      full_name VARCHAR(100),
-      role VARCHAR(30) DEFAULT 'viewer' NOT NULL,
-      status VARCHAR(20) DEFAULT 'active' NOT NULL,
-      last_login_at TIMESTAMP,
-      created_by UUID,
-      created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-      updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-    )
-  `;
-  
-  // Create audit_logs table if not exists
-  await client`
-    CREATE TABLE IF NOT EXISTS audit_logs (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      admin_user_id UUID NOT NULL,
-      action VARCHAR(50) NOT NULL,
-      resource VARCHAR(50) NOT NULL,
-      resource_id UUID,
-      details TEXT,
-      ip_address VARCHAR(45),
-      user_agent TEXT,
-      created_at TIMESTAMP DEFAULT NOW() NOT NULL
-    )
-  `;
+  try {
+    // Drop old table if it has wrong schema and recreate
+    await client`DROP TABLE IF EXISTS admin_users CASCADE`;
+    
+    // Create admin_users table
+    await client`
+      CREATE TABLE admin_users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        username VARCHAR(50) NOT NULL UNIQUE,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        full_name VARCHAR(100),
+        role VARCHAR(30) DEFAULT 'viewer' NOT NULL,
+        status VARCHAR(20) DEFAULT 'active' NOT NULL,
+        last_login_at TIMESTAMP,
+        created_by UUID,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `;
+    
+    // Create audit_logs table if not exists
+    await client`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        admin_user_id UUID NOT NULL,
+        action VARCHAR(50) NOT NULL,
+        resource VARCHAR(50) NOT NULL,
+        resource_id UUID,
+        details TEXT,
+        ip_address VARCHAR(45),
+        user_agent TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `;
+    
+    // Insert Super Admin
+    const passwordHash = Buffer.from('Az55666682').toString('base64');
+    await client`
+      INSERT INTO admin_users (username, email, password_hash, full_name, role, status)
+      VALUES ('superadmin', 'aljapah.a@gmail.com', ${passwordHash}, 'Super Admin', 'super_admin', 'active')
+      ON CONFLICT (email) DO NOTHING
+    `;
+    
+    console.log("[DB] Admin tables initialized successfully");
+  } catch (error) {
+    console.error("[DB] Error initializing admin tables:", error);
+  }
   
   await client.end();
 }
