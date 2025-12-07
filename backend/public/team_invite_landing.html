@@ -712,13 +712,41 @@
 
         function joinTeam(e) {
             e.preventDefault();
-            const appUrl = 'afftok://join/' + inviteCode;
-            const storeUrl = /iPhone|iPad|iPod/i.test(navigator.userAgent) 
-                ? 'https://apps.apple.com/app/afftok'
-                : 'https://play.google.com/store/apps/details?id=com.afftok.app';
             
+            // Store invite code in localStorage for auto-join after registration
+            localStorage.setItem('pending_team_invite', inviteCode);
+            localStorage.setItem('pending_team_name', teamData ? teamData.name : '');
+            
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            
+            // Deep link with invite code
+            const appUrl = 'afftok://join/' + inviteCode;
+            
+            // Store URLs with invite code as parameter
+            const appStoreUrl = 'https://apps.apple.com/app/afftok';
+            const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.afftok.app&referrer=invite_' + inviteCode;
+            
+            // Try to open the app first
+            const start = Date.now();
             window.location = appUrl;
-            setTimeout(function() { window.location = storeUrl; }, 1500);
+            
+            // If app is not installed, redirect to store after delay
+            setTimeout(function() {
+                // Only redirect if we haven't left the page (app not installed)
+                if (Date.now() - start < 2500) {
+                    if (isIOS) {
+                        window.location = appStoreUrl;
+                    } else if (isAndroid) {
+                        window.location = playStoreUrl;
+                    } else {
+                        // Desktop - show message
+                        alert(currentLang === 'ar' 
+                            ? 'يرجى تحميل التطبيق على هاتفك للانضمام للفريق' 
+                            : 'Please download the app on your phone to join the team');
+                    }
+                }
+            }, 1500);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
