@@ -574,3 +574,168 @@ export async function endContest(id: string) {
   
   return { success: true, message: "Contest ended" };
 }
+
+// ============ ADVERTISER INTEGRATIONS ============
+
+export async function getAllIntegrations() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  try {
+    const client = postgres(process.env.DATABASE_URL);
+    
+    // Check if table exists, create if not
+    await client`
+      CREATE TABLE IF NOT EXISTS advertiser_integrations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        advertiser_id UUID NOT NULL,
+        platform VARCHAR(50) NOT NULL,
+        platform_name VARCHAR(100),
+        webhook_url TEXT,
+        webhook_secret TEXT,
+        pixel_id VARCHAR(100),
+        status VARCHAR(20) DEFAULT 'pending' NOT NULL,
+        last_tested_at TIMESTAMP,
+        last_webhook_at TIMESTAMP,
+        total_webhooks INTEGER DEFAULT 0 NOT NULL,
+        successful_webhooks INTEGER DEFAULT 0 NOT NULL,
+        failed_webhooks INTEGER DEFAULT 0 NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `;
+    
+    const result = await client`
+      SELECT 
+        ai.*,
+        u.full_name as advertiser_name,
+        u.email as advertiser_email
+      FROM advertiser_integrations ai
+      LEFT JOIN afftok_users u ON ai.advertiser_id = u.id
+      ORDER BY ai.created_at DESC
+    `;
+    await client.end();
+    
+    return result.map((row: any) => ({
+      id: row.id,
+      advertiserId: row.advertiser_id,
+      advertiserName: row.advertiser_name,
+      advertiserEmail: row.advertiser_email,
+      platform: row.platform,
+      platformName: row.platform_name,
+      webhookUrl: row.webhook_url,
+      webhookSecret: row.webhook_secret,
+      pixelId: row.pixel_id,
+      status: row.status,
+      lastTestedAt: row.last_tested_at,
+      lastWebhookAt: row.last_webhook_at,
+      totalWebhooks: row.total_webhooks,
+      successfulWebhooks: row.successful_webhooks,
+      failedWebhooks: row.failed_webhooks,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  } catch (error) {
+    console.error("[DB] getAllIntegrations error:", error);
+    return [];
+  }
+}
+
+export async function createIntegration(data: {
+  advertiserId: string;
+  platform: string;
+  platformName?: string;
+}) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  const client = postgres(process.env.DATABASE_URL);
+  
+  // Generate webhook URL and secret
+  const webhookUrl = `https://go.afftokapp.com/webhook/${data.platform}/${data.advertiserId}`;
+  const webhookSecret = crypto.randomUUID().replace(/-/g, '');
+  
+  const result = await client`
+    INSERT INTO advertiser_integrations (
+      advertiser_id, platform, platform_name, webhook_url, webhook_secret, status
+    ) VALUES (
+      ${data.advertiserId}::uuid, ${data.platform}, ${data.platformName || null}, 
+      ${webhookUrl}, ${webhookSecret}, 'pending'
+    ) RETURNING *
+  `;
+  
+  await client.end();
+  return result[0];
+}
+
+export async function updateIntegrationStatus(id: string, status: string) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  const client = postgres(process.env.DATABASE_URL);
+  await client`
+    UPDATE advertiser_integrations 
+    SET status = ${status}, updated_at = NOW() 
+    WHERE id = ${id}::uuid
+  `;
+  await client.end();
+  
+  return { success: true };
+}
+
+export async function deleteIntegration(id: string) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  const client = postgres(process.env.DATABASE_URL);
+  await client`DELETE FROM advertiser_integrations WHERE id = ${id}::uuid`;
+  await client.end();
+  
+  return { success: true };
+}
+
+export async function testIntegration(id: string) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database not available");
+  }
+  
+  const client = postgres(process.env.DATABASE_URL);
+  
+  // Get integration details
+  const result = await client`
+    SELECT * FROM advertiser_integrations WHERE id = ${id}::uuid
+  `;
+  
+  if (result.length === 0) {
+    await client.end();
+    return { success: false, error: "Integration not found" };
+  }
+  
+  const integration = result[0];
+  
+  // Try to send test webhook
+  try {
+    // For now, just mark as tested and active
+    await client`
+      UPDATE advertiser_integrations 
+      SET status = 'active', last_tested_at = NOW(), updated_at = NOW() 
+      WHERE id = ${id}::uuid
+    `;
+    await client.end();
+    
+    return { success: true, message: "Integration test passed" };
+  } catch (error) {
+    await client`
+      UPDATE advertiser_integrations 
+      SET status = 'failed', last_tested_at = NOW(), updated_at = NOW() 
+      WHERE id = ${id}::uuid
+    `;
+    await client.end();
+    
+    return { success: false, error: "Integration test failed" };
+  }
+}

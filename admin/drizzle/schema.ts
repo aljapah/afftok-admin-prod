@@ -163,3 +163,22 @@ export const userBadges = pgTable("user_badges", {
   badgeId: uuid("badge_id").notNull(),
   earnedAt: timestamp("earned_at").defaultNow().notNull(),
 });
+
+// Advertiser Integrations - نظام تكامل المعلنين
+export const advertiserIntegrations = pgTable("advertiser_integrations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  advertiserId: uuid("advertiser_id").notNull(), // المعلن
+  platform: varchar("platform", { length: 50 }).notNull(), // shopify, salla, zid, woocommerce, custom
+  platformName: varchar("platform_name", { length: 100 }), // اسم المتجر
+  webhookUrl: text("webhook_url"), // رابط الـ Webhook
+  webhookSecret: text("webhook_secret"), // مفتاح التوقيع
+  pixelId: varchar("pixel_id", { length: 100 }), // معرف البكسل للمواقع المخصصة
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, active, failed, paused
+  lastTestedAt: timestamp("last_tested_at"),
+  lastWebhookAt: timestamp("last_webhook_at"), // آخر webhook تم استلامه
+  totalWebhooks: integer("total_webhooks").default(0).notNull(), // عدد الـ webhooks المستلمة
+  successfulWebhooks: integer("successful_webhooks").default(0).notNull(),
+  failedWebhooks: integer("failed_webhooks").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

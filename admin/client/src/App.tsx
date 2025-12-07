@@ -22,6 +22,7 @@ import LogsViewer from "./pages/LogsViewer";
 import Webhooks from "./pages/Webhooks";
 import Invoices from "./pages/Invoices";
 import Contests from "./pages/Contests";
+import Integrations from "./pages/Integrations";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -44,6 +45,7 @@ function Router() {
       <Route path={"/webhooks"} component={Webhooks} />
       <Route path={"/invoices"} component={Invoices} />
       <Route path={"/contests"} component={Contests} />
+      <Route path={"/integrations"} component={Integrations} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

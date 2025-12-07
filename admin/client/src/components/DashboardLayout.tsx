@@ -38,7 +38,8 @@ import {
   FileText,
   Webhook,
   Receipt,
-  Trophy
+  Trophy,
+  Plug
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -59,6 +60,7 @@ const menuItems = [
 ];
 
 const systemMenuItems = [
+  { icon: Plug, label: "Integrations", path: "/integrations" },
   { icon: Activity, label: "Monitoring", path: "/monitoring" },
   { icon: Building2, label: "Tenants", path: "/tenants" },
   { icon: Globe, label: "Geo Rules", path: "/geo-rules" },

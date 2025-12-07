@@ -401,4 +401,51 @@ export const appRouter = router({
         return endContest(input.id);
       }),
   }),
+
+  // ============ INTEGRATIONS ============
+  integrations: router({
+    list: publicProcedure.query(async () => {
+      const { getAllIntegrations } = await import("./db");
+      return getAllIntegrations();
+    }),
+    create: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          advertiserId: z.string(),
+          platform: z.enum(['shopify', 'salla', 'zid', 'woocommerce', 'custom']),
+          platformName: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { createIntegration } = await import("./db");
+        return createIntegration(input);
+      }),
+    updateStatus: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          id: z.string(),
+          status: z.enum(['pending', 'active', 'failed', 'paused']),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { updateIntegrationStatus } = await import("./db");
+        return updateIntegrationStatus(input.id, input.status);
+      }),
+    delete: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { deleteIntegration } = await import("./db");
+        return deleteIntegration(input.id);
+      }),
+    test: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { testIntegration } = await import("./db");
+        return testIntegration(input.id);
+      }),
+  }),
 });
