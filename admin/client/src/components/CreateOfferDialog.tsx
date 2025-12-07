@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Plus, Globe, Languages, Upload, Image, Loader2 } from "lucide-react";
+import { Plus, Globe, Languages, Upload, Image, Loader2, MapPin, Ban, Radio } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -28,6 +28,30 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
+
+// قائمة الدول المتاحة
+const AVAILABLE_COUNTRIES = [
+  { code: 'SA', en: 'Saudi Arabia', ar: 'السعودية' },
+  { code: 'AE', en: 'UAE', ar: 'الإمارات' },
+  { code: 'KW', en: 'Kuwait', ar: 'الكويت' },
+  { code: 'BH', en: 'Bahrain', ar: 'البحرين' },
+  { code: 'QA', en: 'Qatar', ar: 'قطر' },
+  { code: 'OM', en: 'Oman', ar: 'عمان' },
+  { code: 'EG', en: 'Egypt', ar: 'مصر' },
+  { code: 'JO', en: 'Jordan', ar: 'الأردن' },
+  { code: 'LB', en: 'Lebanon', ar: 'لبنان' },
+  { code: 'IQ', en: 'Iraq', ar: 'العراق' },
+  { code: 'MA', en: 'Morocco', ar: 'المغرب' },
+  { code: 'DZ', en: 'Algeria', ar: 'الجزائر' },
+  { code: 'TN', en: 'Tunisia', ar: 'تونس' },
+  { code: 'US', en: 'United States', ar: 'أمريكا' },
+  { code: 'GB', en: 'United Kingdom', ar: 'بريطانيا' },
+  { code: 'DE', en: 'Germany', ar: 'ألمانيا' },
+  { code: 'FR', en: 'France', ar: 'فرنسا' },
+  { code: 'TR', en: 'Turkey', ar: 'تركيا' },
+];
 
 // ImgBB API for image uploads
 const IMGBB_API_KEY = '6d207e02198a847aa98d0a2a901485a5';
@@ -59,6 +83,7 @@ export function CreateOfferDialog() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    terms: "", // الشروط العامة بالإنجليزية
     titleAr: "",
     descriptionAr: "",
     termsAr: "",
@@ -69,6 +94,10 @@ export function CreateOfferDialog() {
     payout: 0,
     commission: 0,
     payoutType: "cpa",
+    trackingType: "cookie", // نوع التتبع
+    targetCountries: [] as string[], // الدول المستهدفة
+    blockedCountries: [] as string[], // الدول الممنوعة
+    additionalNotes: "", // ملاحظات إضافية
   });
   
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -85,6 +114,7 @@ export function CreateOfferDialog() {
       setFormData({
         title: "",
         description: "",
+        terms: "",
         titleAr: "",
         descriptionAr: "",
         termsAr: "",
@@ -95,6 +125,10 @@ export function CreateOfferDialog() {
         payout: 0,
         commission: 0,
         payoutType: "cpa",
+        trackingType: "cookie",
+        targetCountries: [],
+        blockedCountries: [],
+        additionalNotes: "",
       });
     },
     onError: (error) => {
@@ -201,6 +235,16 @@ export function CreateOfferDialog() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Enter offer description in English"
                   rows={3}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="terms">Terms & Conditions</Label>
+                <Textarea
+                  id="terms"
+                  value={formData.terms}
+                  onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
+                  placeholder="Enter general terms and conditions in English"
+                  rows={4}
                 />
               </div>
             </TabsContent>
@@ -399,6 +443,150 @@ export function CreateOfferDialog() {
                 />
               </div>
             </div>
+          </div>
+          
+          {/* Geo Targeting Section */}
+          <div className="grid gap-4 py-4 border-t mt-4 pt-4">
+            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Geo Targeting / استهداف الدول
+            </h4>
+            
+            {/* Target Countries */}
+            <div className="grid gap-2">
+              <Label className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-green-500" />
+                Target Countries (optional - default: all)
+              </Label>
+              <Select
+                onValueChange={(value) => {
+                  if (!formData.targetCountries.includes(value)) {
+                    setFormData({ ...formData, targetCountries: [...formData.targetCountries, value] });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select countries to target" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABLE_COUNTRIES.filter(c => !formData.targetCountries.includes(c.code)).map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.en} / {country.ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formData.targetCountries.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.targetCountries.map((code) => {
+                    const country = AVAILABLE_COUNTRIES.find(c => c.code === code);
+                    return (
+                      <Badge key={code} variant="secondary" className="bg-green-500/20 text-green-400">
+                        {country?.en || code}
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, targetCountries: formData.targetCountries.filter(c => c !== code) })}
+                          className="ml-1 hover:text-red-400"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            
+            {/* Blocked Countries */}
+            <div className="grid gap-2">
+              <Label className="flex items-center gap-2">
+                <Ban className="h-4 w-4 text-red-500" />
+                Blocked Countries (optional)
+              </Label>
+              <Select
+                onValueChange={(value) => {
+                  if (!formData.blockedCountries.includes(value)) {
+                    setFormData({ ...formData, blockedCountries: [...formData.blockedCountries, value] });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select countries to block" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABLE_COUNTRIES.filter(c => !formData.blockedCountries.includes(c.code)).map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.en} / {country.ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formData.blockedCountries.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.blockedCountries.map((code) => {
+                    const country = AVAILABLE_COUNTRIES.find(c => c.code === code);
+                    return (
+                      <Badge key={code} variant="secondary" className="bg-red-500/20 text-red-400">
+                        {country?.en || code}
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, blockedCountries: formData.blockedCountries.filter(c => c !== code) })}
+                          className="ml-1 hover:text-red-600"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Tracking Type Section */}
+          <div className="grid gap-4 py-4 border-t mt-4 pt-4">
+            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Radio className="h-4 w-4" />
+              Tracking Type / نوع التتبع
+            </h4>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="trackingType">Tracking Method</Label>
+              <Select value={formData.trackingType} onValueChange={(value) => setFormData({ ...formData, trackingType: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select tracking type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cookie">Cookie Tracking / تتبع الكوكيز</SelectItem>
+                  <SelectItem value="coupon">Coupon Code / كود خصم</SelectItem>
+                  <SelectItem value="link">Direct Link / رابط مباشر</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {/* Additional Notes Section */}
+          <div className="grid gap-4 py-4 border-t mt-4 pt-4">
+            <h4 className="text-sm font-medium text-muted-foreground">Additional Notes / ملاحظات إضافية</h4>
+            
+            <div className="grid gap-2">
+              <Textarea
+                value={formData.additionalNotes}
+                onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
+                placeholder="Any additional notes for promoters (optional)"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          {/* Legal Disclaimer */}
+          <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mt-4">
+            <p className="text-sm text-orange-400">
+              ⚠️ The platform is not a party to the financial agreement between advertiser and promoter. Its role is limited to providing tracking and statistics only.
+            </p>
+            <p className="text-sm text-orange-400 mt-2" dir="rtl">
+              ⚠️ المنصة ليست طرفاً في الاتفاق المالي بين المعلن والمروج، ودورها يقتصر على توفير التتبع والإحصائيات فقط.
+            </p>
           </div>
           
           <DialogFooter>

@@ -34,6 +34,7 @@ type Offer struct {
 	// English Fields
 	Title            string     `gorm:"type:varchar(255);not null" json:"title"`
 	Description      string     `gorm:"type:text" json:"description,omitempty"`
+	Terms            string     `gorm:"type:text" json:"terms,omitempty"` // الشروط العامة بالإنجليزية
 	
 	// Arabic Fields (للمستخدم العربي)
 	TitleAr          string     `gorm:"type:varchar(255)" json:"title_ar,omitempty"`
@@ -48,6 +49,17 @@ type Offer struct {
 	Payout           int        `gorm:"default:0" json:"payout"`
 	Commission       int        `gorm:"default:0" json:"commission"`
 	PayoutType       string     `gorm:"type:varchar(20);default:'cpa'" json:"payout_type"`
+	
+	// Geo Targeting - استهداف الدول
+	TargetCountries  string     `gorm:"type:text" json:"target_countries,omitempty"` // JSON array: ["SA", "AE", "KW"]
+	BlockedCountries string     `gorm:"type:text" json:"blocked_countries,omitempty"` // JSON array: ["SY", "YE"]
+	
+	// Tracking - نوع التتبع
+	TrackingType     string     `gorm:"type:varchar(20);default:'cookie'" json:"tracking_type"` // cookie, coupon, link
+	
+	// Additional Notes - ملاحظات إضافية
+	AdditionalNotes  string     `gorm:"type:text" json:"additional_notes,omitempty"`
+	
 	Rating           float64    `gorm:"type:decimal(3,2);default:0.0" json:"rating"`
 	UsersCount       int        `gorm:"default:0" json:"users_count"`
 	Status           string     `gorm:"type:varchar(20);default:'pending'" json:"status"` // pending, active, rejected, paused

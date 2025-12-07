@@ -213,6 +213,7 @@ export async function createOffer(data: any) {
   const newOffer = {
     title: data.title,
     description: data.description || null,
+    terms: data.terms || null, // الشروط العامة بالإنجليزية
     // Arabic fields
     titleAr: data.titleAr || null,
     descriptionAr: data.descriptionAr || null,
@@ -227,6 +228,13 @@ export async function createOffer(data: any) {
     commission: data.commission,
     payoutType: data.payoutType || 'cpa',
     networkId: data.networkId || null,
+    // Geo Targeting
+    targetCountries: data.targetCountries ? JSON.stringify(data.targetCountries) : null,
+    blockedCountries: data.blockedCountries ? JSON.stringify(data.blockedCountries) : null,
+    // Tracking
+    trackingType: data.trackingType || 'cookie',
+    // Notes
+    additionalNotes: data.additionalNotes || null,
   };
 
   const result = await db.insert(offers).values(newOffer).returning();

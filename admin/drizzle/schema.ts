@@ -87,6 +87,7 @@ export const offers = pgTable("offers", {
   // English Fields
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
+  terms: text("terms"), // الشروط العامة بالإنجليزية
   // Arabic Fields (للمستخدم العربي)
   titleAr: varchar("title_ar", { length: 255 }),
   descriptionAr: text("description_ar"),
@@ -99,6 +100,14 @@ export const offers = pgTable("offers", {
   payout: integer("payout").default(0).notNull(),
   commission: integer("commission").default(0).notNull(),
   payoutType: varchar("payout_type", { length: 20 }).default("cpa").notNull(),
+  // Geo Targeting - استهداف الدول
+  targetCountries: text("target_countries"), // JSON array: ["SA", "AE", "KW"] - الدول المستهدفة
+  blockedCountries: text("blocked_countries"), // JSON array: ["SY", "YE"] - الدول الممنوعة (اختياري)
+  // Tracking - نوع التتبع
+  trackingType: varchar("tracking_type", { length: 20 }).default("cookie"), // cookie, coupon, link
+  // Additional Notes - ملاحظات إضافية
+  additionalNotes: text("additional_notes"),
+  // Stats
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0.0").notNull(),
   usersCount: integer("users_count").default(0).notNull(),
   status: varchar("status", { length: 20 }).default("pending").notNull(),

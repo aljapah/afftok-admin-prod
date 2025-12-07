@@ -28,6 +28,12 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final _descriptionArController = TextEditingController();
   final _termsArController = TextEditingController();
   
+  // Terms & Conditions (English)
+  final _termsController = TextEditingController();
+  
+  // Additional Notes
+  final _additionalNotesController = TextEditingController();
+  
   // URLs
   final _imageUrlController = TextEditingController();
   final _logoUrlController = TextEditingController();
@@ -39,6 +45,9 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   
   String _selectedCategory = 'general';
   String _selectedPayoutType = 'cpa';
+  String _selectedTrackingType = 'cookie';
+  List<String> _selectedTargetCountries = [];
+  List<String> _selectedBlockedCountries = [];
   bool _isLoading = false;
   bool _isUploadingImage = false;
   bool _isUploadingLogo = false;
@@ -46,6 +55,35 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   File? _selectedImage;
   File? _selectedLogo;
   final ImagePicker _picker = ImagePicker();
+
+  // قائمة الدول المتاحة
+  final List<Map<String, String>> _availableCountries = [
+    {'code': 'SA', 'en': 'Saudi Arabia', 'ar': 'السعودية'},
+    {'code': 'AE', 'en': 'UAE', 'ar': 'الإمارات'},
+    {'code': 'KW', 'en': 'Kuwait', 'ar': 'الكويت'},
+    {'code': 'BH', 'en': 'Bahrain', 'ar': 'البحرين'},
+    {'code': 'QA', 'en': 'Qatar', 'ar': 'قطر'},
+    {'code': 'OM', 'en': 'Oman', 'ar': 'عمان'},
+    {'code': 'EG', 'en': 'Egypt', 'ar': 'مصر'},
+    {'code': 'JO', 'en': 'Jordan', 'ar': 'الأردن'},
+    {'code': 'LB', 'en': 'Lebanon', 'ar': 'لبنان'},
+    {'code': 'IQ', 'en': 'Iraq', 'ar': 'العراق'},
+    {'code': 'MA', 'en': 'Morocco', 'ar': 'المغرب'},
+    {'code': 'DZ', 'en': 'Algeria', 'ar': 'الجزائر'},
+    {'code': 'TN', 'en': 'Tunisia', 'ar': 'تونس'},
+    {'code': 'US', 'en': 'United States', 'ar': 'أمريكا'},
+    {'code': 'GB', 'en': 'United Kingdom', 'ar': 'بريطانيا'},
+    {'code': 'DE', 'en': 'Germany', 'ar': 'ألمانيا'},
+    {'code': 'FR', 'en': 'France', 'ar': 'فرنسا'},
+    {'code': 'TR', 'en': 'Turkey', 'ar': 'تركيا'},
+  ];
+
+  // أنواع التتبع
+  final List<Map<String, String>> _trackingTypes = [
+    {'value': 'cookie', 'en': 'Cookie Tracking', 'ar': 'تتبع الكوكيز'},
+    {'value': 'coupon', 'en': 'Coupon Code', 'ar': 'كود خصم'},
+    {'value': 'link', 'en': 'Direct Link', 'ar': 'رابط مباشر'},
+  ];
 
   final List<Map<String, String>> _categories = [
     {'value': 'general', 'en': 'General', 'ar': 'عام'},
@@ -80,7 +118,9 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     _descriptionController.text = offer['description'] ?? '';
     _titleArController.text = offer['title_ar'] ?? '';
     _descriptionArController.text = offer['description_ar'] ?? '';
+    _termsController.text = offer['terms'] ?? '';
     _termsArController.text = offer['terms_ar'] ?? '';
+    _additionalNotesController.text = offer['additional_notes'] ?? '';
     _imageUrlController.text = offer['image_url'] ?? '';
     _logoUrlController.text = offer['logo_url'] ?? '';
     _destinationUrlController.text = offer['destination_url'] ?? '';
@@ -88,6 +128,37 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     _commissionController.text = (offer['commission'] ?? 0).toString();
     _selectedCategory = offer['category'] ?? 'general';
     _selectedPayoutType = offer['payout_type'] ?? 'cpa';
+    _selectedTrackingType = offer['tracking_type'] ?? 'cookie';
+    
+    // Parse target countries
+    if (offer['target_countries'] != null) {
+      if (offer['target_countries'] is List) {
+        _selectedTargetCountries = List<String>.from(offer['target_countries']);
+      } else if (offer['target_countries'] is String) {
+        try {
+          _selectedTargetCountries = List<String>.from(
+            (offer['target_countries'] as String).isNotEmpty 
+              ? (offer['target_countries'] as String).split(',') 
+              : []
+          );
+        } catch (_) {}
+      }
+    }
+    
+    // Parse blocked countries
+    if (offer['blocked_countries'] != null) {
+      if (offer['blocked_countries'] is List) {
+        _selectedBlockedCountries = List<String>.from(offer['blocked_countries']);
+      } else if (offer['blocked_countries'] is String) {
+        try {
+          _selectedBlockedCountries = List<String>.from(
+            (offer['blocked_countries'] as String).isNotEmpty 
+              ? (offer['blocked_countries'] as String).split(',') 
+              : []
+          );
+        } catch (_) {}
+      }
+    }
   }
 
   @override
@@ -96,7 +167,9 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     _descriptionController.dispose();
     _titleArController.dispose();
     _descriptionArController.dispose();
+    _termsController.dispose();
     _termsArController.dispose();
+    _additionalNotesController.dispose();
     _imageUrlController.dispose();
     _logoUrlController.dispose();
     _destinationUrlController.dispose();
@@ -181,6 +254,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       'description': _descriptionController.text.trim(),
       'title_ar': _titleArController.text.trim(),
       'description_ar': _descriptionArController.text.trim(),
+      'terms': _termsController.text.trim(),
       'terms_ar': _termsArController.text.trim(),
       'image_url': _imageUrlController.text.trim(),
       'logo_url': _logoUrlController.text.trim(),
@@ -189,6 +263,12 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       'payout': int.tryParse(_payoutController.text) ?? 0,
       'commission': int.tryParse(_commissionController.text) ?? 0,
       'payout_type': _selectedPayoutType,
+      'tracking_type': _selectedTrackingType,
+      'target_countries': _selectedTargetCountries.isNotEmpty ? _selectedTargetCountries : null,
+      'blocked_countries': _selectedBlockedCountries.isNotEmpty ? _selectedBlockedCountries : null,
+      'additional_notes': _additionalNotesController.text.trim().isNotEmpty 
+          ? _additionalNotesController.text.trim() 
+          : null,
     };
 
     try {
@@ -871,6 +951,72 @@ Termination
                         
                         const SizedBox(height: 24),
                         
+                        // Terms & Conditions Section (English)
+                        _buildSectionTitle(isArabic ? 'الشروط العامة (إنجليزي)' : 'General Terms (English)', Icons.rule),
+                        
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _termsController,
+                          label: isArabic ? 'الشروط والأحكام (إنجليزي)' : 'Terms & Conditions (English)',
+                          icon: Icons.gavel,
+                          maxLines: 4,
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Geo Targeting Section
+                        _buildSectionTitle(isArabic ? 'استهداف الدول' : 'Geo Targeting', Icons.public),
+                        
+                        const SizedBox(height: 16),
+                        _buildCountrySelector(
+                          label: isArabic ? 'الدول المستهدفة' : 'Target Countries',
+                          selectedCountries: _selectedTargetCountries,
+                          onChanged: (countries) => setState(() => _selectedTargetCountries = countries),
+                          isArabic: isArabic,
+                          hint: isArabic ? 'اختر الدول (اختياري - الافتراضي: كل الدول)' : 'Select countries (optional - default: all)',
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        _buildCountrySelector(
+                          label: isArabic ? 'الدول الممنوعة' : 'Blocked Countries',
+                          selectedCountries: _selectedBlockedCountries,
+                          onChanged: (countries) => setState(() => _selectedBlockedCountries = countries),
+                          isArabic: isArabic,
+                          hint: isArabic ? 'اختر الدول الممنوعة (اختياري)' : 'Select blocked countries (optional)',
+                          isBlocked: true,
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Tracking Type Section
+                        _buildSectionTitle(isArabic ? 'نوع التتبع' : 'Tracking Type', Icons.track_changes),
+                        
+                        const SizedBox(height: 16),
+                        _buildDropdown(
+                          label: isArabic ? 'طريقة التتبع' : 'Tracking Method',
+                          value: _selectedTrackingType,
+                          items: _trackingTypes.map((t) => DropdownMenuItem(
+                            value: t['value'],
+                            child: Text(isArabic ? t['ar']! : t['en']!),
+                          )).toList(),
+                          onChanged: (v) => setState(() => _selectedTrackingType = v!),
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Additional Notes Section
+                        _buildSectionTitle(isArabic ? 'ملاحظات إضافية' : 'Additional Notes', Icons.note_add),
+                        
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _additionalNotesController,
+                          label: isArabic ? 'ملاحظات إضافية (اختياري)' : 'Additional Notes (optional)',
+                          icon: Icons.notes,
+                          maxLines: 3,
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
                         // URLs Section
                         _buildSectionTitle(isArabic ? 'الروابط والصور' : 'URLs & Images', Icons.link),
                         
@@ -958,6 +1104,36 @@ Termination
                         ),
                         
                         const SizedBox(height: 24),
+                        
+                        // Legal Disclaimer - إخلاء المسؤولية القانونية
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, color: Colors.orange, size: 24),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  isArabic
+                                    ? 'المنصة ليست طرفاً في الاتفاق المالي بين المعلن والمروج، ودورها يقتصر على توفير التتبع والإحصائيات فقط.'
+                                    : 'The platform is not a party to the financial agreement between advertiser and promoter. Its role is limited to providing tracking and statistics only.',
+                                  style: TextStyle(
+                                    color: Colors.orange.shade200,
+                                    fontSize: 12,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
                         
                         // Platform Terms Agreement
                         Container(
@@ -1203,6 +1379,255 @@ Termination
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFF6C63FF)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCountrySelector({
+    required String label,
+    required List<String> selectedCountries,
+    required Function(List<String>) onChanged,
+    required bool isArabic,
+    required String hint,
+    bool isBlocked = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => _showCountryPicker(
+            selectedCountries: selectedCountries,
+            onChanged: onChanged,
+            isArabic: isArabic,
+            isBlocked: isBlocked,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selectedCountries.isNotEmpty
+                    ? (isBlocked ? Colors.red.withOpacity(0.5) : const Color(0xFF6C63FF))
+                    : Colors.white.withOpacity(0.1),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isBlocked ? Icons.block : Icons.public,
+                  color: isBlocked ? Colors.red : const Color(0xFF6C63FF),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: selectedCountries.isEmpty
+                      ? Text(
+                          hint,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 14,
+                          ),
+                        )
+                      : Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: selectedCountries.map((code) {
+                            final country = _availableCountries.firstWhere(
+                              (c) => c['code'] == code,
+                              orElse: () => {'code': code, 'en': code, 'ar': code},
+                            );
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isBlocked 
+                                    ? Colors.red.withOpacity(0.2) 
+                                    : const Color(0xFF6C63FF).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                isArabic ? country['ar']! : country['en']!,
+                                style: TextStyle(
+                                  color: isBlocked ? Colors.red : const Color(0xFF6C63FF),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white.withOpacity(0.3),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showCountryPicker({
+    required List<String> selectedCountries,
+    required Function(List<String>) onChanged,
+    required bool isArabic,
+    required bool isBlocked,
+  }) {
+    List<String> tempSelected = List.from(selectedCountries);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: const BoxDecoration(
+            color: Color(0xFF1a1a1a),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        isArabic ? 'إلغاء' : 'Cancel',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                    Text(
+                      isBlocked
+                          ? (isArabic ? 'الدول الممنوعة' : 'Blocked Countries')
+                          : (isArabic ? 'الدول المستهدفة' : 'Target Countries'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        onChanged(tempSelected);
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        isArabic ? 'تم' : 'Done',
+                        style: const TextStyle(color: Color(0xFF6C63FF)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: Colors.white24),
+              // Select All / Clear
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        setModalState(() {
+                          tempSelected = _availableCountries.map((c) => c['code']!).toList();
+                        });
+                      },
+                      icon: const Icon(Icons.select_all, size: 18),
+                      label: Text(isArabic ? 'تحديد الكل' : 'Select All'),
+                      style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                    ),
+                    const SizedBox(width: 16),
+                    TextButton.icon(
+                      onPressed: () {
+                        setModalState(() {
+                          tempSelected.clear();
+                        });
+                      },
+                      icon: const Icon(Icons.clear_all, size: 18),
+                      label: Text(isArabic ? 'مسح الكل' : 'Clear All'),
+                      style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+              // Country List
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _availableCountries.length,
+                  itemBuilder: (context, index) {
+                    final country = _availableCountries[index];
+                    final isSelected = tempSelected.contains(country['code']);
+                    
+                    return ListTile(
+                      onTap: () {
+                        setModalState(() {
+                          if (isSelected) {
+                            tempSelected.remove(country['code']);
+                          } else {
+                            tempSelected.add(country['code']!);
+                          }
+                        });
+                      },
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? (isBlocked ? Colors.red : const Color(0xFF6C63FF))
+                              : Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Center(
+                          child: Text(
+                            country['code']!,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        isArabic ? country['ar']! : country['en']!,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      trailing: isSelected
+                          ? Icon(
+                              Icons.check_circle,
+                              color: isBlocked ? Colors.red : const Color(0xFF6C63FF),
+                            )
+                          : null,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

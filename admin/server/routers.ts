@@ -145,6 +145,7 @@ export const appRouter = router({
         return z.object({
           title: z.string().min(1),
           description: z.string().optional(),
+          terms: z.string().optional(), // الشروط العامة بالإنجليزية
           // Arabic fields
           titleAr: z.string().optional(),
           descriptionAr: z.string().optional(),
@@ -159,6 +160,13 @@ export const appRouter = router({
           commission: z.number().int().min(0),
           payoutType: z.enum(['cpa', 'cpl', 'cps', 'cpi']).optional(),
           networkId: z.string().optional(),
+          // Geo Targeting
+          targetCountries: z.array(z.string()).optional(), // الدول المستهدفة
+          blockedCountries: z.array(z.string()).optional(), // الدول الممنوعة
+          // Tracking
+          trackingType: z.enum(['cookie', 'coupon', 'link']).optional(), // نوع التتبع
+          // Notes
+          additionalNotes: z.string().optional(), // ملاحظات إضافية
         }).parse(input);
       })
       .mutation(async ({ input }) => {
@@ -171,6 +179,7 @@ export const appRouter = router({
           id: z.string(),
           title: z.string().min(1).optional(),
           description: z.string().optional(),
+          terms: z.string().optional(), // الشروط العامة بالإنجليزية
           // Arabic fields
           titleAr: z.string().optional(),
           descriptionAr: z.string().optional(),
@@ -185,6 +194,13 @@ export const appRouter = router({
           commission: z.number().int().min(0).optional(),
           payoutType: z.enum(['cpa', 'cpl', 'cps', 'cpi']).optional(),
           status: z.enum(['active', 'inactive', 'suspended', 'pending']).optional(),
+          // Geo Targeting
+          targetCountries: z.array(z.string()).optional(), // الدول المستهدفة
+          blockedCountries: z.array(z.string()).optional(), // الدول الممنوعة
+          // Tracking
+          trackingType: z.enum(['cookie', 'coupon', 'link']).optional(), // نوع التتبع
+          // Notes
+          additionalNotes: z.string().optional(), // ملاحظات إضافية
         }).parse(input);
       })
       .mutation(async ({ input }) => {
