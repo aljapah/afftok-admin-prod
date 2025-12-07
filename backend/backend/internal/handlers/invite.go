@@ -30,7 +30,7 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
 	if err := h.db.Preload("Owner").Preload("Members.User").Where("invite_code = ?", code).First(&team).Error; err != nil {
 		errorHTML := getErrorHTML()
 		c.Header("Content-Type", "text/html; charset=utf-8")
-		c.String(http.StatusNotFound, errorHTML)
+		c.Data(http.StatusNotFound, "text/html; charset=utf-8", []byte(errorHTML))
 		return
 	}
 
@@ -518,7 +518,7 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
 </html>`
 
 	c.Header("Content-Type", "text/html; charset=utf-8")
-	c.String(http.StatusOK, html)
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
 }
 
 func getErrorHTML() string {
