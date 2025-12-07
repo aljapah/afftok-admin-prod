@@ -362,35 +362,6 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
         
-        /* Social Section */
-        .social-section {
-            text-align: center;
-            padding: 40px 0;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .social-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
-        
-        .social-icons {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .social-link {
-            color: var(--primary);
-            font-size: 28px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        
-        .social-link:hover {
-            transform: scale(1.2);
-            color: var(--secondary);
-        }
-        
         /* Footer */
         footer {
             background: rgba(15, 15, 15, 0.5);
@@ -398,35 +369,6 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
             padding: 30px 0;
             text-align: center;
         }
-        
-        .support-email {
-            color: var(--text-secondary);
-            font-size: 13px;
-            margin-bottom: 20px;
-        }
-        
-        .support-email a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-        
-        .footer-links {
-            display: flex;
-            gap: 24px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        
-        .footer-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 13px;
-            transition: color 0.3s ease;
-        }
-        
-        .footer-link:hover { color: var(--primary); }
         
         .copyright {
             color: var(--text-secondary);
@@ -505,30 +447,10 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
         </div>
     </div>
 
-    <div class="container">
-        <div class="social-section">
-            <h3 class="social-title" data-lang="follow_us">تابعنا على وسائل التواصل</h3>
-            <div class="social-icons">
-                <a href="https://afftokapp.com" target="_blank" class="social-link"><i class="fas fa-globe"></i></a>
-                <a href="https://www.instagram.com/afftok_app" target="_blank" class="social-link"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.tiktok.com/@afftok_app" target="_blank" class="social-link"><i class="fab fa-tiktok"></i></a>
-                <a href="https://twitter.com/afftokapp" target="_blank" class="social-link">𝕏</a>
-                <a href="https://www.youtube.com/@afftok" target="_blank" class="social-link"><i class="fab fa-youtube"></i></a>
-            </div>
-        </div>
-    </div>
-
     <footer>
         <div class="container">
-            <div class="support-email">
-                <span data-lang="support">للدعم والاستفسارات:</span>
-                <a href="mailto:support@afftokapp.com">support@afftokapp.com</a>
-            </div>
-            <div class="footer-links">
-                <a href="https://afftokapp.com/privacy.html" class="footer-link" data-lang="privacy" target="_blank">سياسة الخصوصية</a>
-                <a href="https://afftokapp.com/terms.html" class="footer-link" data-lang="terms" target="_blank">شروط الاستخدام</a>
-            </div>
-            <p class="copyright" data-lang="copyright">© 2025 AffTok. جميع الحقوق محفوظة.</p>
+            <p class="copyright" data-lang="copyright">© 2025 AffTok - جميع الحقوق محفوظة</p>
+            <p style="margin-top: 10px;"><a href="https://afftokapp.com" style="color: var(--primary);">afftokapp.com</a></p>
         </div>
     </footer>
 
@@ -546,11 +468,7 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
                 owner: 'القائد',
                 download_title: '📱 حمّل تطبيق AffTok',
                 download_subtitle: 'انضم لآلاف المروجين واكسب من عروض الأفلييت',
-                follow_us: 'تابعنا على وسائل التواصل',
-                support: 'للدعم والاستفسارات:',
-                privacy: 'سياسة الخصوصية',
-                terms: 'شروط الاستخدام',
-                copyright: '© 2025 AffTok. جميع الحقوق محفوظة.'
+                copyright: '© 2025 AffTok - جميع الحقوق محفوظة'
             },
             en: {
                 lang_btn: 'العربية',
@@ -562,11 +480,7 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
                 owner: 'Owner',
                 download_title: '📱 Download AffTok App',
                 download_subtitle: 'Join thousands of promoters and earn from affiliate offers',
-                follow_us: 'Follow us on social media',
-                support: 'For support and inquiries:',
-                privacy: 'Privacy Policy',
-                terms: 'Terms of Use',
-                copyright: '© 2025 AffTok. All rights reserved.'
+                copyright: '© 2025 AffTok - All rights reserved'
             }
         };
         
@@ -614,7 +528,6 @@ func getErrorHTML() string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>رابط غير صالح - AffTok</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -654,77 +567,3 @@ func getErrorHTML() string {
 </html>`
 }
 
-// ValidateInvite validates an invite code (returns JSON)
-func (h *InviteHandler) ValidateInvite(c *gin.Context) {
-	code := c.Param("code")
-	if code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invite code is required"})
-		return
-	}
-
-	var team models.Team
-	if err := h.db.Where("invite_code = ?", code).First(&team).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"valid": false, "message": "Invite link not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"valid": true, "message": "Invite link is valid", "code": code, "team_id": team.ID})
-}
-
-// RecordInviteVisit records a visit to an invite link
-func (h *InviteHandler) RecordInviteVisit(c *gin.Context) {
-	code := c.Param("code")
-	c.JSON(http.StatusOK, gin.H{"message": "Visit recorded", "code": code})
-}
-
-// GetMyInviteLink returns the authenticated user's personal invite link
-func (h *InviteHandler) GetMyInviteLink(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"user_id": userID, "invite_link": "https://go.afftokapp.com/api/invite/user", "invite_code": "user"})
-}
-
-// CheckPendingInvite checks if user has a pending invite
-func (h *InviteHandler) CheckPendingInvite(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"user_id": userID, "pending_invite": nil, "has_pending": false})
-}
-
-// AutoJoinByInvite automatically joins user to team
-func (h *InviteHandler) AutoJoinByInvite(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "No pending invite", "user_id": userID})
-}
-
-// ClaimInvite claims a specific invite by ID
-func (h *InviteHandler) ClaimInvite(c *gin.Context) {
-	inviteID := c.Param("id")
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Invite claimed", "invite_id": inviteID, "user_id": userID})
-}
-
-// ClaimInviteByCode claims an invite using the invite code
-func (h *InviteHandler) ClaimInviteByCode(c *gin.Context) {
-	code := c.Param("code")
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Invite claimed", "code": code, "user_id": userID})
-}
