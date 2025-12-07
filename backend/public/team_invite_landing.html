@@ -376,23 +376,16 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 56px;
-            height: 56px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 50%;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            color: var(--text-primary);
-            font-size: 24px;
+            color: var(--primary);
+            font-size: 32px;
         }
 
         .social-link:hover {
-            transform: scale(1.15);
-            border-color: var(--primary);
-            color: var(--primary);
-            box-shadow: 0 8px 20px rgba(255, 0, 110, 0.3);
+            transform: scale(1.2);
+            color: var(--secondary);
         }
 
         .support-email {
@@ -572,8 +565,8 @@
                 <a href="https://www.tiktok.com/@afftok_app" target="_blank" class="social-link" title="TikTok">
                     <i class="fab fa-tiktok"></i>
                 </a>
-                <a href="https://twitter.com/afftokapp" target="_blank" class="social-link" title="X">
-                    <i class="fab fa-x-twitter"></i>
+                <a href="https://twitter.com/afftokapp" target="_blank" class="social-link" title="X" style="font-weight:bold;">
+                    X
                 </a>
                 <a href="https://www.youtube.com/@afftok" target="_blank" class="social-link" title="YouTube">
                     <i class="fab fa-youtube"></i>
@@ -589,9 +582,8 @@
                 <a href="mailto:support@afftokapp.com">support@afftokapp.com</a>
             </div>
             <div class="footer-links">
-                <a href="https://afftokapp.com/privacy" class="footer-link" id="privacy-link">سياسة الخصوصية</a>
-                <a href="https://afftokapp.com/terms" class="footer-link" id="terms-link">شروط الاستخدام</a>
-                <a href="mailto:support@afftokapp.com" class="footer-link" id="contact-link">تواصل معنا</a>
+                <a href="https://go.afftokapp.com/privacy" class="footer-link" id="privacy-link">سياسة الخصوصية</a>
+                <a href="https://go.afftokapp.com/terms" class="footer-link" id="terms-link">شروط الاستخدام</a>
             </div>
             <p id="copyright">© 2025 AffTok. جميع الحقوق محفوظة.</p>
         </div>
@@ -618,7 +610,6 @@
                 support_text: 'للدعم والاستفسارات:',
                 privacy_link: 'سياسة الخصوصية',
                 terms_link: 'شروط الاستخدام',
-                contact_link: 'تواصل معنا',
                 copyright: '© 2025 AffTok. جميع الحقوق محفوظة.',
                 google_play: 'Google Play',
                 app_store: 'App Store',
@@ -640,7 +631,6 @@
                 support_text: 'For support and inquiries:',
                 privacy_link: 'Privacy Policy',
                 terms_link: 'Terms of Use',
-                contact_link: 'Contact Us',
                 copyright: '© 2025 AffTok. All rights reserved.',
                 google_play: 'Google Play',
                 app_store: 'App Store',
@@ -686,7 +676,6 @@
             document.getElementById('support-text').textContent = t('support_text');
             document.getElementById('privacy-link').textContent = t('privacy_link');
             document.getElementById('terms-link').textContent = t('terms_link');
-            document.getElementById('contact-link').textContent = t('contact_link');
             document.getElementById('copyright').textContent = t('copyright');
             document.getElementById('google-play-text').textContent = t('google_play');
             document.getElementById('app-store-text').textContent = t('app_store');
