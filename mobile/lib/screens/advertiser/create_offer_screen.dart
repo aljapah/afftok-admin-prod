@@ -45,7 +45,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   
   String _selectedCategory = 'general';
   String _selectedPayoutType = 'cpa';
-  String _selectedTrackingType = 'cookie';
   List<String> _selectedTargetCountries = [];
   List<String> _selectedBlockedCountries = [];
   bool _isLoading = false;
@@ -78,12 +77,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     {'code': 'TR', 'en': 'Turkey', 'ar': 'تركيا'},
   ];
 
-  // أنواع التتبع
-  final List<Map<String, String>> _trackingTypes = [
-    {'value': 'cookie', 'en': 'Cookie Tracking', 'ar': 'تتبع الكوكيز'},
-    {'value': 'coupon', 'en': 'Coupon Code', 'ar': 'كود خصم'},
-    {'value': 'link', 'en': 'Direct Link', 'ar': 'رابط مباشر'},
-  ];
 
   final List<Map<String, String>> _categories = [
     {'value': 'general', 'en': 'General', 'ar': 'عام'},
@@ -128,7 +121,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     _commissionController.text = (offer['commission'] ?? 0).toString();
     _selectedCategory = offer['category'] ?? 'general';
     _selectedPayoutType = offer['payout_type'] ?? 'cpa';
-    _selectedTrackingType = offer['tracking_type'] ?? 'cookie';
     
     // Parse target countries
     if (offer['target_countries'] != null) {
@@ -263,7 +255,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       'payout': int.tryParse(_payoutController.text) ?? 0,
       'commission': int.tryParse(_commissionController.text) ?? 0,
       'payout_type': _selectedPayoutType,
-      'tracking_type': _selectedTrackingType,
       'target_countries': _selectedTargetCountries.isNotEmpty ? _selectedTargetCountries : null,
       'blocked_countries': _selectedBlockedCountries.isNotEmpty ? _selectedBlockedCountries : null,
       'additional_notes': _additionalNotesController.text.trim().isNotEmpty 
@@ -984,22 +975,6 @@ Termination
                           isArabic: isArabic,
                           hint: isArabic ? 'اختر الدول الممنوعة (اختياري)' : 'Select blocked countries (optional)',
                           isBlocked: true,
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Tracking Type Section
-                        _buildSectionTitle(isArabic ? 'نوع التتبع' : 'Tracking Type', Icons.track_changes),
-                        
-                        const SizedBox(height: 16),
-                        _buildDropdown(
-                          label: isArabic ? 'طريقة التتبع' : 'Tracking Method',
-                          value: _selectedTrackingType,
-                          items: _trackingTypes.map((t) => DropdownMenuItem(
-                            value: t['value'],
-                            child: Text(isArabic ? t['ar']! : t['en']!),
-                          )).toList(),
-                          onChanged: (v) => setState(() => _selectedTrackingType = v!),
                         ),
                         
                         const SizedBox(height: 24),

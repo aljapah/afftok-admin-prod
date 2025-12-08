@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Plus, Globe, Languages, Upload, Image, Loader2, MapPin, Ban, Radio } from "lucide-react";
+import { Plus, Globe, Languages, Upload, Image, Loader2, MapPin, Ban } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -94,7 +94,6 @@ export function CreateOfferDialog() {
     payout: 0,
     commission: 0,
     payoutType: "cpa",
-    trackingType: "cookie", // نوع التتبع
     targetCountries: [] as string[], // الدول المستهدفة
     blockedCountries: [] as string[], // الدول الممنوعة
     additionalNotes: "", // ملاحظات إضافية
@@ -125,7 +124,6 @@ export function CreateOfferDialog() {
         payout: 0,
         commission: 0,
         payoutType: "cpa",
-        trackingType: "cookie",
         targetCountries: [],
         blockedCountries: [],
         additionalNotes: "",
@@ -540,28 +538,6 @@ export function CreateOfferDialog() {
                   })}
                 </div>
               )}
-            </div>
-          </div>
-          
-          {/* Tracking Type Section */}
-          <div className="grid gap-4 py-4 border-t mt-4 pt-4">
-            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Radio className="h-4 w-4" />
-              Tracking Type / نوع التتبع
-            </h4>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="trackingType">Tracking Method</Label>
-              <Select value={formData.trackingType} onValueChange={(value) => setFormData({ ...formData, trackingType: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select tracking type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cookie">Cookie Tracking / تتبع الكوكيز</SelectItem>
-                  <SelectItem value="coupon">Coupon Code / كود خصم</SelectItem>
-                  <SelectItem value="link">Direct Link / رابط مباشر</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
           
