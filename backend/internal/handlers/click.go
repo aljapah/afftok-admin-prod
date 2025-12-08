@@ -22,6 +22,7 @@ type ClickHandler struct {
 	observabilityService *services.ObservabilityService
 	geoRuleService       *services.GeoRuleService
 	linkSigningService   *services.LinkSigningService
+	geoIPService         *services.GeoIPService
 }
 
 func NewClickHandler(db *gorm.DB) *ClickHandler {
@@ -33,6 +34,7 @@ func NewClickHandler(db *gorm.DB) *ClickHandler {
 		observabilityService: services.NewObservabilityService(),
 		geoRuleService:       services.NewGeoRuleService(db),
 		linkSigningService:   services.NewLinkSigningService(),
+		geoIPService:         services.NewGeoIPService(),
 	}
 }
 
@@ -477,9 +479,13 @@ func (h *ClickHandler) getCountryFromRequest(c *gin.Context) string {
 		return strings.ToUpper(country)
 	}
 	
-	// 4. Try to get from click data (if available)
-	// This would require a GeoIP service, for now return empty
-	// In production, integrate with MaxMind or similar
+	// 4. Use GeoIP service to lookup country from IP
+	if h.geoIPService != nil {
+		ip := c.ClientIP()
+		if country := h.geoIPService.GetCountry(ip); country != "" {
+			return country
+		}
+	}
 	
 	return ""
 }
