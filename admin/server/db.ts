@@ -206,7 +206,8 @@ export async function getAllOffers() {
     const result = await _client`
       SELECT 
         id, network_id as "networkId", title, description, 
-        image_url as "imageUrl", destination_url as "destinationUrl",
+        image_url as "imageUrl", logo_url as "logoUrl",
+        destination_url as "destinationUrl",
         category, payout, commission, status, rating,
         users_count as "usersCount", total_clicks as "totalClicks",
         total_conversions as "totalConversions",
@@ -225,15 +226,15 @@ export async function createOffer(data: any) {
   if (!_client) throw new Error("Database not available");
 
   try {
-    // Use raw SQL to avoid schema mismatch issues
     const result = await _client`
       INSERT INTO offers (
-        title, description, image_url, destination_url, 
+        title, description, image_url, logo_url, destination_url, 
         category, payout, commission, status
       ) VALUES (
         ${data.title},
         ${data.description || null},
         ${data.imageUrl || null},
+        ${data.logoUrl || null},
         ${data.destinationUrl},
         ${data.category || null},
         ${data.payout || 0},
