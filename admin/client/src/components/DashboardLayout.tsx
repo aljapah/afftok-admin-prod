@@ -265,9 +265,9 @@ function DashboardLayoutContent({
             {/* System Section */}
             {filteredSystemItems.length > 0 && (
               <>
-                <div className="px-4 py-2">
-                  <Separator />
-                  <p className="text-xs font-medium text-muted-foreground mt-3 mb-1 group-data-[collapsible=icon]:hidden">
+                <div className="px-4 pt-4 pb-1">
+                  <Separator className="mb-3" />
+                  <p className="text-xs font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
                     System
                   </p>
                 </div>
@@ -298,9 +298,9 @@ function DashboardLayoutContent({
             {/* Admin Section - Super Admin Only */}
             {filteredAdminItems.length > 0 && (
               <>
-                <div className="px-4 py-2">
-                  <Separator />
-                  <p className="text-xs font-medium text-muted-foreground mt-3 mb-1 group-data-[collapsible=icon]:hidden">
+                <div className="px-4 pt-4 pb-1">
+                  <Separator className="mb-3" />
+                  <p className="text-xs font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
                     Admin
                   </p>
                 </div>
