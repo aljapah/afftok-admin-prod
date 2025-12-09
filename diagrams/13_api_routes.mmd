@@ -1,0 +1,50 @@
+%%{init: {'theme': 'dark'}}%%
+flowchart LR
+    subgraph Public["🌐 Public Routes"]
+        C1["GET /c/:id<br/>Click Tracking"]
+        C2["GET /r/:code<br/>Promoter Page"]
+        C3["GET /@:username<br/>Promoter Page"]
+        C4["GET /invite/:code<br/>Team Invite"]
+        C5["POST /api/postback<br/>Conversion"]
+    end
+
+    subgraph Auth["🔐 Auth Routes"]
+        A1["POST /api/auth/register"]
+        A2["POST /api/auth/login"]
+        A3["GET /api/auth/me"]
+    end
+
+    subgraph Protected["🔒 Protected Routes"]
+        subgraph Offers["📦 Offers"]
+            O1["GET /api/offers"]
+            O2["GET /api/offers/:id"]
+            O3["POST /api/offers/:id/join"]
+            O4["GET /api/offers/my"]
+        end
+
+        subgraph Users["👤 Users"]
+            U1["PUT /api/user/profile"]
+            U2["GET /api/user/stats"]
+        end
+
+        subgraph Teams["👥 Teams"]
+            T1["GET /api/teams"]
+            T2["POST /api/teams"]
+            T3["POST /api/teams/:id/join"]
+        end
+
+        subgraph Contests["🏆 Contests"]
+            CT1["GET /api/contests"]
+            CT2["GET /api/contests/active"]
+        end
+
+        subgraph Advertiser["📢 Advertiser"]
+            AD1["POST /api/advertiser/offers"]
+            AD2["PUT /api/advertiser/geo-rules"]
+        end
+    end
+
+    Public --> Backend["⚙️ Backend"]
+    Auth --> Backend
+    Protected --> Backend
+

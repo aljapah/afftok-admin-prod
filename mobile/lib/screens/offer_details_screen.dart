@@ -325,6 +325,11 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
                         ),
 
                         const SizedBox(height: 24),
+                        
+                        // Payment Source - مصدر الدفع
+                        _buildPaymentSourceSection(offer, languageCode),
+
+                        const SizedBox(height: 24),
 
                         // Performance stats
                         Text(
@@ -481,6 +486,126 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
           ),
         ),
       ],
+    );
+  }
+  
+  // Build Payment Source Section - قسم مصدر الدفع
+  Widget _buildPaymentSourceSection(Offer offer, String languageCode) {
+    final isArabic = languageCode == 'ar';
+    final paymentSourceName = offer.getPaymentSourceDisplay(languageCode);
+    
+    // Get payment source color and icon
+    Color sourceColor;
+    IconData sourceIcon;
+    String sourceDescription;
+    
+    switch (offer.paymentSource) {
+      case 'payoneer':
+        sourceColor = const Color(0xFFFF6B00); // Payoneer orange
+        sourceIcon = Icons.account_balance_wallet;
+        sourceDescription = isArabic 
+          ? 'ستستلم أرباحك عبر بايونير (قريباً)'
+          : 'You will receive your earnings via Payoneer (Coming Soon)';
+        break;
+      case 'direct':
+      default:
+        sourceColor = const Color(0xFF00D9FF); // Cyan
+        sourceIcon = Icons.handshake;
+        sourceDescription = isArabic 
+          ? 'ستستلم أرباحك مباشرة من المعلن حسب طريقة الدفع المتفق عليها'
+          : 'You will receive your earnings directly from the advertiser';
+    }
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: sourceColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: sourceColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.payment, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                isArabic ? 'مصدر الدفع' : 'Payment Source',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: sourceColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(sourceIcon, color: sourceColor, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      paymentSourceName,
+                      style: TextStyle(
+                        color: sourceColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      sourceDescription,
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (offer.paymentSource != 'direct') ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.verified, color: Colors.green, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    isArabic ? 'دفع مضمون ومنتظم' : 'Guaranteed & Regular Payment',
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

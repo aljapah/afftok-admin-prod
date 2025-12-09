@@ -42,7 +42,8 @@ import {
   Trophy,
   Plug,
   UserCog,
-  History
+  History,
+  Wallet
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -64,18 +65,19 @@ const menuItems = [
 ];
 
 const systemMenuItems = [
-  { icon: Plug, label: "Integrations", labelAr: "التكاملات", path: "/integrations", roles: ['super_admin', 'tech_admin', 'advertiser_manager'] },
-  { icon: Activity, label: "Monitoring", labelAr: "المراقبة", path: "/monitoring", roles: ['super_admin', 'tech_admin'] },
-  { icon: Building2, label: "Tenants", labelAr: "المستأجرون", path: "/tenants", roles: ['super_admin'] },
-  { icon: Globe, label: "Geo Rules", labelAr: "قواعد الدول", path: "/geo-rules", roles: ['super_admin', 'tech_admin', 'fraud_reviewer'] },
-  { icon: Shield, label: "Fraud Detection", labelAr: "كشف الاحتيال", path: "/fraud", roles: ['super_admin', 'tech_admin', 'fraud_reviewer'] },
-  { icon: FileText, label: "Logs", labelAr: "السجلات", path: "/logs", roles: ['super_admin', 'tech_admin', 'fraud_reviewer'] },
-  { icon: Webhook, label: "Webhooks", labelAr: "ويب هوك", path: "/webhooks", roles: ['super_admin', 'tech_admin'] },
+  { icon: Wallet, label: "Payments", labelAr: "الدفع", path: "/affiliate-networks", roles: ['super_admin', 'tech_admin', 'finance_admin', 'advertiser_manager'] },
+  { icon: Plug, label: "Integrate", labelAr: "تكامل", path: "/integrations", roles: ['super_admin', 'tech_admin', 'advertiser_manager'] },
+  { icon: Activity, label: "Monitor", labelAr: "مراقبة", path: "/monitoring", roles: ['super_admin', 'tech_admin'] },
+  { icon: Building2, label: "Tenants", labelAr: "مستأجر", path: "/tenants", roles: ['super_admin'] },
+  { icon: Globe, label: "Geo", labelAr: "الدول", path: "/geo-rules", roles: ['super_admin', 'tech_admin', 'fraud_reviewer'] },
+  { icon: Shield, label: "Fraud", labelAr: "احتيال", path: "/fraud", roles: ['super_admin', 'tech_admin', 'fraud_reviewer'] },
+  { icon: FileText, label: "Logs", labelAr: "سجل", path: "/logs", roles: ['super_admin', 'tech_admin', 'fraud_reviewer'] },
+  { icon: Webhook, label: "Hooks", labelAr: "هوك", path: "/webhooks", roles: ['super_admin', 'tech_admin'] },
 ];
 
 const adminMenuItems = [
-  { icon: UserCog, label: "Admin Users", labelAr: "المستخدمون الإداريون", path: "/admin-users", roles: ['super_admin'] },
-  { icon: History, label: "Audit Log", labelAr: "سجل العمليات", path: "/audit-log", roles: ['super_admin'] },
+  { icon: UserCog, label: "Admins", labelAr: "الإداريون", path: "/admin-users", roles: ['super_admin'] },
+  { icon: History, label: "Audit", labelAr: "السجل", path: "/audit-log", roles: ['super_admin'] },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -89,9 +91,9 @@ const roleLabels: Record<string, string> = {
 };
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
-const DEFAULT_WIDTH = 280;
-const MIN_WIDTH = 200;
-const MAX_WIDTH = 480;
+const DEFAULT_WIDTH = 240;
+const MIN_WIDTH = 180;
+const MAX_WIDTH = 400;
 
 export default function DashboardLayout({
   children,
@@ -251,9 +253,9 @@ function DashboardLayoutContent({
                       className={`h-10 transition-all font-normal`}
                     >
                       <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                        className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`}
                       />
-                      <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -282,9 +284,9 @@ function DashboardLayoutContent({
                           className={`h-10 transition-all font-normal`}
                         >
                           <item.icon
-                            className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                            className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`}
                           />
-                          <span>{item.label}</span>
+                          <span className="truncate">{item.label}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
@@ -315,9 +317,9 @@ function DashboardLayoutContent({
                           className={`h-10 transition-all font-normal`}
                         >
                           <item.icon
-                            className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                            className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`}
                           />
-                          <span>{item.label}</span>
+                          <span className="truncate">{item.label}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );

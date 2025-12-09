@@ -200,45 +200,53 @@ export async function deleteNetwork(id: string) {
 }
 
 export async function getAllOffers() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!_client) throw new Error("Database not available");
 
-  return db.select().from(offers);
+  try {
+    const result = await _client`
+      SELECT 
+        id, network_id as "networkId", title, description, 
+        image_url as "imageUrl", destination_url as "destinationUrl",
+        category, payout, commission, status, rating,
+        users_count as "usersCount", total_clicks as "totalClicks",
+        total_conversions as "totalConversions",
+        created_at as "createdAt", updated_at as "updatedAt"
+      FROM offers
+      ORDER BY created_at DESC
+    `;
+    return result;
+  } catch (error) {
+    console.error("[DB] getAllOffers error:", error);
+    throw error;
+  }
 }
 
 export async function createOffer(data: any) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!_client) throw new Error("Database not available");
 
-  const newOffer = {
-    title: data.title,
-    description: data.description || null,
-    terms: data.terms || null, // الشروط العامة بالإنجليزية
-    // Arabic fields
-    titleAr: data.titleAr || null,
-    descriptionAr: data.descriptionAr || null,
-    termsAr: data.termsAr || null,
-    // Images
-    imageUrl: data.imageUrl || null,
-    logoUrl: data.logoUrl || null,
-    // URLs & Settings
-    destinationUrl: data.destinationUrl,
-    category: data.category || null,
-    payout: data.payout,
-    commission: data.commission,
-    payoutType: data.payoutType || 'cpa',
-    networkId: data.networkId || null,
-    // Geo Targeting
-    targetCountries: data.targetCountries ? JSON.stringify(data.targetCountries) : null,
-    blockedCountries: data.blockedCountries ? JSON.stringify(data.blockedCountries) : null,
-    // Tracking
-    trackingType: data.trackingType || 'cookie',
-    // Notes
-    additionalNotes: data.additionalNotes || null,
-  };
-
-  const result = await db.insert(offers).values(newOffer).returning();
-  return result[0];
+  try {
+    // Use raw SQL to avoid schema mismatch issues
+    const result = await _client`
+      INSERT INTO offers (
+        title, description, image_url, destination_url, 
+        category, payout, commission, status
+      ) VALUES (
+        ${data.title},
+        ${data.description || null},
+        ${data.imageUrl || null},
+        ${data.destinationUrl},
+        ${data.category || null},
+        ${data.payout || 0},
+        ${data.commission || 0},
+        'active'
+      )
+      RETURNING *
+    `;
+    return result[0];
+  } catch (error) {
+    console.error("[DB] createOffer error:", error);
+    throw error;
+  }
 }
 
 export async function updateOffer(data: { id: string; [key: string]: any }) {

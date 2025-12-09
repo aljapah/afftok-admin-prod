@@ -1,0 +1,38 @@
+%%{init: {'theme': 'dark'}}%%
+sequenceDiagram
+    participant U as 👤 User
+    participant A as 📱 App
+    participant B as ⚙️ Backend
+    participant D as 💾 Database
+    participant R as 🔴 Redis
+
+    Note over U,R: Registration Flow
+    U->>A: Enter email, password
+    A->>B: POST /api/auth/register
+    B->>B: Hash password (Argon2id)
+    B->>D: INSERT user
+    D-->>B: user_id
+    B->>B: Generate JWT
+    B->>R: Store session
+    B-->>A: JWT token
+    A->>A: Store token locally
+
+    Note over U,R: Login Flow
+    U->>A: Enter credentials
+    A->>B: POST /api/auth/login
+    B->>D: Find user by email
+    D-->>B: user record
+    B->>B: Verify password
+    B->>B: Generate JWT
+    B->>R: Store session
+    B-->>A: JWT token
+
+    Note over U,R: Authenticated Request
+    A->>B: GET /api/offers<br/>Authorization: Bearer JWT
+    B->>B: Validate JWT
+    B->>R: Check session
+    R-->>B: valid
+    B->>D: Query offers
+    D-->>B: offers list
+    B-->>A: 200 OK + data
+

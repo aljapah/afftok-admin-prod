@@ -1,0 +1,38 @@
+%%{init: {'theme': 'dark'}}%%
+sequenceDiagram
+    participant U as 👤 User
+    participant T as 🔗 Tracking Link
+    participant B as ⚙️ Backend
+    participant G as 🌍 GeoIP
+    participant S as 🛡️ Security
+    participant D as 💾 Database
+    participant R as 🔴 Redis
+    participant A as 🎯 Advertiser Site
+
+    U->>T: Click tracking link
+    T->>B: GET /c/abc123xyz
+    
+    B->>R: Resolve tracking_code
+    R-->>B: user_offer_id
+    
+    B->>S: Check for bot
+    S-->>B: is_bot: false
+    
+    B->>S: Check datacenter IP
+    S-->>B: is_datacenter: false
+    
+    B->>G: Get country from IP
+    G-->>B: country: SA
+    
+    B->>D: Check geo rules
+    D-->>B: allowed: true
+    
+    B->>D: INSERT click record
+    D-->>B: click_id
+    
+    B->>D: UPDATE user_offers stats
+    B->>R: INCR click counters
+    
+    B->>U: 302 Redirect
+    U->>A: Visit advertiser site
+

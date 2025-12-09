@@ -1,0 +1,54 @@
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph Login["🔐 Single Login"]
+        LoginPage["Login Page"]
+    end
+
+    subgraph Roles["👥 Roles"]
+        Super["👑 Super Admin<br/>Full Access"]
+        Finance["💰 Finance Admin"]
+        Tech["🔧 Tech Admin"]
+        AdvMgr["📢 Advertiser Manager"]
+        PromoSupp["🎯 Promoter Support"]
+        FraudRev["🛡️ Fraud Reviewer"]
+    end
+
+    subgraph Screens["📱 Screens"]
+        Dashboard["Dashboard"]
+        Users["Users"]
+        Offers["Offers"]
+        Contests["Contests"]
+        Invoices["Invoices"]
+        Analytics["Analytics"]
+        Logs["Logs"]
+        Webhooks["Webhooks"]
+        GeoRules["Geo Rules"]
+        Fraud["Fraud Detection"]
+        AdminUsers["Admin Users"]
+        AuditLog["Audit Log"]
+    end
+
+    LoginPage --> Super
+    LoginPage --> Finance
+    LoginPage --> Tech
+    LoginPage --> AdvMgr
+    LoginPage --> PromoSupp
+    LoginPage --> FraudRev
+
+    Super --> Dashboard & Users & Offers & Contests & Invoices & Analytics & Logs & Webhooks & GeoRules & Fraud & AdminUsers & AuditLog
+
+    Finance --> Invoices & Analytics
+    Finance -.->|Read Only| Offers & Contests
+
+    Tech --> Logs & Webhooks & GeoRules
+    Tech -.->|Read Only| Dashboard & Fraud
+
+    AdvMgr --> Offers & Contests
+    AdvMgr -.->|Read Only| Analytics
+
+    PromoSupp --> Users
+    PromoSupp -.->|Read Only| Dashboard & Contests
+
+    FraudRev --> Fraud
+    FraudRev -.->|Read Only| GeoRules & Logs
+

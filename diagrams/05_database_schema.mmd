@@ -1,0 +1,82 @@
+%%{init: {'theme': 'dark'}}%%
+erDiagram
+    AFFTOK_USERS ||--o{ USER_OFFERS : joins
+    AFFTOK_USERS ||--o{ TEAMS : creates
+    AFFTOK_USERS ||--o{ TEAM_MEMBERS : member_of
+    
+    OFFERS ||--o{ USER_OFFERS : has
+    OFFERS ||--o{ CLICKS : receives
+    OFFERS ||--o{ CONVERSIONS : generates
+    
+    USER_OFFERS ||--o{ CLICKS : tracks
+    USER_OFFERS ||--o{ CONVERSIONS : earns
+    
+    TEAMS ||--o{ TEAM_MEMBERS : contains
+    TEAMS ||--o{ CONTESTS : participates
+    
+    CONTESTS ||--o{ CONTEST_PARTICIPANTS : has
+    
+    ADMIN_USERS ||--o{ AUDIT_LOGS : creates
+
+    AFFTOK_USERS {
+        uuid id PK
+        string email
+        string username
+        string role
+        string country
+        array audience_countries
+        int total_clicks
+        int total_conversions
+        decimal total_earnings
+    }
+
+    OFFERS {
+        uuid id PK
+        string title
+        string title_ar
+        text description
+        text terms
+        decimal payout
+        string payout_type
+        array target_countries
+        array blocked_countries
+        string status
+    }
+
+    USER_OFFERS {
+        uuid id PK
+        uuid user_id FK
+        uuid offer_id FK
+        string tracking_code
+        string short_link
+        int total_clicks
+        int total_conversions
+        decimal earnings
+    }
+
+    CLICKS {
+        uuid id PK
+        uuid user_offer_id FK
+        string ip_address
+        string country
+        string user_agent
+        string device
+        boolean is_bot
+        decimal fraud_score
+    }
+
+    CONVERSIONS {
+        uuid id PK
+        uuid click_id FK
+        string transaction_id
+        decimal amount
+        string status
+    }
+
+    ADMIN_USERS {
+        uuid id PK
+        string email
+        string role
+        boolean is_active
+    }
+

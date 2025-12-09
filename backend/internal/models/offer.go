@@ -26,10 +26,14 @@ func (Network) TableName() string {
 }
 
 type Offer struct {
-	ID               uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	NetworkID        *uuid.UUID `gorm:"type:uuid" json:"network_id,omitempty"`
-	AdvertiserID     *uuid.UUID `gorm:"type:uuid;index" json:"advertiser_id,omitempty"` // NEW: Link to advertiser user
-	ExternalOfferID  string     `gorm:"type:varchar(100)" json:"external_offer_id,omitempty"`
+	ID                 uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	NetworkID          *uuid.UUID `gorm:"type:uuid" json:"network_id,omitempty"`
+	AffiliateNetworkID *uuid.UUID `gorm:"type:uuid;index" json:"affiliate_network_id,omitempty"` // الشبكة الخارجية (Noon, Amazon, Payoneer)
+	AdvertiserID       *uuid.UUID `gorm:"type:uuid;index" json:"advertiser_id,omitempty"`        // Link to advertiser user
+	ExternalOfferID    string     `gorm:"type:varchar(100)" json:"external_offer_id,omitempty"`
+	
+	// Payment Source - مصدر الدفع للمروج
+	PaymentSource      string     `gorm:"type:varchar(30);default:'direct'" json:"payment_source"` // noon, amazon, payoneer, direct
 	
 	// English Fields
 	Title            string     `gorm:"type:varchar(255);not null" json:"title"`
@@ -68,9 +72,10 @@ type Offer struct {
 	TotalConversions int        `gorm:"default:0" json:"total_conversions"`
 	CreatedAt        time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt        time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
-	Network          *Network    `gorm:"foreignKey:NetworkID" json:"network,omitempty"`
-	Advertiser       *AfftokUser `gorm:"foreignKey:AdvertiserID" json:"advertiser,omitempty"` // NEW: Advertiser relationship
-	UserOffers       []UserOffer `gorm:"foreignKey:OfferID" json:"user_offers,omitempty"`
+	Network          *Network           `gorm:"foreignKey:NetworkID" json:"network,omitempty"`
+	AffiliateNetwork *AffiliateNetwork  `gorm:"foreignKey:AffiliateNetworkID" json:"affiliate_network,omitempty"` // الشبكة الخارجية
+	Advertiser       *AfftokUser        `gorm:"foreignKey:AdvertiserID" json:"advertiser,omitempty"`
+	UserOffers       []UserOffer        `gorm:"foreignKey:OfferID" json:"user_offers,omitempty"`
 }
 
 // GetTitle returns title based on language preference

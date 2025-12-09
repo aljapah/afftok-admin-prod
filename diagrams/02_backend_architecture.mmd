@@ -1,0 +1,45 @@
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph Entry["🚪 Entry Point"]
+        Main["main.go"]
+    end
+
+    subgraph Middleware["🔒 Middleware"]
+        CORS["CORS"]
+        Security["Security Headers"]
+        RateLimit["Rate Limiting"]
+        AuthMW["JWT Auth"]
+    end
+
+    subgraph Handlers["📦 Handlers"]
+        ClickH["click.go"]
+        OfferH["offer.go"]
+        UserH["user.go"]
+        TeamH["team.go"]
+        ContestH["contest.go"]
+        InviteH["invite.go"]
+        PromoterH["promoter.go"]
+    end
+
+    subgraph Services["⚡ Services"]
+        ClickS["Click Service"]
+        LinkS["Link Service"]
+        SecurityS["Security Service"]
+        GeoIPS["GeoIP Service"]
+        WebhookS["Webhook Service"]
+        GeoRuleS["GeoRule Service"]
+    end
+
+    subgraph Models["📊 Models"]
+        User["User"]
+        Offer["Offer"]
+        Click["Click"]
+        Conversion["Conversion"]
+        Team["Team"]
+    end
+
+    Main --> Middleware
+    Middleware --> Handlers
+    Handlers --> Services
+    Services --> Models
+

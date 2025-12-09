@@ -191,6 +191,65 @@ export const userBadges = pgTable("user_badges", {
   earnedAt: timestamp("earned_at").defaultNow().notNull(),
 });
 
+// Affiliate Networks - شبكات الأفلييت (Noon, Amazon, Payoneer, etc.)
+export const affiliateNetworks = pgTable("affiliate_networks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 100 }).notNull(), // Noon, Amazon, Payoneer
+  nameAr: varchar("name_ar", { length: 100 }), // نون، أمازون، بايونير
+  type: varchar("type", { length: 30 }).notNull(), // marketplace, payment_provider, direct
+  logoUrl: text("logo_url"),
+  websiteUrl: text("website_url"),
+  affiliateProgramUrl: text("affiliate_program_url"), // رابط برنامج الأفلييت
+  
+  // API Integration
+  apiUrl: text("api_url"),
+  apiKey: text("api_key"),
+  apiSecret: text("api_secret"),
+  
+  // Payment Info
+  paymentMethod: varchar("payment_method", { length: 50 }), // bank_transfer, paypal, payoneer, internal
+  paymentCurrency: varchar("payment_currency", { length: 3 }).default("USD"), // USD, SAR, AED
+  minPayout: integer("min_payout").default(50), // الحد الأدنى للسحب
+  paymentCycle: varchar("payment_cycle", { length: 30 }), // monthly, weekly, net30
+  
+  // Coverage
+  supportedCountries: text("supported_countries"), // JSON array: ["SA", "AE", "EG"]
+  
+  // Status
+  status: varchar("status", { length: 20 }).default("active").notNull(), // active, inactive, coming_soon
+  priority: integer("priority").default(0), // للترتيب في العرض
+  
+  // Stats
+  totalOffers: integer("total_offers").default(0),
+  totalPromoters: integer("total_promoters").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Promoter Network Accounts - حسابات المروجين في الشبكات الخارجية
+export const promoterNetworkAccounts = pgTable("promoter_network_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(), // المروج
+  networkId: uuid("network_id").notNull(), // الشبكة (Noon, Amazon, etc.)
+  
+  // External Account Info
+  externalAccountId: varchar("external_account_id", { length: 100 }), // معرف الحساب في الشبكة الخارجية
+  externalUsername: varchar("external_username", { length: 100 }),
+  externalEmail: varchar("external_email", { length: 255 }),
+  
+  // Status
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, active, suspended
+  verifiedAt: timestamp("verified_at"),
+  
+  // Payment Info (from external network)
+  paymentEmail: varchar("payment_email", { length: 255 }), // PayPal email or similar
+  paymentMethod: varchar("payment_method", { length: 50 }), // الطريقة المختارة للدفع
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Advertiser Integrations - نظام تكامل المعلنين
 export const advertiserIntegrations = pgTable("advertiser_integrations", {
   id: uuid("id").primaryKey().defaultRandom(),

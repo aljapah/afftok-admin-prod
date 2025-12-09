@@ -21,6 +21,12 @@ class Offer {
   final String usersCount;
   final int payout;
   final String payoutType;
+  
+  // Payment Source - مصدر الدفع
+  final String paymentSource; // noon, amazon, payoneer, direct
+  final String? affiliateNetworkId;
+  final String? affiliateNetworkName;
+  final String? affiliateNetworkLogo;
 
   Offer({
     required this.id,
@@ -43,7 +49,25 @@ class Offer {
     this.trackingLinkTemplate,
     this.payout = 0,
     this.payoutType = 'cpa',
+    this.paymentSource = 'direct',
+    this.affiliateNetworkId,
+    this.affiliateNetworkName,
+    this.affiliateNetworkLogo,
   });
+  
+  // Get payment source display name
+  String getPaymentSourceDisplay(String languageCode) {
+    switch (paymentSource) {
+      case 'payoneer':
+        return languageCode == 'ar' ? 'بايونير' : 'Payoneer';
+      case 'direct':
+      default:
+        return languageCode == 'ar' ? 'دفع مباشر من المعلن' : 'Direct from Advertiser';
+    }
+  }
+  
+  // Check if payment is through external network
+  bool get isExternalPayment => paymentSource != 'direct';
 
   // Get title based on language
   String getTitle(String languageCode) {
@@ -103,6 +127,10 @@ class Offer {
       trackingLinkTemplate: json['tracking_link_template'],
       payout: payout is int ? payout : (payout as num).toInt(),
       payoutType: payoutType,
+      paymentSource: json['payment_source'] ?? 'direct',
+      affiliateNetworkId: json['affiliate_network_id']?.toString(),
+      affiliateNetworkName: json['affiliate_network_name'],
+      affiliateNetworkLogo: json['affiliate_network_logo'],
     );
   }
 
@@ -126,6 +154,87 @@ class Offer {
       'network_name': networkName,
       'tracking_parameter': trackingParameter,
       'tracking_link_template': trackingLinkTemplate,
+      'payment_source': paymentSource,
+      'affiliate_network_id': affiliateNetworkId,
+      'affiliate_network_name': affiliateNetworkName,
+      'affiliate_network_logo': affiliateNetworkLogo,
     };
+  }
+}
+
+// Affiliate Network Model - نموذج شبكة الأفلييت
+class AffiliateNetwork {
+  final String id;
+  final String name;
+  final String? nameAr;
+  final String type; // marketplace, payment_provider, direct
+  final String? logoUrl;
+  final String? websiteUrl;
+  final String? affiliateProgramUrl;
+  final String? paymentMethod;
+  final String paymentCurrency;
+  final int minPayout;
+  final String? paymentCycle;
+  final List<String> supportedCountries;
+  final String status;
+  
+  AffiliateNetwork({
+    required this.id,
+    required this.name,
+    this.nameAr,
+    required this.type,
+    this.logoUrl,
+    this.websiteUrl,
+    this.affiliateProgramUrl,
+    this.paymentMethod,
+    this.paymentCurrency = 'USD',
+    this.minPayout = 50,
+    this.paymentCycle,
+    this.supportedCountries = const [],
+    this.status = 'active',
+  });
+  
+  String getDisplayName(String languageCode) {
+    if (languageCode == 'ar' && nameAr != null && nameAr!.isNotEmpty) {
+      return nameAr!;
+    }
+    return name;
+  }
+  
+  bool get isActive => status == 'active';
+  bool get isComingSoon => status == 'coming_soon';
+  
+  factory AffiliateNetwork.fromJson(Map<String, dynamic> json) {
+    List<String> countries = [];
+    if (json['supported_countries'] != null) {
+      if (json['supported_countries'] is List) {
+        countries = List<String>.from(json['supported_countries']);
+      } else if (json['supported_countries'] is String) {
+        // Parse JSON string
+        try {
+          countries = List<String>.from(
+            (json['supported_countries'] as String).isNotEmpty 
+              ? List<String>.from(json['supported_countries'].split(','))
+              : []
+          );
+        } catch (_) {}
+      }
+    }
+    
+    return AffiliateNetwork(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      nameAr: json['name_ar'],
+      type: json['type'] ?? 'direct',
+      logoUrl: json['logo_url'],
+      websiteUrl: json['website_url'],
+      affiliateProgramUrl: json['affiliate_program_url'],
+      paymentMethod: json['payment_method'],
+      paymentCurrency: json['payment_currency'] ?? 'USD',
+      minPayout: json['min_payout'] ?? 50,
+      paymentCycle: json['payment_cycle'],
+      supportedCountries: countries,
+      status: json['status'] ?? 'active',
+    );
   }
 }

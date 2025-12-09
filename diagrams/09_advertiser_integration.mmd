@@ -1,0 +1,42 @@
+%%{init: {'theme': 'dark'}}%%
+flowchart LR
+    subgraph Platforms["🏪 E-Commerce Platforms"]
+        Shopify["🛒 Shopify"]
+        Salla["🛍️ Salla"]
+        Zid["📦 Zid"]
+        Woo["🔌 WooCommerce"]
+        Custom["⚙️ Custom"]
+    end
+
+    subgraph Methods["📡 Integration Methods"]
+        WebhookM["Webhook"]
+        PixelM["Pixel"]
+        APIM["API"]
+    end
+
+    subgraph AffTok["⚡ AffTok Backend"]
+        Receiver["Webhook Receiver"]
+        Validator["Request Validator"]
+        Processor["Conversion Processor"]
+    end
+
+    subgraph Storage["💾 Storage"]
+        DB[("PostgreSQL")]
+        Cache[("Redis")]
+    end
+
+    Shopify -->|Webhook| WebhookM
+    Salla -->|Webhook| WebhookM
+    Zid -->|Webhook| WebhookM
+    Woo -->|Webhook| WebhookM
+    Custom -->|Pixel/API| PixelM & APIM
+
+    WebhookM --> Receiver
+    PixelM --> Receiver
+    APIM --> Receiver
+
+    Receiver --> Validator
+    Validator --> Processor
+    Processor --> DB
+    Processor --> Cache
+

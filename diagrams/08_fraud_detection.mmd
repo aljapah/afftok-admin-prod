@@ -1,0 +1,46 @@
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph Input["📥 Incoming Request"]
+        Click["Click Request"]
+    end
+
+    subgraph Layer1["🤖 Layer 1: Bot Detection"]
+        UA["User-Agent Analysis"]
+        Patterns["30+ Bot Patterns"]
+        Headless["Headless Browser Check"]
+    end
+
+    subgraph Layer2["🌐 Layer 2: IP Analysis"]
+        Datacenter["Datacenter IP Check"]
+        VPN["VPN/Proxy Detection"]
+        Ranges["AWS/GCP/Azure Ranges"]
+    end
+
+    subgraph Layer3["📊 Layer 3: Behavior"]
+        CookieStuff["Cookie Stuffing"]
+        ClickPattern["Click Pattern Anomaly"]
+        ConvAnomaly["Conversion Anomaly"]
+        RefererSpoof["Referer Spoofing"]
+    end
+
+    subgraph Layer4["🌍 Layer 4: Geo"]
+        GeoIP["GeoIP Lookup"]
+        GeoRules["Geo Rules Check"]
+        CountryMatch["Country Validation"]
+    end
+
+    subgraph Output["📤 Decision"]
+        Allow["✅ Allow"]
+        Block["❌ Block"]
+        Flag["⚠️ Flag for Review"]
+    end
+
+    Click --> Layer1
+    Layer1 --> Layer2
+    Layer2 --> Layer3
+    Layer3 --> Layer4
+    
+    Layer4 -->|Pass All| Allow
+    Layer4 -->|Fail Any| Block
+    Layer4 -->|Suspicious| Flag
+

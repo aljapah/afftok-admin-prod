@@ -1,0 +1,49 @@
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph UI["📱 UI Layer"]
+        Splash["Splash Screen"]
+        SignIn["Sign In"]
+        RoleSelect["Role Selection"]
+        
+        subgraph Promoter["🎯 Promoter Screens"]
+            HomeFeed["Home Feed"]
+            MyOffers["My Offers"]
+            Profile["Profile"]
+            Teams["Teams"]
+            Settings["Settings"]
+        end
+
+        subgraph Advertiser["📢 Advertiser Screens"]
+            AdvDash["Dashboard"]
+            AdvOffers["My Offers"]
+            GeoTarget["Geo Targeting"]
+            Integration["Integration Setup"]
+        end
+    end
+
+    subgraph State["🔄 State Management"]
+        AuthProv["Auth Provider"]
+        OfferProv["Offer Provider"]
+    end
+
+    subgraph Services["⚡ Services Layer"]
+        AuthServ["Auth Service"]
+        ApiServ["API Service"]
+        OfferServ["Offer Service"]
+        ImgServ["ImgBB Service"]
+    end
+
+    subgraph Backend["☁️ Backend API"]
+        API["go.afftokapp.com"]
+    end
+
+    Splash --> SignIn
+    SignIn --> RoleSelect
+    RoleSelect --> Promoter
+    RoleSelect --> Advertiser
+
+    Promoter --> State
+    Advertiser --> State
+    State --> Services
+    Services --> API
+

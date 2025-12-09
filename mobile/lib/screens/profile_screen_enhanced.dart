@@ -581,6 +581,213 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   }
 
   Widget _buildPaymentMethodCard(BuildContext context, User user, AppLocalizations lang) {
+    final isArabic = lang.locale.languageCode == 'ar';
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF00FF88).withOpacity(0.15),
+              const Color(0xFF00D9FF).withOpacity(0.08),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color(0xFF00FF88).withOpacity(0.3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00FF88).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet,
+                    color: Color(0xFF00FF88),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isArabic ? 'طريقة استلام الأرباح' : 'How You Get Paid',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isArabic
+                            ? 'الدفع يختلف حسب مصدر كل عرض'
+                            : 'Payment varies by offer source',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            
+            // Payment Sources Explanation
+            _buildPaymentSourceItem(
+              icon: Icons.handshake,
+              color: const Color(0xFF00D9FF),
+              name: isArabic ? 'دفع مباشر' : 'Direct Payment',
+              description: isArabic 
+                  ? 'المعلن يدفع لك مباشرة حسب طريقة الدفع المتفق عليها (تحويل بنكي، PayPal، STC Pay...)'
+                  : 'Advertiser pays you directly via agreed method (Bank, PayPal, STC Pay...)',
+            ),
+            const SizedBox(height: 12),
+            _buildPaymentSourceItem(
+              icon: Icons.account_balance_wallet,
+              color: const Color(0xFFFF6B00),
+              name: isArabic ? 'بايونير' : 'Payoneer',
+              description: isArabic 
+                  ? 'قريباً - نظام دفع موحد وآلي لجميع العروض'
+                  : 'Coming Soon - Unified & automated payment for all offers',
+              isComingSoon: true,
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Info Box
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.blue.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    color: Colors.blue,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      isArabic
+                          ? 'شاهد تفاصيل كل عرض لمعرفة طريقة الدفع الخاصة به'
+                          : 'Check each offer details to see its payment method',
+                      style: TextStyle(
+                        color: Colors.blue.shade200,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildPaymentSourceItem({
+    required IconData icon,
+    required Color color,
+    required String name,
+    required String description,
+    bool isComingSoon = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (isComingSoon) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Soon',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Keep old method for backward compatibility but unused now
+  Widget _buildOldPaymentMethodCard(BuildContext context, User user, AppLocalizations lang) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(

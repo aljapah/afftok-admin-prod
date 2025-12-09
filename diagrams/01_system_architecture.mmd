@@ -1,0 +1,40 @@
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph Clients["🌐 Clients"]
+        Mobile["📱 Mobile App<br/>Flutter"]
+        Admin["🖥️ Admin Panel<br/>React/TS"]
+        Web["🌍 Web/Landing"]
+    end
+
+    subgraph Backend["⚙️ Backend API (Go/Gin)"]
+        Router["🔀 Router"]
+        Auth["🔐 Auth Middleware"]
+        Handlers["📦 Handlers"]
+        Services["⚡ Services"]
+    end
+
+    subgraph Data["💾 Data Layer"]
+        PostgreSQL[("🐘 PostgreSQL<br/>Neon")]
+        Redis[("🔴 Redis<br/>RedisLabs")]
+    end
+
+    subgraph External["🔗 External"]
+        GeoIP["🌍 GeoIP<br/>ip-api.com"]
+        ImgBB["🖼️ ImgBB"]
+        Webhooks["📡 Webhooks"]
+    end
+
+    Mobile --> Router
+    Admin --> Router
+    Web --> Router
+    
+    Router --> Auth
+    Auth --> Handlers
+    Handlers --> Services
+    
+    Services --> PostgreSQL
+    Services --> Redis
+    Services --> GeoIP
+    Services --> ImgBB
+    Services --> Webhooks
+

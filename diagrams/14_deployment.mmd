@@ -1,0 +1,41 @@
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph GitHub["📂 GitHub Repositories"]
+        BackendRepo["afftok-backend-prod"]
+        AdminRepo["afftok-admin-prod"]
+        MobileRepo["afftok-mobile-prod"]
+    end
+
+    subgraph Railway["🚂 Railway"]
+        BackendDeploy["Backend API<br/>Go/Gin"]
+        AdminDeploy["Admin Panel<br/>React/TS"]
+    end
+
+    subgraph Domain["🌐 Domains"]
+        TrackDomain["go.afftokapp.com"]
+        AdminDomain["admin.afftokapp.com"]
+        APIDomain["api.afftokapp.com"]
+    end
+
+    subgraph Services["☁️ External Services"]
+        Neon[("🐘 Neon<br/>PostgreSQL")]
+        RedisLabs[("🔴 RedisLabs<br/>Redis")]
+        IPAPI["🌍 ip-api.com<br/>GeoIP"]
+        ImgBB["🖼️ ImgBB<br/>Images"]
+    end
+
+    subgraph Mobile["📱 Mobile Build"]
+        Android["🤖 Android APK"]
+        iOS["🍎 iOS IPA"]
+    end
+
+    BackendRepo -->|Auto Deploy| BackendDeploy
+    AdminRepo -->|Auto Deploy| AdminDeploy
+    MobileRepo --> Android & iOS
+
+    BackendDeploy --> TrackDomain & APIDomain
+    AdminDeploy --> AdminDomain
+
+    BackendDeploy --> Neon & RedisLabs & IPAPI
+    AdminDeploy --> Neon
+

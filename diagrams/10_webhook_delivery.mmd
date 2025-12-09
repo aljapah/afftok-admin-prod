@@ -1,0 +1,37 @@
+%%{init: {'theme': 'dark'}}%%
+sequenceDiagram
+    participant E as 📦 Event
+    participant Q as 📋 Queue
+    participant W as 📡 Webhook Service
+    participant T as 🎯 Target Server
+    participant R as 🔄 Retry Logic
+    participant D as 💀 Dead Letter
+
+    E->>Q: New event (conversion)
+    Q->>W: Dequeue event
+    
+    W->>W: Sign payload (HMAC)
+    W->>T: POST webhook
+    
+    alt Success (2xx)
+        T-->>W: 200 OK
+        W->>Q: Mark complete
+    else Failure
+        T-->>W: Error/Timeout
+        W->>R: Schedule retry
+        
+        loop Retry attempts (1-8)
+            R->>W: Retry delivery
+            W->>T: POST webhook
+            alt Success
+                T-->>W: 200 OK
+                W->>Q: Mark complete
+            else Still failing
+                R->>R: Increase delay
+                Note over R: 5s→10s→30s→1m→5m→30m→1h
+            end
+        end
+        
+        R->>D: Move to DLQ
+    end
+

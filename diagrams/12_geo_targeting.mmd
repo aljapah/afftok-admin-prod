@@ -1,0 +1,47 @@
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph Offer["📢 Offer Configuration"]
+        Target["🎯 Target Countries<br/>SA, AE, KW"]
+        Blocked["🚫 Blocked Countries<br/>IR, SY"]
+    end
+
+    subgraph Promoter["👤 Promoter"]
+        Country["📍 User Country<br/>SA"]
+        Audience["👥 Audience Countries<br/>SA, AE, BH"]
+    end
+
+    subgraph Click["🖱️ Click Event"]
+        IP["IP: 178.23.45.67"]
+        GeoIP["🌍 GeoIP Service"]
+        ClickCountry["Country: SA"]
+    end
+
+    subgraph Rules["⚖️ Geo Rules Engine"]
+        Check1["Is promoter country in target?"]
+        Check2["Is promoter country blocked?"]
+        Check3["Does audience match target?"]
+        Check4["Is click country allowed?"]
+    end
+
+    subgraph Result["📤 Result"]
+        Show["✅ Show Offer"]
+        Hide["❌ Hide Offer"]
+        Allow["✅ Track Click"]
+        Block["❌ Block Click"]
+    end
+
+    Target --> Check1
+    Blocked --> Check2
+    Country --> Check1 & Check2
+    Audience --> Check3
+    
+    IP --> GeoIP --> ClickCountry --> Check4
+
+    Check1 -->|Yes| Check2
+    Check2 -->|No| Check3
+    Check3 -->|Match| Show
+    Check3 -->|No Match| Hide
+
+    Check4 -->|In Target| Allow
+    Check4 -->|In Blocked| Block
+

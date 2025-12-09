@@ -1,0 +1,37 @@
+%%{init: {'theme': 'dark'}}%%
+sequenceDiagram
+    participant A as 🏪 Advertiser
+    participant W as 📡 Webhook
+    participant B as ⚙️ Backend
+    participant V as ✅ Validator
+    participant D as 💾 Database
+    participant N as 📧 Notifier
+
+    A->>W: Order completed
+    W->>B: POST /api/postback
+    
+    Note over B: Verify API Key
+    B->>V: Validate signature
+    V-->>B: valid: true
+    
+    Note over B: Check duplicate
+    B->>D: Find transaction_id
+    D-->>B: not found (new)
+    
+    Note over B: Find click
+    B->>D: Get click by click_id
+    D-->>B: click record
+    
+    B->>D: INSERT conversion
+    D-->>B: conversion_id
+    
+    B->>D: UPDATE user_offers
+    Note over D: total_conversions++<br/>earnings += payout
+    
+    B->>D: UPDATE user stats
+    
+    B->>N: Trigger webhooks
+    N-->>A: Confirmation
+    
+    B-->>W: 200 OK
+
