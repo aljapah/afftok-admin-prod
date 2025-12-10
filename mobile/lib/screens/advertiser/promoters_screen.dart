@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/advertiser_service.dart';
 
@@ -230,7 +231,7 @@ class _PromotersScreenState extends State<PromotersScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Name and username
+                // Name, username and email
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,6 +251,58 @@ class _PromotersScreenState extends State<PromotersScreen> {
                           fontSize: 13,
                         ),
                       ),
+                      if (email.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        GestureDetector(
+                          onTap: () async {
+                            final uri = Uri.parse('mailto:$email');
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
+                            }
+                          },
+                          child: Row(
+                            children: [
+                              Icon(Icons.email, size: 14, color: Colors.blue.withOpacity(0.8)),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  email,
+                                  style: TextStyle(
+                                    color: Colors.blue.withOpacity(0.8),
+                                    fontSize: 12,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              GestureDetector(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: email));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isArabic ? 'تم نسخ البريد' : 'Email copied'),
+                                      backgroundColor: Colors.blue,
+                                      duration: const Duration(seconds: 1),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    isArabic ? 'نسخ' : 'Copy',
+                                    style: const TextStyle(color: Colors.blue, fontSize: 10),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
