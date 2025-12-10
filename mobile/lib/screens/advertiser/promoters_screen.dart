@@ -323,62 +323,7 @@ class _PromotersScreenState extends State<PromotersScreen> {
 
           // Payment Method Section
           if (paymentMethod.isNotEmpty)
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF00FF88).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF00FF88).withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.account_balance_wallet,
-                    color: Color(0xFF00FF88),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isArabic ? 'طريقة الدفع' : 'Payment Method',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 11,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          paymentMethod,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.copy, color: Color(0xFF00FF88), size: 18),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: paymentMethod));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(isArabic ? 'تم النسخ' : 'Copied'),
-                          backgroundColor: const Color(0xFF00FF88),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            )
+            _buildPaymentMethodDisplay(context, paymentMethod, isArabic)
           else
             Padding(
               padding: const EdgeInsets.all(16),
@@ -460,6 +405,155 @@ class _PromotersScreenState extends State<PromotersScreen> {
             color: Colors.white.withOpacity(0.5),
             fontSize: 10,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentMethodDisplay(BuildContext context, String paymentMethod, bool isArabic) {
+    // Check if it's a bank transfer with multiple fields
+    final isBankTransfer = paymentMethod.toLowerCase().startsWith('bank:');
+    
+    if (isBankTransfer) {
+      // Parse: Bank: Name | IBAN | SWIFT | BankName
+      final data = paymentMethod.replaceFirst('Bank: ', '').replaceFirst('bank: ', '');
+      final parts = data.split(' | ');
+      
+      String fullName = parts.isNotEmpty ? parts[0] : '';
+      String iban = parts.length > 1 ? parts[1] : '';
+      String swift = parts.length > 2 ? parts[2] : '';
+      String bankName = parts.length > 3 ? parts[3] : '';
+      
+      return Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF00FF88).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF00FF88).withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                const Icon(Icons.account_balance, color: Color(0xFF00FF88), size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  isArabic ? 'تحويل بنكي' : 'Bank Transfer',
+                  style: const TextStyle(color: Color(0xFF00FF88), fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.copy_all, color: Color(0xFF00FF88), size: 18),
+                  onPressed: () {
+                    final copyText = '${isArabic ? "الاسم" : "Name"}: $fullName\nIBAN: $iban\nSWIFT: $swift\n${isArabic ? "البنك" : "Bank"}: $bankName';
+                    Clipboard.setData(ClipboardData(text: copyText));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(isArabic ? 'تم نسخ جميع البيانات' : 'All details copied'),
+                        backgroundColor: const Color(0xFF00FF88),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const Divider(color: Colors.white24, height: 16),
+            // Details
+            _buildBankDetailRow(isArabic ? 'الاسم' : 'Name', fullName, context),
+            const SizedBox(height: 8),
+            _buildBankDetailRow('IBAN', iban, context),
+            const SizedBox(height: 8),
+            _buildBankDetailRow('SWIFT', swift, context),
+            const SizedBox(height: 8),
+            _buildBankDetailRow(isArabic ? 'البنك' : 'Bank', bankName, context),
+          ],
+        ),
+      );
+    }
+    
+    // Simple display for PayPal / USDT
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF00FF88).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF00FF88).withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            paymentMethod.toLowerCase().contains('paypal') ? Icons.paypal : Icons.currency_bitcoin,
+            color: const Color(0xFF00FF88),
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isArabic ? 'طريقة الدفع' : 'Payment Method',
+                  style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  paymentMethod,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy, color: Color(0xFF00FF88), size: 18),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: paymentMethod));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(isArabic ? 'تم النسخ' : 'Copied'),
+                  backgroundColor: const Color(0xFF00FF88),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBankDetailRow(String label, String value, BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 60,
+          child: Text(
+            label,
+            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: value));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$label copied'),
+                backgroundColor: const Color(0xFF00FF88),
+                duration: const Duration(milliseconds: 500),
+              ),
+            );
+          },
+          child: Icon(Icons.copy, color: Colors.white.withOpacity(0.4), size: 14),
         ),
       ],
     );
