@@ -582,6 +582,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
 
   Widget _buildPaymentMethodCard(BuildContext context, User user, AppLocalizations lang) {
     final isArabic = lang.locale.languageCode == 'ar';
+    final hasPaymentMethod = user.paymentMethod != null && user.paymentMethod!.isNotEmpty;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -604,7 +605,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // Header with Info & Edit Buttons
             Row(
               children: [
                 Container(
@@ -635,8 +636,8 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                       const SizedBox(height: 2),
                       Text(
                         isArabic
-                            ? 'الدفع يختلف حسب مصدر كل عرض'
-                            : 'Payment varies by offer source',
+                            ? 'يراها المعلن للتواصل معك'
+                            : 'Visible to advertisers',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.5),
                           fontSize: 11,
@@ -645,60 +646,155 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     ],
                   ),
                 ),
+                // Info Button - How to register
+                GestureDetector(
+                  onTap: () => _showPaymentMethodsInfoDialog(context, isArabic),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.help_outline,
+                      color: Colors.blue,
+                      size: 18,
+                    ),
+                  ),
+                ),
+                // Edit Button
+                IconButton(
+                  onPressed: () => _showEditPaymentMethodDialog(context, user, lang),
+                  icon: Icon(
+                    hasPaymentMethod ? Icons.edit : Icons.add_circle_outline,
+                    color: const Color(0xFF00FF88),
+                    size: 22,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             
-            // Payment Sources Explanation
-            _buildPaymentSourceItem(
-              icon: Icons.handshake,
-              color: const Color(0xFF00D9FF),
-              name: isArabic ? 'دفع مباشر' : 'Direct Payment',
-              description: isArabic 
-                  ? 'المعلن يدفع لك مباشرة حسب طريقة الدفع المتفق عليها (تحويل بنكي، PayPal، STC Pay...)'
-                  : 'Advertiser pays you directly via agreed method (Bank, PayPal, STC Pay...)',
-            ),
-            const SizedBox(height: 12),
-            _buildPaymentSourceItem(
-              icon: Icons.account_balance_wallet,
-              color: const Color(0xFFFF6B00),
-              name: isArabic ? 'بايونير' : 'Payoneer',
-              description: isArabic 
-                  ? 'قريباً - نظام دفع موحد وآلي لجميع العروض'
-                  : 'Coming Soon - Unified & automated payment for all offers',
-              isComingSoon: true,
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Info Box
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.blue.withOpacity(0.3),
+            // Current Payment Method Display
+            GestureDetector(
+              onTap: () => _showEditPaymentMethodDialog(context, user, lang),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: hasPaymentMethod 
+                        ? const Color(0xFF00FF88).withOpacity(0.3)
+                        : Colors.orange.withOpacity(0.3),
+                  ),
                 ),
+                child: hasPaymentMethod
+                    ? Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle,
+                            color: Color(0xFF00FF88),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              user.paymentMethod!,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.edit_note,
+                            color: Colors.white.withOpacity(0.5),
+                            size: 18,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange.withOpacity(0.8),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            isArabic
+                                ? '⚠️ اضغط هنا لإضافة طريقة الدفع'
+                                : '⚠️ Tap here to add payment method',
+                            style: TextStyle(
+                              color: Colors.orange.withOpacity(0.9),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Payoneer Coming Soon
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF6B00).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFF6B00).withOpacity(0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: Colors.blue,
-                    size: 20,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B00).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.account_balance_wallet, color: Color(0xFFFF6B00), size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      isArabic
-                          ? 'شاهد تفاصيل كل عرض لمعرفة طريقة الدفع الخاصة به'
-                          : 'Check each offer details to see its payment method',
-                      style: TextStyle(
-                        color: Colors.blue.shade200,
-                        fontSize: 12,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Payoneer',
+                              style: TextStyle(
+                                color: Color(0xFFFF6B00),
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                isArabic ? 'قريباً' : 'Soon',
+                                style: const TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isArabic ? 'نظام دفع موحد وآلي لجميع العروض' : 'Unified & automated payment system',
+                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -935,129 +1031,373 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   }
 
   void _showEditPaymentMethodDialog(BuildContext context, User user, AppLocalizations lang) {
-    final controller = TextEditingController(text: user.paymentMethod ?? '');
     final isArabic = lang.locale.languageCode == 'ar';
+    
+    // Parse existing payment method
+    String? initialType;
+    String existingValue = '';
+    if (user.paymentMethod != null && user.paymentMethod!.isNotEmpty) {
+      final parts = user.paymentMethod!.split(': ');
+      if (parts.length >= 2) {
+        final type = parts[0].toLowerCase();
+        if (type.contains('paypal')) initialType = 'paypal';
+        else if (type.contains('bank') || type.contains('iban')) initialType = 'bank';
+        else if (type.contains('usdt') || type.contains('trc')) initialType = 'usdt';
+        existingValue = parts.sublist(1).join(': ');
+      }
+    }
+    
+    // Create controller ONCE outside builder
+    final controller = TextEditingController(text: existingValue);
+    String? selectedType = initialType;
     
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00FF88).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_wallet,
-                      color: Color(0xFF00FF88),
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(dialogContext).size.height * 0.85,
+              ),
+              decoration: const BoxDecoration(
+                color: Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Row(
                       children: [
-                        Text(
-                          isArabic ? 'طريقة استلام الأرباح' : 'Payment Method',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00FF88).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          child: const Icon(Icons.account_balance_wallet, color: Color(0xFF00FF88), size: 24),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          isArabic
-                              ? 'أدخل طريقة الدفع المفضلة لديك'
-                              : 'Enter your preferred payment method',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 13,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isArabic ? 'طريقة استلام الأرباح' : 'Payment Method',
+                                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                isArabic ? 'اختر طريقة الدفع المفضلة' : 'Choose your preferred method',
+                                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              
-              // Text Field
-              TextField(
-                controller: controller,
-                maxLines: 3,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: isArabic
-                      ? 'أدخل طريقة الدفع المفضلة لديك...'
-                      : 'Enter your preferred payment method...',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF00FF88)),
-                  ),
+                    const SizedBox(height: 24),
+                    
+                    // Payment Method Options
+                    _buildPaymentOption(
+                      icon: '💳',
+                      name: 'PayPal',
+                      isSelected: selectedType == 'paypal',
+                      onTap: () => setModalState(() { selectedType = 'paypal'; controller.clear(); }),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildPaymentOption(
+                      icon: '🏦',
+                      name: isArabic ? 'تحويل بنكي (IBAN)' : 'Bank Transfer (IBAN)',
+                      isSelected: selectedType == 'bank',
+                      onTap: () => setModalState(() { selectedType = 'bank'; controller.clear(); }),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildPaymentOption(
+                      icon: '₮',
+                      name: 'USDT (TRC20)',
+                      isSelected: selectedType == 'usdt',
+                      onTap: () => setModalState(() { selectedType = 'usdt'; controller.clear(); }),
+                    ),
+                    
+                    // Input Field based on selection
+                    if (selectedType != null) ...[
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: controller,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: _getFieldLabel(selectedType!, isArabic),
+                          labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                          hintText: _getFieldHint(selectedType!, isArabic),
+                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.05),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF00FF88)),
+                          ),
+                          prefixIcon: Icon(_getFieldIcon(selectedType!), color: const Color(0xFF00FF88)),
+                        ),
+                        keyboardType: selectedType == 'paypal' ? TextInputType.emailAddress : TextInputType.text,
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // Save Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final value = controller.text.trim();
+                            if (value.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(isArabic ? 'الرجاء إدخال البيانات' : 'Please enter the details'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+                            final formatted = _formatPaymentMethod(selectedType!, value, isArabic);
+                            Navigator.pop(dialogContext);
+                            await _updatePaymentMethod(context, formatted);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00FF88),
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            isArabic ? 'حفظ' : 'Save',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              
-              // Save Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    await _updatePaymentMethod(context, controller.text);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00FF88),
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    isArabic ? 'حفظ' : 'Save',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  Widget _buildPaymentOption({
+    required String icon,
+    required String name,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF00FF88).withOpacity(0.15) : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF00FF88) : Colors.white.withOpacity(0.1),
+            width: isSelected ? 2 : 1,
           ),
         ),
+        child: Row(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 24)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFF00FF88) : Colors.white,
+                  fontSize: 15,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle, color: Color(0xFF00FF88), size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  String _getFieldLabel(String type, bool isArabic) {
+    switch (type) {
+      case 'paypal': return isArabic ? 'البريد الإلكتروني' : 'Email Address';
+      case 'bank': return 'IBAN';
+      case 'usdt': return isArabic ? 'عنوان المحفظة (TRC20)' : 'Wallet Address (TRC20)';
+      default: return '';
+    }
+  }
+  
+  String _getFieldHint(String type, bool isArabic) {
+    switch (type) {
+      case 'paypal': return 'example@email.com';
+      case 'bank': return 'KW00XXXX0000000000000000000000';
+      case 'usdt': return 'TRC20 Address';
+      default: return '';
+    }
+  }
+  
+  IconData _getFieldIcon(String type) {
+    switch (type) {
+      case 'paypal': return Icons.email;
+      case 'bank': return Icons.account_balance;
+      case 'usdt': return Icons.currency_bitcoin;
+      default: return Icons.payment;
+    }
+  }
+  
+  String _formatPaymentMethod(String type, String value, bool isArabic) {
+    switch (type) {
+      case 'paypal': return 'PayPal: $value';
+      case 'bank': return 'IBAN: $value';
+      case 'usdt': return 'USDT (TRC20): $value';
+      default: return value;
+    }
+  }
+
+  void _showPaymentMethodsInfoDialog(BuildContext context, bool isArabic) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.help_outline, color: Colors.blue, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  isArabic ? 'كيف أسجل في وسائل الدفع؟' : 'How to register?',
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            
+            // PayPal
+            _buildPaymentInfoItem(
+              icon: '💳',
+              name: 'PayPal',
+              description: isArabic 
+                  ? 'سجّل مجاناً في paypal.com واحصل على إيميل الدفع'
+                  : 'Register free at paypal.com and get your payment email',
+              url: 'https://www.paypal.com',
+            ),
+            const SizedBox(height: 12),
+            
+            // Bank Transfer
+            _buildPaymentInfoItem(
+              icon: '🏦',
+              name: isArabic ? 'تحويل بنكي' : 'Bank Transfer',
+              description: isArabic 
+                  ? 'احصل على رقم IBAN من بنكك المحلي'
+                  : 'Get your IBAN number from your local bank',
+              url: null,
+            ),
+            const SizedBox(height: 12),
+            
+            // USDT
+            _buildPaymentInfoItem(
+              icon: '₮',
+              name: 'USDT (TRC20)',
+              description: isArabic 
+                  ? 'أنشئ محفظة في Binance أو Trust Wallet واحصل على عنوان TRC20'
+                  : 'Create wallet in Binance or Trust Wallet and get TRC20 address',
+              url: 'https://www.binance.com',
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Close Button
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  isArabic ? 'فهمت' : 'Got it',
+                  style: const TextStyle(color: Colors.blue, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentInfoItem({
+    required String icon,
+    required String name,
+    required String description,
+    String? url,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 24)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 2),
+                Text(description, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+              ],
+            ),
+          ),
+          if (url != null)
+            GestureDetector(
+              onTap: () {
+                // Could open URL here
+              },
+              child: Icon(Icons.open_in_new, color: Colors.white.withOpacity(0.4), size: 18),
+            ),
+        ],
       ),
     );
   }

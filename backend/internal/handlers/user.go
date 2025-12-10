@@ -80,9 +80,10 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	type UpdateProfileRequest struct {
-		FullName  string `json:"full_name"`
-		Bio       string `json:"bio"`
-		AvatarURL string `json:"avatar_url"`
+		FullName      string `json:"full_name"`
+		Bio           string `json:"bio"`
+		AvatarURL     string `json:"avatar_url"`
+		PaymentMethod string `json:"payment_method"`
 	}
 
 	var req UpdateProfileRequest
@@ -101,6 +102,9 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	if req.AvatarURL != "" {
 		updates["avatar_url"] = req.AvatarURL
 	}
+	if req.PaymentMethod != "" {
+		updates["payment_method"] = req.PaymentMethod
+	}
 
 	if err := h.db.Model(&models.AfftokUser{}).Where("id = ?", userID).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
@@ -112,6 +116,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	user.PasswordHash = ""
 
 	c.JSON(http.StatusOK, gin.H{
+		"success": true,
 		"message": "Profile updated successfully",
 		"user":    user,
 	})
