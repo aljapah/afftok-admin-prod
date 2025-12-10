@@ -703,7 +703,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 آلية الدفع والمواعيد
 • تُصدر الفاتورة الشهرية في اليوم الأول من كل شهر ميلادي.
 • يلتزم المعلن بالسداد خلال 7 أيام عمل من تاريخ إصدار الفاتورة.
-• في حال كان المبلغ المستحق أقل من 10 د.ك، يُرحَّل للشهر التالي.
+• في حال كان المبلغ المستحق أقل من 10 دولار، يُرحَّل للشهر التالي.
 
 وسيلة الدفع
 تتم عملية السداد الخاصة بنسبة المنصّة عبر تحويل بنكي مباشر لحساب الشركة، وتُزوَّد بيانات الحساب للمعلن عند بدء تفعيل الاتفاق.
@@ -728,7 +728,7 @@ Platform Obligations
 Payment Schedule
 • Monthly invoices are issued on the first day of each calendar month.
 • The advertiser must pay within 7 business days from the invoice date.
-• If the amount due is less than 10 KWD, it will be carried over to the next month.
+• If the amount due is less than 10 USD, it will be carried over to the next month.
 
 Payment Method
 Platform commission payments are made via direct bank transfer to the company account. Account details are provided to the advertiser upon agreement activation.

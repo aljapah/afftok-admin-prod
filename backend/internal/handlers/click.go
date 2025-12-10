@@ -23,6 +23,7 @@ type ClickHandler struct {
 	geoRuleService       *services.GeoRuleService
 	linkSigningService   *services.LinkSigningService
 	geoIPService         *services.GeoIPService
+	badgeHandler         *BadgeHandler
 }
 
 func NewClickHandler(db *gorm.DB) *ClickHandler {
@@ -35,6 +36,7 @@ func NewClickHandler(db *gorm.DB) *ClickHandler {
 		geoRuleService:       services.NewGeoRuleService(db),
 		linkSigningService:   services.NewLinkSigningService(),
 		geoIPService:         services.NewGeoIPService(),
+		badgeHandler:         NewBadgeHandler(db),
 	}
 }
 
@@ -289,6 +291,13 @@ trackAndRedirect:
 				"",
 				durationMs,
 			)
+			
+			// Check and award badges for the user (gamification)
+			go func() {
+				if err := h.badgeHandler.CheckAndAwardBadges(userOffer.UserID); err != nil {
+					fmt.Printf("[Click] Failed to check badges for user %s: %v\n", userOffer.UserID.String(), err)
+				}
+			}()
 		}
 	} else {
 		fmt.Printf("[Click] No user offer to track for offer %s\n", offer.ID.String())

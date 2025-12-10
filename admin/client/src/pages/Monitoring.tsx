@@ -18,7 +18,8 @@ import {
   Clock,
   Zap,
   TrendingUp,
-  Globe
+  Users,
+  Package
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { 
@@ -32,89 +33,43 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
-
-// Mock data - replace with actual API calls
-const generateMockData = () => ({
-  system: {
-    status: "healthy",
-    uptime: "15d 7h 32m",
-    version: "1.0.0",
-    environment: "production"
-  },
-  services: [
-    { name: "API Server", status: "healthy", latency: 12, uptime: 99.99 },
-    { name: "PostgreSQL", status: "healthy", latency: 5, uptime: 99.95 },
-    { name: "Redis", status: "healthy", latency: 2, uptime: 99.99 },
-    { name: "Edge Workers", status: "healthy", latency: 8, uptime: 99.97 },
-    { name: "WAL Service", status: "healthy", latency: 3, uptime: 100 },
-    { name: "Stream Consumers", status: "warning", latency: 45, uptime: 98.5 },
-  ],
-  metrics: {
-    cpu: 45,
-    memory: 62,
-    disk: 38,
-    network: 25,
-    goroutines: 1250,
-    connections: 85
-  },
-  performance: {
-    clicksPerSecond: 125,
-    conversionsPerMinute: 42,
-    avgLatencyMs: 18,
-    p99LatencyMs: 85,
-    errorRate: 0.02
-  }
-});
-
-// Generate time series data
-const generateTimeSeriesData = () => {
-  const data = [];
-  const now = new Date();
-  for (let i = 30; i >= 0; i--) {
-    data.push({
-      time: new Date(now.getTime() - i * 60000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      clicks: Math.floor(Math.random() * 150) + 50,
-      latency: Math.floor(Math.random() * 30) + 10,
-      errors: Math.floor(Math.random() * 5),
-    });
-  }
-  return data;
-};
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 export default function Monitoring() {
-  const [data, setData] = useState(generateMockData());
-  const [timeSeriesData, setTimeSeriesData] = useState(generateTimeSeriesData());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  // API Queries - Real Data
+  const { data: stats, refetch: refetchStats } = trpc.monitoring.stats.useQuery();
+  const { data: health, refetch: refetchHealth } = trpc.monitoring.health.useQuery();
+  const { data: clicksData, refetch: refetchClicks } = trpc.monitoring.clicksTimeSeries.useQuery();
+  const { data: latencyData, refetch: refetchLatency } = trpc.monitoring.latencyTimeSeries.useQuery();
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setData(generateMockData());
-      setTimeSeriesData(generateTimeSeriesData());
       setLastUpdated(new Date());
+      refetchStats();
+      refetchHealth();
+      refetchClicks();
+      refetchLatency();
     }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refetchStats, refetchHealth, refetchClicks, refetchLatency]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setData(generateMockData());
-      setTimeSeriesData(generateTimeSeriesData());
+    Promise.all([refetchStats(), refetchHealth(), refetchClicks(), refetchLatency()]).then(() => {
       setLastUpdated(new Date());
       setIsRefreshing(false);
-    }, 1000);
+      toast.success("Data refreshed!");
+    });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "healthy": return "text-green-500";
-      case "warning": return "text-yellow-500";
-      case "critical": return "text-red-500";
-      default: return "text-gray-500";
-    }
-  };
+  // Use real data or empty array
+  const timeSeriesClicksData = clicksData || [];
+  const timeSeriesLatencyData = latencyData || [];
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -124,6 +79,37 @@ export default function Monitoring() {
       default: return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
+
+  const dbStatus = health?.database?.status || 'unknown';
+  const backendStatus = health?.backend?.status || 'unknown';
+  const systemStatus = dbStatus === 'healthy' && backendStatus === 'healthy' ? 'healthy' : 
+                       dbStatus === 'critical' || backendStatus === 'critical' ? 'critical' : 'warning';
+  const dbLatency = health?.database?.latency || 0;
+
+  // Real services from API
+  const services = [
+    { 
+      name: health?.database?.name || "PostgreSQL (Neon)", 
+      status: health?.database?.status || 'unknown', 
+      latency: health?.database?.latency || 0, 
+      uptime: health?.database?.uptime || 0,
+      real: true
+    },
+    { 
+      name: health?.backend?.name || "Backend API", 
+      status: health?.backend?.status || 'unknown', 
+      latency: health?.backend?.latency || 0, 
+      uptime: health?.backend?.uptime || 0,
+      real: true
+    },
+    { 
+      name: health?.redis?.name || "Redis Cache", 
+      status: health?.redis?.status || 'not_configured', 
+      latency: health?.redis?.latency || 0, 
+      uptime: health?.redis?.uptime || 0,
+      real: true
+    },
+  ];
 
   return (
     <DashboardLayout>
@@ -148,92 +134,95 @@ export default function Monitoring() {
         </div>
 
         {/* System Status Banner */}
-        <Card className={`border-l-4 ${data.system.status === 'healthy' ? 'border-l-green-500' : 'border-l-yellow-500'}`}>
+        <Card className={`border-l-4 ${systemStatus === 'healthy' ? 'border-l-green-500' : 'border-l-yellow-500'}`}>
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                {getStatusIcon(data.system.status)}
+                {getStatusIcon(systemStatus)}
                 <div>
-                  <h3 className="font-semibold">System Status: {data.system.status.toUpperCase()}</h3>
+                  <h3 className="font-semibold">System Status: {systemStatus.toUpperCase()}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Uptime: {data.system.uptime} | Version: {data.system.version} | Environment: {data.system.environment}
+                    DB Latency: {dbLatency}ms | Environment: production
                   </p>
                 </div>
               </div>
-              <Badge variant={data.system.status === 'healthy' ? 'default' : 'destructive'}>
-                {data.system.status === 'healthy' ? 'All Systems Operational' : 'Issues Detected'}
+              <Badge variant={systemStatus === 'healthy' ? 'default' : 'destructive'}>
+                {systemStatus === 'healthy' ? 'All Systems Operational' : 'Issues Detected'}
               </Badge>
             </div>
           </CardContent>
         </Card>
 
-        {/* Performance Metrics */}
+        {/* Real Stats from Database */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Clicks/sec</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
               <Zap className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.performance.clicksPerSecond}</div>
-              <p className="text-xs text-muted-foreground">+12% from avg</p>
+              <div className="text-2xl font-bold">{(stats?.totalClicks || 0).toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Last hour: {stats?.recentClicks || 0}</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Conversions/min</CardTitle>
+              <CardTitle className="text-sm font-medium">Conversions</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.performance.conversionsPerMinute}</div>
-              <p className="text-xs text-muted-foreground">+5% from avg</p>
+              <div className="text-2xl font-bold">{(stats?.totalConversions || 0).toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Last hour: {stats?.recentConversions || 0}</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Latency</CardTitle>
-              <Activity className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.performance.avgLatencyMs}ms</div>
-              <p className="text-xs text-muted-foreground">p99: {data.performance.p99LatencyMs}ms</p>
+              <div className="text-2xl font-bold">{(stats?.totalUsers || 0).toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Registered accounts</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <CardTitle className="text-sm font-medium">Total Offers</CardTitle>
+              <Package className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.performance.errorRate}%</div>
-              <p className="text-xs text-green-500">Below threshold</p>
+              <div className="text-2xl font-bold">{stats?.totalOffers || 0}</div>
+              <p className="text-xs text-green-500">Active: {stats?.activeOffers || 0}</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Goroutines</CardTitle>
-              <Server className="h-4 w-4 text-cyan-500" />
+              <CardTitle className="text-sm font-medium">DB Latency</CardTitle>
+              <Database className="h-4 w-4 text-cyan-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.metrics.goroutines}</div>
-              <p className="text-xs text-muted-foreground">Active workers</p>
+              <div className="text-2xl font-bold">{dbLatency}ms</div>
+              <p className={`text-xs ${dbLatency < 50 ? 'text-green-500' : 'text-yellow-500'}`}>
+                {dbLatency < 50 ? 'Excellent' : 'Good'}
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Charts */}
+        {/* Charts - Real Data */}
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Click Traffic (Last 30 min)</CardTitle>
+              <p className="text-xs text-green-500">✓ Real Data from Database</p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={timeSeriesData}>
+                <AreaChart data={timeSeriesClicksData}>
                   <defs>
                     <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
@@ -254,11 +243,12 @@ export default function Monitoring() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Response Latency (Last 30 min)</CardTitle>
+              <CardTitle>DB Latency (Last 30 min)</CardTitle>
+              <p className="text-xs text-green-500">✓ Real Latency Measurement</p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={timeSeriesData}>
+                <LineChart data={timeSeriesLatencyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                   <XAxis dataKey="time" stroke="#888" fontSize={10} />
                   <YAxis stroke="#888" fontSize={10} />
@@ -272,30 +262,44 @@ export default function Monitoring() {
           </Card>
         </div>
 
-        {/* Services Status */}
+        {/* Services Status - All Real Data */}
         <Card>
           <CardHeader>
             <CardTitle>Services Health</CardTitle>
-            <CardDescription>Status of all system components</CardDescription>
+            <CardDescription>
+              <span className="text-green-500">✓ All Real-time Data</span> - Status of all system components
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {data.services.map((service) => (
+              {services.map((service: any) => (
                 <div 
                   key={service.name}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                  className={`flex items-center justify-between p-4 rounded-lg border bg-card ${
+                    service.status === 'critical' ? 'border-red-500/50' : 
+                    service.status === 'warning' ? 'border-yellow-500/50' : ''
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     {getStatusIcon(service.status)}
                     <div>
                       <p className="font-medium">{service.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Latency: {service.latency}ms | Uptime: {service.uptime}%
+                        {service.status === 'not_configured' ? 'Not Configured' : 
+                         `Latency: ${service.latency}ms | Uptime: ${service.uptime}%`}
                       </p>
                     </div>
                   </div>
-                  <Badge variant={service.status === 'healthy' ? 'outline' : 'destructive'}>
-                    {service.status}
+                  <Badge 
+                    variant={service.status === 'healthy' ? 'outline' : 'destructive'}
+                    className={
+                      service.status === 'healthy' ? 'bg-green-500/10 text-green-500' :
+                      service.status === 'warning' ? 'bg-yellow-500/10 text-yellow-500' :
+                      service.status === 'not_configured' ? 'bg-gray-500/10 text-gray-500' :
+                      'bg-red-500/10 text-red-500'
+                    }
+                  >
+                    {service.status === 'not_configured' ? 'N/A' : service.status}
                   </Badge>
                 </div>
               ))}
@@ -303,57 +307,52 @@ export default function Monitoring() {
           </CardContent>
         </Card>
 
-        {/* Resource Usage */}
+        {/* External Monitoring Links */}
         <Card>
           <CardHeader>
-            <CardTitle>Resource Usage</CardTitle>
-            <CardDescription>Server resource utilization</CardDescription>
+            <CardTitle>External Monitoring</CardTitle>
+            <CardDescription>Links to external monitoring services</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Cpu className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm font-medium">CPU</span>
-                  </div>
-                  <span className="text-sm font-bold">{data.metrics.cpu}%</span>
+            <div className="grid gap-4 md:grid-cols-3">
+              <a 
+                href="https://railway.app/project" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted transition-colors"
+              >
+                <Server className="h-5 w-5 text-purple-500" />
+                <div>
+                  <p className="font-medium">Railway Dashboard</p>
+                  <p className="text-xs text-muted-foreground">Server metrics & logs</p>
                 </div>
-                <Progress value={data.metrics.cpu} className="h-2" />
-              </div>
+              </a>
               
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MemoryStick className="h-4 w-4 text-purple-500" />
-                    <span className="text-sm font-medium">Memory</span>
-                  </div>
-                  <span className="text-sm font-bold">{data.metrics.memory}%</span>
+              <a 
+                href="https://sentry.io" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted transition-colors"
+              >
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                <div>
+                  <p className="font-medium">Sentry</p>
+                  <p className="text-xs text-muted-foreground">Error tracking</p>
                 </div>
-                <Progress value={data.metrics.memory} className="h-2" />
-              </div>
+              </a>
               
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <HardDrive className="h-4 w-4 text-green-500" />
-                    <span className="text-sm font-medium">Disk</span>
-                  </div>
-                  <span className="text-sm font-bold">{data.metrics.disk}%</span>
+              <a 
+                href="https://uptimerobot.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted transition-colors"
+              >
+                <Activity className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="font-medium">UptimeRobot</p>
+                  <p className="text-xs text-muted-foreground">Uptime monitoring</p>
                 </div>
-                <Progress value={data.metrics.disk} className="h-2" />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Wifi className="h-4 w-4 text-cyan-500" />
-                    <span className="text-sm font-medium">Network</span>
-                  </div>
-                  <span className="text-sm font-bold">{data.metrics.network}%</span>
-                </div>
-                <Progress value={data.metrics.network} className="h-2" />
-              </div>
+              </a>
             </div>
           </CardContent>
         </Card>
@@ -361,4 +360,3 @@ export default function Monitoring() {
     </DashboardLayout>
   );
 }
-

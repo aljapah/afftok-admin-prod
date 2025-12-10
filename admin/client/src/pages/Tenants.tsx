@@ -24,74 +24,37 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { 
   Building2, 
   Plus, 
   Search, 
   MoreVertical, 
-  Edit, 
   Trash2, 
   Ban, 
   CheckCircle,
   Users,
-  MousePointerClick,
   DollarSign,
-  Globe,
-  Settings
+  RefreshCw,
+  Play
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
-// Mock data - replace with actual API calls
-const mockTenants = [
-  {
-    id: "1",
-    name: "AffTok Main",
-    slug: "afftok-main",
-    status: "active",
-    plan: "enterprise",
-    adminEmail: "admin@afftok.com",
-    usersCount: 1250,
-    offersCount: 45,
-    clicksToday: 15420,
-    revenue: 45000,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    name: "Partner Corp",
-    slug: "partner-corp",
-    status: "active",
-    plan: "pro",
-    adminEmail: "admin@partner.com",
-    usersCount: 340,
-    offersCount: 12,
-    clicksToday: 3200,
-    revenue: 12000,
-    createdAt: "2024-03-20",
-  },
-  {
-    id: "3",
-    name: "Test Tenant",
-    slug: "test-tenant",
-    status: "suspended",
-    plan: "free",
-    adminEmail: "test@test.com",
-    usersCount: 5,
-    offersCount: 2,
-    clicksToday: 0,
-    revenue: 0,
-    createdAt: "2024-06-01",
-  },
-];
+import { trpc } from "@/lib/trpc";
 
 export default function Tenants() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [newTenant, setNewTenant] = useState({
     name: "",
     slug: "",
@@ -99,30 +62,83 @@ export default function Tenants() {
     plan: "free"
   });
 
-  const filteredTenants = mockTenants.filter(tenant => 
+  // API Queries
+  const { data: tenants, refetch: refetchTenants } = trpc.tenants.list.useQuery();
+  const { data: stats, refetch: refetchStats } = trpc.tenants.stats.useQuery();
+
+  // Mutations
+  const createMutation = trpc.tenants.create.useMutation({
+    onSuccess: () => {
+      toast.success("Tenant created!");
+      setIsCreateOpen(false);
+      setNewTenant({ name: "", slug: "", adminEmail: "", plan: "free" });
+      refetchTenants();
+      refetchStats();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const updateMutation = trpc.tenants.update.useMutation({
+    onSuccess: () => {
+      toast.success("Tenant updated!");
+      refetchTenants();
+      refetchStats();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteMutation = trpc.tenants.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Tenant deleted!");
+      refetchTenants();
+      refetchStats();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const tenantsList = tenants || [];
+
+  const filteredTenants = tenantsList.filter((tenant: any) => 
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tenant.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tenant.adminEmail.toLowerCase().includes(searchQuery.toLowerCase())
+    (tenant.adminEmail && tenant.adminEmail.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    Promise.all([refetchTenants(), refetchStats()]).finally(() => {
+      setIsRefreshing(false);
+      toast.success("Data refreshed!");
+    });
+  };
 
   const handleCreateTenant = () => {
     if (!newTenant.name || !newTenant.slug || !newTenant.adminEmail) {
       toast.error("Please fill in all required fields");
       return;
     }
-    toast.success(`Tenant "${newTenant.name}" created successfully`);
-    setIsCreateOpen(false);
-    setNewTenant({ name: "", slug: "", adminEmail: "", plan: "free" });
+    createMutation.mutate(newTenant);
+  };
+
+  const handleToggleStatus = (tenant: any) => {
+    updateMutation.mutate({
+      id: tenant.id,
+      status: tenant.status === 'active' ? 'suspended' : 'active'
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Are you sure you want to delete this tenant?")) {
+      deleteMutation.mutate({ id });
+    }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Active</Badge>;
+        return <Badge className="bg-green-500/10 text-green-500">Active</Badge>;
       case "suspended":
         return <Badge variant="destructive">Suspended</Badge>;
-      case "pending":
-        return <Badge variant="secondary">Pending</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -131,9 +147,9 @@ export default function Tenants() {
   const getPlanBadge = (plan: string) => {
     switch (plan) {
       case "enterprise":
-        return <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20">Enterprise</Badge>;
+        return <Badge className="bg-purple-500/10 text-purple-500">Enterprise</Badge>;
       case "pro":
-        return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">Pro</Badge>;
+        return <Badge className="bg-blue-500/10 text-blue-500">Pro</Badge>;
       case "free":
         return <Badge variant="outline">Free</Badge>;
       default:
@@ -141,11 +157,11 @@ export default function Tenants() {
     }
   };
 
-  const stats = [
-    { title: "Total Tenants", value: mockTenants.length, icon: Building2, color: "text-blue-500" },
-    { title: "Active Tenants", value: mockTenants.filter(t => t.status === 'active').length, icon: CheckCircle, color: "text-green-500" },
-    { title: "Total Users", value: mockTenants.reduce((acc, t) => acc + t.usersCount, 0), icon: Users, color: "text-purple-500" },
-    { title: "Total Revenue", value: `$${(mockTenants.reduce((acc, t) => acc + t.revenue, 0) / 100).toLocaleString()}`, icon: DollarSign, color: "text-green-500" },
+  const statsCards = [
+    { title: "Total Tenants", value: stats?.total || 0, icon: Building2, color: "text-blue-500" },
+    { title: "Active Tenants", value: stats?.active || 0, icon: CheckCircle, color: "text-green-500" },
+    { title: "Total Users", value: (stats?.totalUsers || 0).toLocaleString(), icon: Users, color: "text-purple-500" },
+    { title: "Total Revenue", value: `$${(stats?.totalRevenue || 0).toLocaleString()}`, icon: DollarSign, color: "text-emerald-500" },
   ];
 
   return (
@@ -156,64 +172,88 @@ export default function Tenants() {
           <div>
             <h1 className="text-3xl font-bold">Tenants</h1>
             <p className="text-muted-foreground mt-1">
-              Manage multi-tenant organizations
+              <span className="text-green-500">✓ Real Data</span> - Manage multi-tenant organizations
             </p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Tenant
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Tenant</DialogTitle>
-                <DialogDescription>
-                  Add a new organization to the platform
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Organization Name *</Label>
-                  <Input
-                    id="name"
-                    value={newTenant.name}
-                    onChange={(e) => setNewTenant({ ...newTenant, name: e.target.value })}
-                    placeholder="e.g., Acme Corporation"
-                  />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Tenant
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Tenant</DialogTitle>
+                  <DialogDescription>
+                    Set up a new tenant organization
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Tenant Name *</Label>
+                    <Input
+                      id="name"
+                      value={newTenant.name}
+                      onChange={(e) => setNewTenant({ ...newTenant, name: e.target.value })}
+                      placeholder="e.g., Acme Corporation"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="slug">Slug *</Label>
+                    <Input
+                      id="slug"
+                      value={newTenant.slug}
+                      onChange={(e) => setNewTenant({ ...newTenant, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                      placeholder="e.g., acme-corp"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Admin Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={newTenant.adminEmail}
+                      onChange={(e) => setNewTenant({ ...newTenant, adminEmail: e.target.value })}
+                      placeholder="admin@example.com"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Plan</Label>
+                    <Select 
+                      value={newTenant.plan} 
+                      onValueChange={(v) => setNewTenant({ ...newTenant, plan: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">Free</SelectItem>
+                        <SelectItem value="pro">Pro</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="slug">Slug *</Label>
-                  <Input
-                    id="slug"
-                    value={newTenant.slug}
-                    onChange={(e) => setNewTenant({ ...newTenant, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                    placeholder="e.g., acme-corp"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="adminEmail">Admin Email *</Label>
-                  <Input
-                    id="adminEmail"
-                    type="email"
-                    value={newTenant.adminEmail}
-                    onChange={(e) => setNewTenant({ ...newTenant, adminEmail: e.target.value })}
-                    placeholder="admin@example.com"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                <Button onClick={handleCreateTenant}>Create Tenant</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                  <Button onClick={handleCreateTenant} disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Creating..." : "Create Tenant"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => {
+          {statsCards.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.title}>
@@ -259,72 +299,66 @@ export default function Tenants() {
                   <TableHead>Offers</TableHead>
                   <TableHead>Clicks Today</TableHead>
                   <TableHead>Revenue</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTenants.map((tenant) => (
-                  <TableRow key={tenant.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Building2 className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{tenant.name}</p>
-                          <p className="text-xs text-muted-foreground">{tenant.slug}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(tenant.status)}</TableCell>
-                    <TableCell>{getPlanBadge(tenant.plan)}</TableCell>
-                    <TableCell>{tenant.usersCount.toLocaleString()}</TableCell>
-                    <TableCell>{tenant.offersCount}</TableCell>
-                    <TableCell>{tenant.clicksToday.toLocaleString()}</TableCell>
-                    <TableCell className="font-medium text-green-500">
-                      ${(tenant.revenue / 100).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Settings className="h-4 w-4 mr-2" />
-                            Settings
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Globe className="h-4 w-4 mr-2" />
-                            Domains
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {tenant.status === 'active' ? (
-                            <DropdownMenuItem className="text-yellow-500">
-                              <Ban className="h-4 w-4 mr-2" />
-                              Suspend
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem className="text-green-500">
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Activate
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {filteredTenants.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      No tenants found. Click "Create Tenant" to add one.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredTenants.map((tenant: any) => (
+                    <TableRow key={tenant.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{tenant.name}</p>
+                            <p className="text-xs text-muted-foreground">{tenant.slug}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(tenant.status)}</TableCell>
+                      <TableCell>{getPlanBadge(tenant.plan)}</TableCell>
+                      <TableCell>{(tenant.usersCount || 0).toLocaleString()}</TableCell>
+                      <TableCell>{tenant.offersCount || 0}</TableCell>
+                      <TableCell>{(tenant.clicksToday || 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-emerald-500 font-medium">
+                        ${(tenant.revenue || 0).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleToggleStatus(tenant)}>
+                              {tenant.status === 'active' ? (
+                                <><Ban className="h-4 w-4 mr-2" /> Suspend</>
+                              ) : (
+                                <><Play className="h-4 w-4 mr-2" /> Activate</>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDelete(tenant.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -333,4 +367,3 @@ export default function Tenants() {
     </DashboardLayout>
   );
 }
-

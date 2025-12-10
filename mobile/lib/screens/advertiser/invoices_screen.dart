@@ -164,7 +164,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
           Expanded(
             child: _buildSummaryCard(
               isArabic ? 'المستحق' : 'Pending',
-              '${(_summary!['pending_amount'] ?? 0).toStringAsFixed(2)} KWD',
+              '${(_summary!['pending_amount'] ?? 0).toStringAsFixed(2)} USD',
               const Color(0xFFFF9800),
               Icons.pending_actions,
             ),
@@ -173,7 +173,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
           Expanded(
             child: _buildSummaryCard(
               isArabic ? 'المدفوع' : 'Paid',
-              '${(_summary!['paid_amount'] ?? 0).toStringAsFixed(2)} KWD',
+              '${(_summary!['paid_amount'] ?? 0).toStringAsFixed(2)} USD',
               const Color(0xFF4CAF50),
               Icons.check_circle,
             ),
@@ -286,7 +286,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   ],
                 ),
                 Text(
-                  '${(invoice['platform_amount'] ?? 0).toStringAsFixed(2)} KWD',
+                  '${(invoice['platform_amount'] ?? 0).toStringAsFixed(2)} USD',
                   style: TextStyle(
                     color: statusColors[status],
                     fontSize: 20,
@@ -308,12 +308,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                 ),
                 _buildDetailRow(
                   isArabic ? 'عمولات المروجين' : 'Promoter Payouts',
-                  '${(invoice['total_promoter_payout'] ?? 0).toStringAsFixed(2)} KWD',
+                  '${(invoice['total_promoter_payout'] ?? 0).toStringAsFixed(2)} USD',
                   Icons.payments,
                 ),
                 _buildDetailRow(
                   isArabic ? 'نسبة المنصة (10%)' : 'Platform Fee (10%)',
-                  '${(invoice['platform_amount'] ?? 0).toStringAsFixed(2)} KWD',
+                  '${(invoice['platform_amount'] ?? 0).toStringAsFixed(2)} USD',
                   Icons.receipt_long,
                 ),
                 // Action Buttons Row
@@ -433,8 +433,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       buffer.writeln('');
       buffer.writeln('${isArabic ? 'الفترة' : 'Period'},${monthNames[month - 1]} $year');
       buffer.writeln('${isArabic ? 'إجمالي التحويلات' : 'Total Conversions'},${invoice['total_conversions'] ?? 0}');
-      buffer.writeln('${isArabic ? 'إجمالي عمولات المروجين' : 'Total Promoter Payouts'},${(invoice['total_promoter_payout'] ?? 0).toStringAsFixed(2)} KWD');
-      buffer.writeln('${isArabic ? 'نسبة المنصة (10%)' : 'Platform Fee (10%)'},${(invoice['platform_amount'] ?? 0).toStringAsFixed(2)} KWD');
+      buffer.writeln('${isArabic ? 'إجمالي عمولات المروجين' : 'Total Promoter Payouts'},${(invoice['total_promoter_payout'] ?? 0).toStringAsFixed(2)} USD');
+      buffer.writeln('${isArabic ? 'نسبة المنصة (10%)' : 'Platform Fee (10%)'},${(invoice['platform_amount'] ?? 0).toStringAsFixed(2)} USD');
       buffer.writeln('${isArabic ? 'الحالة' : 'Status'},${invoice['status'] ?? 'pending'}');
       buffer.writeln('');
       buffer.writeln(isArabic ? '---' : '---');
@@ -739,7 +739,7 @@ class _PaymentConfirmationSheetState extends State<_PaymentConfirmationSheet> {
                         ),
                       ),
                       Text(
-                        widget.isArabic ? 'المبلغ: $amount KWD' : 'Amount: $amount KWD',
+                        widget.isArabic ? 'المبلغ: $amount USD' : 'Amount: $amount USD',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.6),
                           fontSize: 14,

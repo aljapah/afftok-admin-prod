@@ -34,7 +34,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   Webhook, 
   Plus, 
@@ -47,57 +46,12 @@ import {
   RefreshCw,
   CheckCircle,
   XCircle,
-  Clock,
   Send,
   AlertTriangle
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
-// Mock data
-const mockWebhooks = [
-  {
-    id: "1",
-    name: "Conversion Postback",
-    url: "https://partner.com/postback",
-    triggerType: "conversion",
-    status: "active",
-    signatureMode: "hmac",
-    lastTriggered: "2 min ago",
-    successRate: 98.5,
-    totalDeliveries: 1250,
-    failedDeliveries: 19,
-  },
-  {
-    id: "2",
-    name: "Click Notification",
-    url: "https://analytics.example.com/clicks",
-    triggerType: "click",
-    status: "active",
-    signatureMode: "jwt",
-    lastTriggered: "30 sec ago",
-    successRate: 99.2,
-    totalDeliveries: 15420,
-    failedDeliveries: 124,
-  },
-  {
-    id: "3",
-    name: "Fraud Alert",
-    url: "https://security.internal/alerts",
-    triggerType: "fraud",
-    status: "paused",
-    signatureMode: "none",
-    lastTriggered: "1 hour ago",
-    successRate: 95.0,
-    totalDeliveries: 340,
-    failedDeliveries: 17,
-  },
-];
-
-const mockDLQ = [
-  { id: "dlq_1", webhookName: "Conversion Postback", error: "Connection timeout", attempts: 5, lastAttempt: "5 min ago" },
-  { id: "dlq_2", webhookName: "Click Notification", error: "HTTP 500", attempts: 3, lastAttempt: "15 min ago" },
-];
+import { trpc } from "@/lib/trpc";
 
 const triggerTypes = [
   { value: "click", label: "Click Event" },
@@ -116,6 +70,7 @@ const signatureModes = [
 export default function Webhooks() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [newWebhook, setNewWebhook] = useState({
     name: "",
     url: "",
@@ -124,19 +79,85 @@ export default function Webhooks() {
     secret: "",
   });
 
-  const filteredWebhooks = mockWebhooks.filter(webhook => 
+  // API Queries
+  const { data: webhooks, refetch: refetchWebhooks } = trpc.webhooks.list.useQuery();
+  const { data: stats, refetch: refetchStats } = trpc.webhooks.stats.useQuery();
+  const { data: dlqItems, refetch: refetchDLQ } = trpc.webhooks.dlq.useQuery();
+
+  // Mutations
+  const createMutation = trpc.webhooks.create.useMutation({
+    onSuccess: () => {
+      toast.success("Webhook created!");
+      setIsCreateOpen(false);
+      setNewWebhook({ name: "", url: "", triggerType: "conversion", signatureMode: "hmac", secret: "" });
+      refetchWebhooks();
+      refetchStats();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const updateMutation = trpc.webhooks.update.useMutation({
+    onSuccess: () => {
+      toast.success("Webhook updated!");
+      refetchWebhooks();
+      refetchStats();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteMutation = trpc.webhooks.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Webhook deleted!");
+      refetchWebhooks();
+      refetchStats();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteDLQMutation = trpc.webhooks.deleteDLQ.useMutation({
+    onSuccess: () => {
+      toast.success("DLQ item removed!");
+      refetchDLQ();
+      refetchStats();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const webhooksList = webhooks || [];
+  const dlqList = dlqItems || [];
+
+  const filteredWebhooks = webhooksList.filter((webhook: any) => 
     webhook.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     webhook.url.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    Promise.all([refetchWebhooks(), refetchStats(), refetchDLQ()]).finally(() => {
+      setIsRefreshing(false);
+      toast.success("Data refreshed!");
+    });
+  };
 
   const handleCreateWebhook = () => {
     if (!newWebhook.name || !newWebhook.url) {
       toast.error("Please fill in all required fields");
       return;
     }
-    toast.success(`Webhook "${newWebhook.name}" created successfully`);
-    setIsCreateOpen(false);
-    setNewWebhook({ name: "", url: "", triggerType: "conversion", signatureMode: "hmac", secret: "" });
+    createMutation.mutate(newWebhook);
+  };
+
+  const handleToggleStatus = (webhook: any) => {
+    updateMutation.mutate({
+      id: webhook.id,
+      status: webhook.status === 'active' ? 'paused' : 'active'
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Are you sure you want to delete this webhook?")) {
+      deleteMutation.mutate({ id });
+    }
   };
 
   const handleTestWebhook = (name: string) => {
@@ -168,11 +189,24 @@ export default function Webhooks() {
     }
   };
 
-  const stats = [
-    { title: "Total Webhooks", value: mockWebhooks.length, icon: Webhook, color: "text-blue-500" },
-    { title: "Active", value: mockWebhooks.filter(w => w.status === 'active').length, icon: CheckCircle, color: "text-green-500" },
-    { title: "Total Deliveries", value: mockWebhooks.reduce((acc, w) => acc + w.totalDeliveries, 0).toLocaleString(), icon: Send, color: "text-purple-500" },
-    { title: "DLQ Items", value: mockDLQ.length, icon: AlertTriangle, color: "text-yellow-500" },
+  const formatTimeAgo = (dateStr: string | null) => {
+    if (!dateStr) return 'Never';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${Math.floor(diffHours / 24)} day${Math.floor(diffHours / 24) > 1 ? 's' : ''} ago`;
+  };
+
+  const statsCards = [
+    { title: "Total Webhooks", value: stats?.total || 0, icon: Webhook, color: "text-blue-500" },
+    { title: "Active", value: stats?.active || 0, icon: CheckCircle, color: "text-green-500" },
+    { title: "Total Deliveries", value: (stats?.totalDeliveries || 0).toLocaleString(), icon: Send, color: "text-purple-500" },
+    { title: "DLQ Items", value: stats?.dlqItems || 0, icon: AlertTriangle, color: "text-yellow-500" },
   ];
 
   return (
@@ -183,101 +217,109 @@ export default function Webhooks() {
           <div>
             <h1 className="text-3xl font-bold">Webhooks</h1>
             <p className="text-muted-foreground mt-1">
-              Manage webhook pipelines and deliveries
+              <span className="text-green-500">✓ Real Data</span> - Manage webhook pipelines and deliveries
             </p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Webhook
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Create Webhook</DialogTitle>
-                <DialogDescription>
-                  Configure a new webhook endpoint
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={newWebhook.name}
-                    onChange={(e) => setNewWebhook({ ...newWebhook, name: e.target.value })}
-                    placeholder="e.g., Conversion Postback"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="url">URL *</Label>
-                  <Input
-                    id="url"
-                    type="url"
-                    value={newWebhook.url}
-                    onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
-                    placeholder="https://example.com/webhook"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Webhook
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Create Webhook</DialogTitle>
+                  <DialogDescription>
+                    Configure a new webhook endpoint
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label>Trigger</Label>
-                    <Select 
-                      value={newWebhook.triggerType} 
-                      onValueChange={(v) => setNewWebhook({ ...newWebhook, triggerType: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {triggerTypes.map(t => (
-                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Signature</Label>
-                    <Select 
-                      value={newWebhook.signatureMode} 
-                      onValueChange={(v) => setNewWebhook({ ...newWebhook, signatureMode: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {signatureModes.map(s => (
-                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                {newWebhook.signatureMode !== 'none' && (
-                  <div className="grid gap-2">
-                    <Label htmlFor="secret">Secret Key</Label>
+                    <Label htmlFor="name">Name *</Label>
                     <Input
-                      id="secret"
-                      type="password"
-                      value={newWebhook.secret}
-                      onChange={(e) => setNewWebhook({ ...newWebhook, secret: e.target.value })}
-                      placeholder="Enter signing secret"
+                      id="name"
+                      value={newWebhook.name}
+                      onChange={(e) => setNewWebhook({ ...newWebhook, name: e.target.value })}
+                      placeholder="e.g., Conversion Postback"
                     />
                   </div>
-                )}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                <Button onClick={handleCreateWebhook}>Create Webhook</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                  <div className="grid gap-2">
+                    <Label htmlFor="url">URL *</Label>
+                    <Input
+                      id="url"
+                      type="url"
+                      value={newWebhook.url}
+                      onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
+                      placeholder="https://example.com/webhook"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Trigger</Label>
+                      <Select 
+                        value={newWebhook.triggerType} 
+                        onValueChange={(v) => setNewWebhook({ ...newWebhook, triggerType: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {triggerTypes.map(t => (
+                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Signature</Label>
+                      <Select 
+                        value={newWebhook.signatureMode} 
+                        onValueChange={(v) => setNewWebhook({ ...newWebhook, signatureMode: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {signatureModes.map(s => (
+                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {newWebhook.signatureMode !== 'none' && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="secret">Secret Key</Label>
+                      <Input
+                        id="secret"
+                        type="password"
+                        value={newWebhook.secret}
+                        onChange={(e) => setNewWebhook({ ...newWebhook, secret: e.target.value })}
+                        placeholder="Enter signing secret"
+                      />
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                  <Button onClick={handleCreateWebhook} disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Creating..." : "Create Webhook"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => {
+          {statsCards.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.title}>
@@ -327,53 +369,57 @@ export default function Webhooks() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredWebhooks.map((webhook) => (
-                  <TableRow key={webhook.id}>
-                    <TableCell className="font-medium">{webhook.name}</TableCell>
-                    <TableCell className="font-mono text-xs max-w-[200px] truncate">{webhook.url}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{webhook.triggerType}</Badge>
-                    </TableCell>
-                    <TableCell>{getSignatureBadge(webhook.signatureMode)}</TableCell>
-                    <TableCell>{getStatusBadge(webhook.status)}</TableCell>
-                    <TableCell>
-                      <span className={webhook.successRate >= 98 ? 'text-green-500' : webhook.successRate >= 95 ? 'text-yellow-500' : 'text-red-500'}>
-                        {webhook.successRate}%
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{webhook.lastTriggered}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleTestWebhook(webhook.name)}>
-                            <Play className="h-4 w-4 mr-2" />
-                            Test
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            {webhook.status === 'active' ? (
-                              <><Pause className="h-4 w-4 mr-2" /> Pause</>
-                            ) : (
-                              <><Play className="h-4 w-4 mr-2" /> Activate</>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {filteredWebhooks.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      No webhooks found. Click "Create Webhook" to add one.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredWebhooks.map((webhook: any) => (
+                    <TableRow key={webhook.id}>
+                      <TableCell className="font-medium">{webhook.name}</TableCell>
+                      <TableCell className="font-mono text-xs max-w-[200px] truncate">{webhook.url}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{webhook.triggerType}</Badge>
+                      </TableCell>
+                      <TableCell>{getSignatureBadge(webhook.signatureMode)}</TableCell>
+                      <TableCell>{getStatusBadge(webhook.status)}</TableCell>
+                      <TableCell>
+                        <span className={webhook.successRate >= 98 ? 'text-green-500' : webhook.successRate >= 95 ? 'text-yellow-500' : 'text-red-500'}>
+                          {webhook.successRate}%
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{formatTimeAgo(webhook.lastTriggered)}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleTestWebhook(webhook.name)}>
+                              <Play className="h-4 w-4 mr-2" />
+                              Test
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleStatus(webhook)}>
+                              {webhook.status === 'active' ? (
+                                <><Pause className="h-4 w-4 mr-2" /> Pause</>
+                              ) : (
+                                <><Play className="h-4 w-4 mr-2" /> Activate</>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(webhook.id)}>
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -389,7 +435,7 @@ export default function Webhooks() {
             <CardDescription>Failed webhook deliveries awaiting retry</CardDescription>
           </CardHeader>
           <CardContent>
-            {mockDLQ.length > 0 ? (
+            {dlqList.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -401,19 +447,24 @@ export default function Webhooks() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockDLQ.map((item) => (
+                  {dlqList.map((item: any) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.webhookName}</TableCell>
                       <TableCell className="text-red-500">{item.error}</TableCell>
                       <TableCell>{item.attempts}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.lastAttempt}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatTimeAgo(item.lastAttempt)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button variant="ghost" size="sm">
                             <RefreshCw className="h-4 w-4 mr-1" />
                             Retry
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-destructive">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-destructive"
+                            onClick={() => deleteDLQMutation.mutate({ id: item.id })}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -434,4 +485,3 @@ export default function Webhooks() {
     </DashboardLayout>
   );
 }
-

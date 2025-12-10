@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Plus, Globe, Languages, Upload, Image, Loader2, MapPin, Ban } from "lucide-react";
+import { Plus, Globe, Languages, Upload, Image, Loader2, MapPin, Ban, User } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -97,7 +97,11 @@ export function CreateOfferDialog() {
     targetCountries: [] as string[], // الدول المستهدفة
     blockedCountries: [] as string[], // الدول الممنوعة
     additionalNotes: "", // ملاحظات إضافية
+    advertiserId: "", // المعلن صاحب العرض
   });
+  
+  // جلب قائمة المعلنين
+  const { data: advertisers } = trpc.users.list.useQuery();
   
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -127,6 +131,7 @@ export function CreateOfferDialog() {
         targetCountries: [],
         blockedCountries: [],
         additionalNotes: "",
+        advertiserId: "",
       });
     },
     onError: (error) => {
@@ -137,18 +142,6 @@ export function CreateOfferDialog() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'logo') => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB');
-      return;
-    }
 
     if (type === 'image') {
       setUploadingImage(true);
@@ -169,7 +162,7 @@ export function CreateOfferDialog() {
         toast.error('Failed to upload image');
       }
     } catch (error) {
-      toast.error('Upload error');
+      toast.error('Upload error - try using a direct image URL');
     } finally {
       if (type === 'image') {
         setUploadingImage(false);
@@ -366,7 +359,32 @@ export function CreateOfferDialog() {
           
           {/* Common Fields */}
           <div className="grid gap-4 py-4 border-t mt-4 pt-4">
-            <h4 className="text-sm font-medium text-muted-foreground">Settings</h4>
+            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Settings
+            </h4>
+            
+            {/* Advertiser Selection - اختيار المعلن */}
+            <div className="grid gap-2">
+              <Label htmlFor="advertiserId">Advertiser / المعلن</Label>
+              <Select 
+                value={formData.advertiserId} 
+                onValueChange={(value) => setFormData({ ...formData, advertiserId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select advertiser (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No Advertiser (Admin Created)</SelectItem>
+                  {advertisers?.filter((u: any) => u.role === 'advertiser' || u.role === 'user').map((user: any) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.fullName || user.username} ({user.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Leave empty for admin-created offers</p>
+            </div>
             
             <div className="grid gap-2">
               <Label htmlFor="destinationUrl">Destination URL *</Label>

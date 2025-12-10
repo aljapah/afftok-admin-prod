@@ -250,12 +250,10 @@ function DashboardLayoutContent({
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
-                      className={`h-10 transition-all font-normal`}
+                      className="h-9"
                     >
-                      <item.icon
-                        className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`}
-                      />
-                      <span className="truncate">{item.label}</span>
+                      <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
+                      <span className="truncate text-sm">{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -264,66 +262,46 @@ function DashboardLayoutContent({
             
             {/* System Section */}
             {filteredSystemItems.length > 0 && (
-              <>
-                <div className="mt-4 mx-4 pt-4 border-t border-border">
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/70 mb-2 group-data-[collapsible=icon]:hidden">
-                    System
-                  </p>
-                </div>
-                
-                <SidebarMenu className="px-2 py-1">
-                  {filteredSystemItems.map(item => {
-                    const isActive = location === item.path;
-                    return (
-                      <SidebarMenuItem key={item.path}>
-                        <SidebarMenuButton
-                          isActive={isActive}
-                          onClick={() => setLocation(item.path)}
-                          tooltip={item.label}
-                          className={`h-10 transition-all font-normal`}
-                        >
-                          <item.icon
-                            className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`}
-                          />
-                          <span className="truncate">{item.label}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </>
+              <SidebarMenu className="px-2 py-1 mt-2 pt-2 border-t border-border/50">
+                {filteredSystemItems.map(item => {
+                  const isActive = location === item.path;
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setLocation(item.path)}
+                        tooltip={item.label}
+                        className="h-9"
+                      >
+                        <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
+                        <span className="truncate text-sm">{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
             )}
 
-            {/* Admin Section - Super Admin Only */}
+            {/* Admin Section */}
             {filteredAdminItems.length > 0 && (
-              <>
-                <div className="mt-4 mx-4 pt-4 border-t border-border">
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/70 mb-2 group-data-[collapsible=icon]:hidden">
-                    Admin
-                  </p>
-                </div>
-                
-                <SidebarMenu className="px-2 py-1">
-                  {filteredAdminItems.map(item => {
-                    const isActive = location === item.path;
-                    return (
-                      <SidebarMenuItem key={item.path}>
-                        <SidebarMenuButton
-                          isActive={isActive}
-                          onClick={() => setLocation(item.path)}
-                          tooltip={item.label}
-                          className={`h-10 transition-all font-normal`}
-                        >
-                          <item.icon
-                            className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`}
-                          />
-                          <span className="truncate">{item.label}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </>
+              <SidebarMenu className="px-2 py-1 mt-2 pt-2 border-t border-border/50">
+                {filteredAdminItems.map(item => {
+                  const isActive = location === item.path;
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setLocation(item.path)}
+                        tooltip={item.label}
+                        className="h-9"
+                      >
+                        <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
+                        <span className="truncate text-sm">{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
             )}
           </SidebarContent>
 

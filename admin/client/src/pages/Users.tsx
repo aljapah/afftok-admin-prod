@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { Search, Eye, Download, Edit, Trash2 } from "lucide-react";
+import { Search, Eye, Download, Edit, Trash2, Filter, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -30,15 +30,92 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Users() {
   const { data: users, isLoading } = trpc.users.list.useQuery();
   const [searchQuery, setSearchQuery] = useState("");
+  const [nameFilter, setNameFilter] = useState("");
+  const [countryFilter, setCountryFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [levelFilter, setLevelFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [, navigate] = useLocation();
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const itemsPerPage = 10;
+  
+  // Predefined list of countries with flags
+  const predefinedCountries = [
+    // Arab Countries - الدول العربية
+    { code: "KW", name: "🇰🇼 Kuwait - الكويت" },
+    { code: "SA", name: "🇸🇦 Saudi Arabia - السعودية" },
+    { code: "AE", name: "🇦🇪 UAE - الإمارات" },
+    { code: "BH", name: "🇧🇭 Bahrain - البحرين" },
+    { code: "QA", name: "🇶🇦 Qatar - قطر" },
+    { code: "OM", name: "🇴🇲 Oman - عمان" },
+    { code: "EG", name: "🇪🇬 Egypt - مصر" },
+    { code: "JO", name: "🇯🇴 Jordan - الأردن" },
+    { code: "LB", name: "🇱🇧 Lebanon - لبنان" },
+    { code: "IQ", name: "🇮🇶 Iraq - العراق" },
+    { code: "SY", name: "🇸🇾 Syria - سوريا" },
+    { code: "PS", name: "🇵🇸 Palestine - فلسطين" },
+    { code: "YE", name: "🇾🇪 Yemen - اليمن" },
+    { code: "LY", name: "🇱🇾 Libya - ليبيا" },
+    { code: "TN", name: "🇹🇳 Tunisia - تونس" },
+    { code: "DZ", name: "🇩🇿 Algeria - الجزائر" },
+    { code: "MA", name: "🇲🇦 Morocco - المغرب" },
+    { code: "SD", name: "🇸🇩 Sudan - السودان" },
+    { code: "SO", name: "🇸🇴 Somalia - الصومال" },
+    { code: "MR", name: "🇲🇷 Mauritania - موريتانيا" },
+    { code: "DJ", name: "🇩🇯 Djibouti - جيبوتي" },
+    { code: "KM", name: "🇰🇲 Comoros - جزر القمر" },
+    // Other Countries - دول أخرى
+    { code: "IN", name: "🇮🇳 India - الهند" },
+    { code: "PK", name: "🇵🇰 Pakistan - باكستان" },
+    { code: "BD", name: "🇧🇩 Bangladesh - بنغلاديش" },
+    { code: "TR", name: "🇹🇷 Turkey - تركيا" },
+    { code: "IR", name: "🇮🇷 Iran - إيران" },
+    { code: "US", name: "🇺🇸 USA - أمريكا" },
+    { code: "GB", name: "🇬🇧 UK - بريطانيا" },
+    { code: "DE", name: "🇩🇪 Germany - ألمانيا" },
+    { code: "FR", name: "🇫🇷 France - فرنسا" },
+    { code: "CA", name: "🇨🇦 Canada - كندا" },
+    { code: "AU", name: "🇦🇺 Australia - أستراليا" },
+    { code: "MY", name: "🇲🇾 Malaysia - ماليزيا" },
+    { code: "ID", name: "🇮🇩 Indonesia - إندونيسيا" },
+    { code: "PH", name: "🇵🇭 Philippines - الفلبين" },
+    { code: "CN", name: "🇨🇳 China - الصين" },
+    { code: "JP", name: "🇯🇵 Japan - اليابان" },
+    { code: "KR", name: "🇰🇷 South Korea - كوريا" },
+    { code: "RU", name: "🇷🇺 Russia - روسيا" },
+    { code: "BR", name: "🇧🇷 Brazil - البرازيل" },
+    { code: "MX", name: "🇲🇽 Mexico - المكسيك" },
+  ];
+  
+  // Get unique countries from users (if any have country set)
+  const userCountries = [...new Set(users?.map(u => u.country).filter(Boolean))] as string[];
+  
+  // Check if any filter is active
+  const hasActiveFilters = roleFilter !== "all" || statusFilter !== "all" || levelFilter !== "all" || countryFilter !== "all" || searchQuery !== "" || nameFilter !== "";
+  
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery("");
+    setNameFilter("");
+    setCountryFilter("all");
+    setRoleFilter("all");
+    setStatusFilter("all");
+    setLevelFilter("all");
+    setCurrentPage(1);
+  };
   
   const utils = trpc.useUtils();
   const deleteMutation = trpc.users.delete.useMutation({
@@ -51,12 +128,34 @@ export default function Users() {
       toast.error(`Failed to delete user: ${error.message}`);
     },
   });
+  
 
-  const filteredUsers = users?.filter((user) =>
-    user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users?.filter((user) => {
+    // Text search (general)
+    const matchesSearch = searchQuery === "" || 
+      user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.fullName?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Name filter (specific)
+    const matchesName = nameFilter === "" ||
+      user.fullName?.toLowerCase().includes(nameFilter.toLowerCase()) ||
+      user.username?.toLowerCase().includes(nameFilter.toLowerCase());
+    
+    // Country filter
+    const matchesCountry = countryFilter === "all" || user.country === countryFilter;
+    
+    // Role filter
+    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+    
+    // Status filter
+    const matchesStatus = statusFilter === "all" || user.status === statusFilter;
+    
+    // Level filter
+    const matchesLevel = levelFilter === "all" || String(user.level) === levelFilter;
+    
+    return matchesSearch && matchesName && matchesCountry && matchesRole && matchesStatus && matchesLevel;
+  });
 
   const totalPages = Math.ceil((filteredUsers?.length || 0) / itemsPerPage);
   const paginatedUsers = filteredUsers?.slice(
@@ -102,6 +201,93 @@ export default function Users() {
           </div>
         </div>
 
+        {/* Advanced Filters */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Filters:</span>
+              </div>
+              
+              {/* Name Filter */}
+              <Input
+                placeholder="Filter by name..."
+                value={nameFilter}
+                onChange={(e) => { setNameFilter(e.target.value); setCurrentPage(1); }}
+                className="w-40"
+              />
+              
+              {/* Country Filter */}
+              <Select value={countryFilter} onValueChange={(value) => { setCountryFilter(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Countries</SelectItem>
+                  {predefinedCountries.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Role Filter */}
+              <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="advertiser">Advertiser</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Level Filter */}
+              <Select value={levelFilter} onValueChange={(value) => { setLevelFilter(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="1">Level 1</SelectItem>
+                  <SelectItem value="2">Level 2</SelectItem>
+                  <SelectItem value="3">Level 3</SelectItem>
+                  <SelectItem value="4">Level 4</SelectItem>
+                  <SelectItem value="5">Level 5</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              )}
+              
+              {/* Results count */}
+              <span className="text-sm text-muted-foreground ml-auto">
+                {filteredUsers?.length || 0} user(s) found
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>All Users</CardTitle>
@@ -114,6 +300,7 @@ export default function Users() {
                     <TableHead>Username</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Full Name</TableHead>
+                    <TableHead>Country</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Points</TableHead>
@@ -122,7 +309,7 @@ export default function Users() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableSkeleton rows={5} columns={8} />
+                  <TableSkeleton rows={5} columns={9} />
                 </TableBody>
               </Table>
             ) : filteredUsers && filteredUsers.length > 0 ? (
@@ -133,6 +320,7 @@ export default function Users() {
                       <TableHead>Username</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Full Name</TableHead>
+                      <TableHead>Country</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Points</TableHead>
@@ -146,6 +334,7 @@ export default function Users() {
                       <TableCell className="font-medium">{user.username}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.fullName || "-"}</TableCell>
+                      <TableCell>{predefinedCountries.find(c => c.code === user.country)?.name || user.country || "-"}</TableCell>
                       <TableCell>
                         <Badge variant={user.role === "admin" ? "destructive" : "secondary"}>
                           {user.role}

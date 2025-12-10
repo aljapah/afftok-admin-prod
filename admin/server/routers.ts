@@ -38,6 +38,18 @@ export const appRouter = router({
         const { getConversionsAnalytics } = await import("./db");
         return getConversionsAnalytics(input.days);
       }),
+    offersByCategory: publicProcedure.query(async () => {
+      const { getOffersByCategory } = await import("./db");
+      return getOffersByCategory();
+    }),
+    topPromoters: publicProcedure.query(async () => {
+      const { getTopPromoters } = await import("./db");
+      return getTopPromoters();
+    }),
+    clicksVsConversions: publicProcedure.query(async () => {
+      const { getClicksVsConversions } = await import("./db");
+      return getClicksVsConversions();
+    }),
   }),
   
   users: router({
@@ -52,7 +64,7 @@ export const appRouter = router({
           email: z.string().email(),
           password: z.string().min(6),
           fullName: z.string().optional(),
-          role: z.enum(['user', 'admin']).default('user'),
+          role: z.enum(['user', 'admin', 'advertiser']).default('user'),
         }).parse(input);
       })
       .mutation(async ({ input }) => {
@@ -66,7 +78,8 @@ export const appRouter = router({
           username: z.string().min(3).optional(),
           email: z.string().email().optional(),
           fullName: z.string().optional(),
-          role: z.enum(['user', 'admin']).default('user').optional(),
+          country: z.string().optional(),
+          role: z.enum(['user', 'admin', 'advertiser']).default('user').optional(),
           status: z.enum(['active', 'inactive', 'suspended', 'pending']).optional(),
           points: z.number().int().min(0).optional(),
           level: z.number().int().min(1).optional(),
@@ -83,6 +96,19 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { deleteAfftokUser } = await import("./db");
         return deleteAfftokUser(input.id);
+      }),
+    setDefaultCountry: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ countryCode: z.string().length(2) }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { setDefaultCountryForUsers } = await import("./db");
+        return setDefaultCountryForUsers(input.countryCode);
+      }),
+    addCountryColumn: publicProcedure
+      .mutation(async () => {
+        const { addCountryColumnToUsers } = await import("./db");
+        return addCountryColumnToUsers();
       }),
   }),
   
@@ -160,6 +186,7 @@ export const appRouter = router({
           commission: z.number().int().min(0),
           payoutType: z.enum(['cpa', 'cpl', 'cps', 'cpi']).optional(),
           networkId: z.string().optional(),
+          advertiserId: z.string().optional(), // المعلن صاحب العرض
           // Geo Targeting
           targetCountries: z.array(z.string()).optional(), // الدول المستهدفة
           blockedCountries: z.array(z.string()).optional(), // الدول الممنوعة
@@ -296,6 +323,8 @@ export const appRouter = router({
           name: z.string().min(1),
           description: z.string().optional(),
           iconUrl: z.string().optional(),
+          criteria: z.enum(['clicks', 'conversions', 'earnings', 'points']),
+          requiredValue: z.number().int().min(1),
           pointsReward: z.number().int().min(0),
         }).parse(input);
       })
@@ -310,6 +339,8 @@ export const appRouter = router({
           name: z.string().min(1).optional(),
           description: z.string().optional(),
           iconUrl: z.string().optional(),
+          criteria: z.enum(['clicks', 'conversions', 'earnings', 'points']).optional(),
+          requiredValue: z.number().int().min(1).optional(),
           pointsReward: z.number().int().min(0).optional(),
         }).parse(input);
       })
@@ -547,6 +578,225 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { testIntegration } = await import("./db");
         return testIntegration(input.id);
+      }),
+  }),
+
+  logs: router({
+    list: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ limit: z.number().int().min(1).max(500).optional() }).parse(input);
+      })
+      .query(async ({ input }) => {
+        const { getAuditLogs } = await import("./db");
+        return getAuditLogs(input.limit || 100);
+      }),
+  }),
+
+  monitoring: router({
+    stats: publicProcedure.query(async () => {
+      const { getSystemStats } = await import("./db");
+      return getSystemStats();
+    }),
+    health: publicProcedure.query(async () => {
+      const { getServicesHealth } = await import("./db");
+      return getServicesHealth();
+    }),
+    clicksTimeSeries: publicProcedure.query(async () => {
+      const { getClicksTimeSeries } = await import("./db");
+      return getClicksTimeSeries();
+    }),
+    latencyTimeSeries: publicProcedure.query(async () => {
+      const { getLatencyTimeSeries } = await import("./db");
+      return getLatencyTimeSeries();
+    }),
+  }),
+
+  tenants: router({
+    list: publicProcedure.query(async () => {
+      const { getTenants } = await import("./db");
+      return getTenants();
+    }),
+    stats: publicProcedure.query(async () => {
+      const { getTenantsStats } = await import("./db");
+      return getTenantsStats();
+    }),
+    create: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          name: z.string(),
+          slug: z.string(),
+          adminEmail: z.string().email(),
+          plan: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { createTenant } = await import("./db");
+        return createTenant(input);
+      }),
+    update: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          id: z.string(),
+          name: z.string().optional(),
+          slug: z.string().optional(),
+          status: z.string().optional(),
+          plan: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { updateTenant } = await import("./db");
+        return updateTenant(input.id, input);
+      }),
+    delete: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { deleteTenant } = await import("./db");
+        return deleteTenant(input.id);
+      }),
+  }),
+
+  webhooks: router({
+    list: publicProcedure.query(async () => {
+      const { getWebhooks } = await import("./db");
+      return getWebhooks();
+    }),
+    stats: publicProcedure.query(async () => {
+      const { getWebhooksStats } = await import("./db");
+      return getWebhooksStats();
+    }),
+    dlq: publicProcedure.query(async () => {
+      const { getWebhookDLQ } = await import("./db");
+      return getWebhookDLQ();
+    }),
+    create: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          name: z.string(),
+          url: z.string().url(),
+          triggerType: z.string(),
+          signatureMode: z.string().optional(),
+          secret: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { createWebhook } = await import("./db");
+        return createWebhook(input);
+      }),
+    update: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          id: z.string(),
+          name: z.string().optional(),
+          url: z.string().optional(),
+          triggerType: z.string().optional(),
+          signatureMode: z.string().optional(),
+          status: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { updateWebhook } = await import("./db");
+        return updateWebhook(input.id, input);
+      }),
+    delete: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { deleteWebhook } = await import("./db");
+        return deleteWebhook(input.id);
+      }),
+    deleteDLQ: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { deleteDLQItem } = await import("./db");
+        return deleteDLQItem(input.id);
+      }),
+  }),
+
+  geoRules: router({
+    list: publicProcedure.query(async () => {
+      const { getGeoRules, initGeoRulesTable } = await import("./db");
+      await initGeoRulesTable();
+      return getGeoRules();
+    }),
+    stats: publicProcedure.query(async () => {
+      const { getGeoRulesStats } = await import("./db");
+      return getGeoRulesStats();
+    }),
+    create: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          name: z.string(),
+          scopeType: z.string().optional(),
+          scopeId: z.string().optional(),
+          mode: z.string(),
+          countries: z.array(z.string()),
+          priority: z.number().optional(),
+          status: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { createGeoRule } = await import("./db");
+        return createGeoRule(input);
+      }),
+    update: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          id: z.string(),
+          name: z.string().optional(),
+          mode: z.string().optional(),
+          countries: z.array(z.string()).optional(),
+          priority: z.number().optional(),
+          status: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { updateGeoRule } = await import("./db");
+        return updateGeoRule(input.id, input);
+      }),
+    delete: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { deleteGeoRule } = await import("./db");
+        return deleteGeoRule(input.id);
+      }),
+  }),
+
+  fraud: router({
+    stats: publicProcedure.query(async () => {
+      const { getFraudStats, initFraudTable } = await import("./db");
+      await initFraudTable();
+      return getFraudStats();
+    }),
+    events: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ limit: z.number().int().min(1).max(500).optional() }).parse(input);
+      })
+      .query(async ({ input }) => {
+        const { getFraudEvents } = await import("./db");
+        return getFraudEvents(input.limit || 100);
+      }),
+    block: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ ipAddress: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { blockIP } = await import("./db");
+        return blockIP(input.ipAddress);
+      }),
+    unblock: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ ipAddress: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { unblockIP } = await import("./db");
+        return unblockIP(input.ipAddress);
       }),
   }),
 });

@@ -38,39 +38,16 @@ import {
   Pie,
   Cell 
 } from 'recharts';
-
-// Mock data
-const mockFraudStats = {
-  totalBlocked: 4520,
-  botsBlocked: 2150,
-  geoBlocked: 1890,
-  rateLimited: 480,
-  riskScore: 15,
-};
-
-const mockRiskyIPs = [
-  { ip: "192.168.1.100", attempts: 1250, lastSeen: "2 min ago", country: "CN", riskScore: 95, blocked: true },
-  { ip: "10.0.0.55", attempts: 890, lastSeen: "5 min ago", country: "RU", riskScore: 88, blocked: true },
-  { ip: "172.16.0.22", attempts: 450, lastSeen: "12 min ago", country: "IN", riskScore: 72, blocked: false },
-  { ip: "203.45.67.89", attempts: 320, lastSeen: "25 min ago", country: "BR", riskScore: 65, blocked: false },
-  { ip: "45.123.45.67", attempts: 180, lastSeen: "1 hour ago", country: "US", riskScore: 45, blocked: false },
-];
-
-const mockFraudEvents = [
-  { id: "1", type: "bot_detected", ip: "192.168.1.100", country: "CN", timestamp: "2024-12-02 14:32:15", details: "Headless browser detected" },
-  { id: "2", type: "rate_limit", ip: "10.0.0.55", country: "RU", timestamp: "2024-12-02 14:30:22", details: "100+ requests/min" },
-  { id: "3", type: "geo_block", ip: "172.16.0.22", country: "IN", timestamp: "2024-12-02 14:28:45", details: "Blocked country" },
-  { id: "4", type: "replay_attempt", ip: "203.45.67.89", country: "BR", timestamp: "2024-12-02 14:25:10", details: "Duplicate nonce detected" },
-  { id: "5", type: "invalid_signature", ip: "45.123.45.67", country: "US", timestamp: "2024-12-02 14:20:33", details: "HMAC validation failed" },
-];
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 const hourlyData = [
-  { hour: "00:00", blocked: 120 },
-  { hour: "04:00", blocked: 85 },
-  { hour: "08:00", blocked: 210 },
-  { hour: "12:00", blocked: 380 },
-  { hour: "16:00", blocked: 450 },
-  { hour: "20:00", blocked: 320 },
+  { hour: "00:00", blocked: 0 },
+  { hour: "04:00", blocked: 0 },
+  { hour: "08:00", blocked: 0 },
+  { hour: "12:00", blocked: 0 },
+  { hour: "16:00", blocked: 0 },
+  { hour: "20:00", blocked: 0 },
 ];
 
 const fraudTypeData = [
@@ -82,16 +59,41 @@ const fraudTypeData = [
 
 export default function FraudDetection() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
+  // Fetch real data from API
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = trpc.fraud.stats.useQuery();
+  const { data: events, isLoading: eventsLoading, refetch: refetchEvents } = trpc.fraud.events.useQuery({ limit: 100 });
+  const blockMutation = trpc.fraud.block.useMutation({
+    onSuccess: () => {
+      toast.success("IP blocked successfully");
+      refetchEvents();
+    }
+  });
+  const unblockMutation = trpc.fraud.unblock.useMutation({
+    onSuccess: () => {
+      toast.success("IP unblocked successfully");
+      refetchEvents();
+    }
+  });
+
+  const isRefreshing = statsLoading || eventsLoading;
+
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setLastUpdated(new Date());
-      setIsRefreshing(false);
-    }, 1000);
+    refetchStats();
+    refetchEvents();
+    setLastUpdated(new Date());
   };
+
+  // Transform events to risky IPs format
+  const riskyIPs = (events || []).map((e: any) => ({
+    ip: e.ipAddress,
+    attempts: e.attempts || 1,
+    lastSeen: e.lastSeen ? new Date(e.lastSeen).toLocaleString() : 'Unknown',
+    country: e.country || 'XX',
+    riskScore: e.riskScore || 0,
+    blocked: e.status === 'blocked'
+  }));
 
   const getEventTypeBadge = (type: string) => {
     switch (type) {
@@ -116,11 +118,13 @@ export default function FraudDetection() {
     return <Badge variant="outline">{score}%</Badge>;
   };
 
-  const stats = [
-    { title: "Total Blocked", value: mockFraudStats.totalBlocked.toLocaleString(), icon: Ban, color: "text-red-500", change: "+12%" },
-    { title: "Bots Blocked", value: mockFraudStats.botsBlocked.toLocaleString(), icon: Bot, color: "text-orange-500", change: "+8%" },
-    { title: "Geo Blocked", value: mockFraudStats.geoBlocked.toLocaleString(), icon: Globe, color: "text-blue-500", change: "+15%" },
-    { title: "Risk Score", value: `${mockFraudStats.riskScore}%`, icon: Shield, color: "text-green-500", change: "-3%" },
+  const fraudStats = stats || { totalBlocked: 0, suspiciousIPs: 0, blockedToday: 0, blockRate: 0, byType: {} };
+  
+  const statCards = [
+    { title: "Total Blocked", value: fraudStats.totalBlocked.toLocaleString(), icon: Ban, color: "text-red-500", change: "" },
+    { title: "Suspicious IPs", value: fraudStats.suspiciousIPs.toLocaleString(), icon: Bot, color: "text-orange-500", change: "" },
+    { title: "Blocked Today", value: fraudStats.blockedToday.toLocaleString(), icon: Globe, color: "text-blue-500", change: "" },
+    { title: "Block Rate", value: `${fraudStats.blockRate}%`, icon: Shield, color: "text-green-500", change: "" },
   ];
 
   return (
@@ -147,7 +151,7 @@ export default function FraudDetection() {
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => {
+          {statCards.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.title}>
@@ -246,7 +250,13 @@ export default function FraudDetection() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockRiskyIPs.map((ip) => (
+                {riskyIPs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      لا توجد بيانات احتيال بعد - ستظهر عند وجود نشاط مشبوه
+                    </TableCell>
+                  </TableRow>
+                ) : riskyIPs.map((ip: any) => (
                   <TableRow key={ip.ip}>
                     <TableCell className="font-mono">{ip.ip}</TableCell>
                     <TableCell>
@@ -268,11 +278,11 @@ export default function FraudDetection() {
                           <Eye className="h-4 w-4" />
                         </Button>
                         {ip.blocked ? (
-                          <Button variant="ghost" size="icon" className="text-green-500">
+                          <Button variant="ghost" size="icon" className="text-green-500" onClick={() => unblockMutation.mutate({ ipAddress: ip.ip })}>
                             <Unlock className="h-4 w-4" />
                           </Button>
                         ) : (
-                          <Button variant="ghost" size="icon" className="text-red-500">
+                          <Button variant="ghost" size="icon" className="text-red-500" onClick={() => blockMutation.mutate({ ipAddress: ip.ip })}>
                             <Lock className="h-4 w-4" />
                           </Button>
                         )}
@@ -303,15 +313,21 @@ export default function FraudDetection() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockFraudEvents.map((event) => (
+                {(events || []).length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      لا توجد أحداث احتيال بعد
+                    </TableCell>
+                  </TableRow>
+                ) : (events || []).map((event: any) => (
                   <TableRow key={event.id}>
-                    <TableCell>{getEventTypeBadge(event.type)}</TableCell>
-                    <TableCell className="font-mono">{event.ip}</TableCell>
+                    <TableCell>{getEventTypeBadge(event.eventType)}</TableCell>
+                    <TableCell className="font-mono">{event.ipAddress}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{event.country}</Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{event.timestamp}</TableCell>
-                    <TableCell className="text-sm">{event.details}</TableCell>
+                    <TableCell className="text-muted-foreground">{event.createdAt ? new Date(event.createdAt).toLocaleString() : 'Unknown'}</TableCell>
+                    <TableCell className="text-sm">{event.details || '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

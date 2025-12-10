@@ -26,12 +26,52 @@ interface EditUserDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const countries = [
+  { code: "KW", name: "🇰🇼 Kuwait" },
+  { code: "SA", name: "🇸🇦 Saudi Arabia" },
+  { code: "AE", name: "🇦🇪 UAE" },
+  { code: "BH", name: "🇧🇭 Bahrain" },
+  { code: "QA", name: "🇶🇦 Qatar" },
+  { code: "OM", name: "🇴🇲 Oman" },
+  { code: "EG", name: "🇪🇬 Egypt" },
+  { code: "JO", name: "🇯🇴 Jordan" },
+  { code: "LB", name: "🇱🇧 Lebanon" },
+  { code: "IQ", name: "🇮🇶 Iraq" },
+  { code: "SY", name: "🇸🇾 Syria" },
+  { code: "PS", name: "🇵🇸 Palestine" },
+  { code: "YE", name: "🇾🇪 Yemen" },
+  { code: "LY", name: "🇱🇾 Libya" },
+  { code: "TN", name: "🇹🇳 Tunisia" },
+  { code: "DZ", name: "🇩🇿 Algeria" },
+  { code: "MA", name: "🇲🇦 Morocco" },
+  { code: "SD", name: "🇸🇩 Sudan" },
+  { code: "SO", name: "🇸🇴 Somalia" },
+  { code: "MR", name: "🇲🇷 Mauritania" },
+  { code: "DJ", name: "🇩🇯 Djibouti" },
+  { code: "KM", name: "🇰🇲 Comoros" },
+  { code: "IN", name: "🇮🇳 India" },
+  { code: "PK", name: "🇵🇰 Pakistan" },
+  { code: "BD", name: "🇧🇩 Bangladesh" },
+  { code: "TR", name: "🇹🇷 Turkey" },
+  { code: "IR", name: "🇮🇷 Iran" },
+  { code: "US", name: "🇺🇸 USA" },
+  { code: "GB", name: "🇬🇧 UK" },
+  { code: "DE", name: "🇩🇪 Germany" },
+  { code: "FR", name: "🇫🇷 France" },
+  { code: "CA", name: "🇨🇦 Canada" },
+  { code: "AU", name: "🇦🇺 Australia" },
+  { code: "MY", name: "🇲🇾 Malaysia" },
+  { code: "ID", name: "🇮🇩 Indonesia" },
+  { code: "PH", name: "🇵🇭 Philippines" },
+];
+
 export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     fullName: "",
-    role: "user" as "user" | "admin",
+    country: "",
+    role: "user" as "user" | "admin" | "advertiser",
     status: "active" as "active" | "suspended",
   });
 
@@ -53,6 +93,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
         username: user.username || "",
         email: user.email || "",
         fullName: user.fullName || "",
+        country: user.country || "",
         role: user.role || "user",
         status: user.status || "active",
       });
@@ -113,10 +154,26 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="country">Country</Label>
+              <Select
+                value={formData.country}
+                onValueChange={(value) => setFormData({ ...formData, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="role">Role</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: "user" | "admin") => 
+                onValueChange={(value: "user" | "admin" | "advertiser") => 
                   setFormData({ ...formData, role: value })
                 }
               >
@@ -125,6 +182,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="advertiser">Advertiser</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

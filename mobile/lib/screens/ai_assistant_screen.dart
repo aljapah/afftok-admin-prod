@@ -808,7 +808,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                       // TODO: Enable when implemented
                       // _buildPointRow('🎯', _isArabic ? 'أول تحويل في عرض' : 'First Conv. in Offer', '+50'),
                       // _buildPointRow('📅', _isArabic ? 'نشاط يومي' : 'Daily Activity', '+5'),
-                      _buildPointRow('👥', _isArabic ? 'دعوة صديق' : 'Invite Friend', '+30'),
+                      // Removed: Invite Friend +30 points - disabled to prevent fraud
                       
                       const SizedBox(height: 24),
                       

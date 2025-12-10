@@ -19,6 +19,7 @@ type PostbackHandler struct {
 	observabilityService *services.ObservabilityService
 	apiKeyService        *services.APIKeyService
 	geoRuleService       *services.GeoRuleService
+	badgeHandler         *BadgeHandler
 }
 
 func NewPostbackHandler(db *gorm.DB) *PostbackHandler {
@@ -28,6 +29,7 @@ func NewPostbackHandler(db *gorm.DB) *PostbackHandler {
 		observabilityService: services.NewObservabilityService(),
 		apiKeyService:        services.NewAPIKeyService(db),
 		geoRuleService:       services.NewGeoRuleService(db),
+		badgeHandler:         NewBadgeHandler(db),
 	}
 }
 
@@ -325,6 +327,13 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 	}
 
 	fmt.Printf("[Postback] Conversion created: %s for user offer %s\n", conversion.ID.String(), userOfferID.String())
+
+	// Check and award badges for the user (gamification)
+	go func() {
+		if err := h.badgeHandler.CheckAndAwardBadges(userOffer.UserID); err != nil {
+			fmt.Printf("[Postback] Failed to check badges for user %s: %v\n", userOffer.UserID.String(), err)
+		}
+	}()
 
 	// Log conversion with full observability
 	durationMs := time.Since(startTime).Milliseconds()

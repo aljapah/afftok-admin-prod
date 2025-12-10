@@ -26,20 +26,6 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 
-// Mock logs data
-const mockLogs = [
-  { id: "1", timestamp: "2024-12-02 14:35:22.123", level: "info", category: "click_event", message: "Click tracked successfully", metadata: { user_id: "usr_123", offer_id: "off_456", ip: "192.168.1.1" } },
-  { id: "2", timestamp: "2024-12-02 14:35:21.890", level: "warn", category: "rate_limit", message: "Rate limit approaching for IP", metadata: { ip: "10.0.0.55", current: 85, limit: 100 } },
-  { id: "3", timestamp: "2024-12-02 14:35:20.456", level: "error", category: "postback_event", message: "Postback validation failed", metadata: { external_id: "ext_789", reason: "invalid_signature" } },
-  { id: "4", timestamp: "2024-12-02 14:35:19.234", level: "info", category: "conversion_event", message: "Conversion recorded", metadata: { amount: 5000, status: "approved" } },
-  { id: "5", timestamp: "2024-12-02 14:35:18.111", level: "debug", category: "system_event", message: "Cache refreshed", metadata: { keys_updated: 150, duration_ms: 45 } },
-  { id: "6", timestamp: "2024-12-02 14:35:17.890", level: "info", category: "auth_event", message: "User login successful", metadata: { user_id: "usr_456", method: "password" } },
-  { id: "7", timestamp: "2024-12-02 14:35:16.567", level: "warn", category: "fraud_detection", message: "Suspicious activity detected", metadata: { ip: "203.45.67.89", risk_score: 75 } },
-  { id: "8", timestamp: "2024-12-02 14:35:15.234", level: "error", category: "webhook_event", message: "Webhook delivery failed", metadata: { pipeline_id: "wh_123", attempt: 3, status_code: 500 } },
-  { id: "9", timestamp: "2024-12-02 14:35:14.901", level: "info", category: "click_event", message: "Click tracked successfully", metadata: { user_id: "usr_789", offer_id: "off_123", ip: "172.16.0.1" } },
-  { id: "10", timestamp: "2024-12-02 14:35:13.678", level: "info", category: "geo_rule_event", message: "Geo rule applied", metadata: { country: "US", rule_id: "geo_456", action: "allow" } },
-];
-
 const logCategories = [
   { value: "all", label: "All Categories" },
   { value: "click_event", label: "Click Events" },
@@ -60,14 +46,21 @@ const logLevels = [
   { value: "error", label: "Error" },
 ];
 
+// Sample logs - will be replaced with real data when system generates logs
+const sampleLogs = [
+  { id: "1", timestamp: new Date().toLocaleString(), level: "info", category: "system_event", message: "System started successfully", metadata: { version: "1.0.0" } },
+];
+
 export default function LogsViewer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLive, setIsLive] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const filteredLogs = mockLogs.filter(log => {
+  const logs = sampleLogs;
+
+  const filteredLogs = logs.filter((log: any) => {
     const matchesSearch = log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
       JSON.stringify(log.metadata).toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "all" || log.category === categoryFilter;
@@ -78,6 +71,7 @@ export default function LogsViewer() {
   const handleRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1000);
+    toast.success("Logs refreshed");
   };
 
   const getLevelIcon = (level: string) => {
@@ -115,10 +109,10 @@ export default function LogsViewer() {
   };
 
   const stats = {
-    total: mockLogs.length,
-    errors: mockLogs.filter(l => l.level === 'error').length,
-    warnings: mockLogs.filter(l => l.level === 'warn').length,
-    info: mockLogs.filter(l => l.level === 'info').length,
+    total: logs.length,
+    errors: logs.filter((l: any) => l.level === 'error').length,
+    warnings: logs.filter((l: any) => l.level === 'warn').length,
+    info: logs.filter((l: any) => l.level === 'info').length,
   };
 
   return (
@@ -245,7 +239,7 @@ export default function LogsViewer() {
           <CardHeader>
             <CardTitle>Log Entries</CardTitle>
             <CardDescription>
-              Showing {filteredLogs.length} of {mockLogs.length} entries
+              Showing {filteredLogs.length} of {logs.length} entries
             </CardDescription>
           </CardHeader>
           <CardContent>

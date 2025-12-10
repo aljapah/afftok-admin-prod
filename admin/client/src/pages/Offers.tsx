@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { CreateOfferDialog } from "@/components/CreateOfferDialog";
 import { EditOfferDialog } from "@/components/EditOfferDialog";
-import { Trash2, Search, Pencil, Download, Check, X, Clock, AlertCircle } from "lucide-react";
+import { Trash2, Search, Pencil, Download, Check, X, Clock, AlertCircle, Filter } from "lucide-react";
 import { toast } from "sonner";
 import TableSkeleton from "@/components/TableSkeleton";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,10 @@ export default function Offers() {
   const { data: offers, isLoading } = trpc.offers.list.useQuery();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [payoutFilter, setPayoutFilter] = useState<string>("all");
+  const [clicksFilter, setClicksFilter] = useState<string>("all");
+  const [conversionsFilter, setConversionsFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [editingOffer, setEditingOffer] = useState<any>(null);
@@ -43,14 +47,75 @@ export default function Offers() {
   const [rejectingOffer, setRejectingOffer] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState("");
   
+  // Check if any filter is active
+  const hasActiveFilters = statusFilter !== "all" || categoryFilter !== "all" || payoutFilter !== "all" || clicksFilter !== "all" || conversionsFilter !== "all" || searchQuery !== "";
+  
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setCategoryFilter("all");
+    setPayoutFilter("all");
+    setClicksFilter("all");
+    setConversionsFilter("all");
+    setCurrentPage(1);
+  };
+  
+  // Get unique categories from offers
+  const categories = [...new Set(offers?.map(o => o.category).filter(Boolean))] as string[];
+  
   // Get pending offers count
   const pendingOffers = offers?.filter(o => o.status === "pending") || [];
   
   const filteredOffers = offers?.filter((offer) => {
-    const matchesSearch = offer.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    // Text search
+    const matchesSearch = searchQuery === "" ||
+      offer.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       offer.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Status filter
     const matchesStatus = statusFilter === "all" || offer.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    // Category filter
+    const matchesCategory = categoryFilter === "all" || offer.category === categoryFilter;
+    
+    // Payout filter (in cents)
+    let matchesPayout = true;
+    if (payoutFilter !== "all") {
+      const payout = offer.payout || 0;
+      switch (payoutFilter) {
+        case "0-100": matchesPayout = payout <= 100; break;
+        case "100-500": matchesPayout = payout > 100 && payout <= 500; break;
+        case "500-1000": matchesPayout = payout > 500 && payout <= 1000; break;
+        case "1000+": matchesPayout = payout > 1000; break;
+      }
+    }
+    
+    // Clicks filter
+    let matchesClicks = true;
+    if (clicksFilter !== "all") {
+      const clicks = offer.totalClicks || 0;
+      switch (clicksFilter) {
+        case "0": matchesClicks = clicks === 0; break;
+        case "1-10": matchesClicks = clicks >= 1 && clicks <= 10; break;
+        case "10-100": matchesClicks = clicks > 10 && clicks <= 100; break;
+        case "100+": matchesClicks = clicks > 100; break;
+      }
+    }
+    
+    // Conversions filter
+    let matchesConversions = true;
+    if (conversionsFilter !== "all") {
+      const conversions = offer.totalConversions || 0;
+      switch (conversionsFilter) {
+        case "0": matchesConversions = conversions === 0; break;
+        case "1-10": matchesConversions = conversions >= 1 && conversions <= 10; break;
+        case "10-50": matchesConversions = conversions > 10 && conversions <= 50; break;
+        case "50+": matchesConversions = conversions > 50; break;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesCategory && matchesPayout && matchesClicks && matchesConversions;
   });
 
   const totalPages = Math.ceil((filteredOffers?.length || 0) / itemsPerPage);
@@ -177,17 +242,6 @@ export default function Offers() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Offers</h1>
           <div className="flex items-center gap-4">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
             <Button
               variant="outline"
               size="sm"
@@ -215,6 +269,99 @@ export default function Offers() {
             <CreateOfferDialog />
           </div>
         </div>
+
+        {/* Advanced Filters */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Filters:</span>
+              </div>
+              
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Category Filter */}
+              <Select value={categoryFilter} onValueChange={(value) => { setCategoryFilter(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Payout Filter */}
+              <Select value={payoutFilter} onValueChange={(value) => { setPayoutFilter(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Payout" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Payouts</SelectItem>
+                  <SelectItem value="0-100">$0 - $1</SelectItem>
+                  <SelectItem value="100-500">$1 - $5</SelectItem>
+                  <SelectItem value="500-1000">$5 - $10</SelectItem>
+                  <SelectItem value="1000+">$10+</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Clicks Filter */}
+              <Select value={clicksFilter} onValueChange={(value) => { setClicksFilter(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Clicks" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Clicks</SelectItem>
+                  <SelectItem value="0">No clicks</SelectItem>
+                  <SelectItem value="1-10">1-10</SelectItem>
+                  <SelectItem value="10-100">10-100</SelectItem>
+                  <SelectItem value="100+">100+</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Conversions Filter */}
+              <Select value={conversionsFilter} onValueChange={(value) => { setConversionsFilter(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Conversions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Conv.</SelectItem>
+                  <SelectItem value="0">No conversions</SelectItem>
+                  <SelectItem value="1-10">1-10</SelectItem>
+                  <SelectItem value="10-50">10-50</SelectItem>
+                  <SelectItem value="50+">50+</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              )}
+              
+              {/* Results count */}
+              <span className="text-sm text-muted-foreground ml-auto">
+                {filteredOffers?.length || 0} offer(s) found
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

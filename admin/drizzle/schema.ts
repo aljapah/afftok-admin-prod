@@ -55,6 +55,7 @@ export const afftokUsers = pgTable("afftok_users", {
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   fullName: varchar("full_name", { length: 100 }),
   avatarUrl: text("avatar_url"),
+  country: varchar("country", { length: 5 }),
   role: varchar("role", { length: 20 }).default("user").notNull(),
   status: varchar("status", { length: 20 }).default("active").notNull(),
   points: integer("points").default(0).notNull(),
@@ -83,6 +84,7 @@ export const networks = pgTable("networks", {
 export const offers = pgTable("offers", {
   id: uuid("id").primaryKey().defaultRandom(),
   networkId: uuid("network_id"),
+  advertiserId: uuid("advertiser_id"), // المعلن صاحب العرض
   externalOfferId: varchar("external_offer_id", { length: 100 }),
   // English Fields
   title: varchar("title", { length: 255 }).notNull(),

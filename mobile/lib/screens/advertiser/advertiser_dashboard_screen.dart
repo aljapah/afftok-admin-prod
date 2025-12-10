@@ -607,7 +607,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
 آلية الدفع والمواعيد
 • تُصدر الفاتورة الشهرية في اليوم الأول من كل شهر ميلادي.
 • يلتزم المعلن بالسداد خلال 7 أيام عمل من تاريخ إصدار الفاتورة.
-• في حال كان المبلغ المستحق أقل من 10 د.ك، يُرحَّل للشهر التالي.
+• في حال كان المبلغ المستحق أقل من 10 دولار، يُرحَّل للشهر التالي.
 
 الإنهاء
 • يحق لأي طرف إنهاء هذه الاتفاقية بإشعار خطي مسبق مدته 30 يومًا.
@@ -629,7 +629,7 @@ Platform Obligations
 Payment Schedule
 • Monthly invoices are issued on the first day of each calendar month.
 • The advertiser must pay within 7 business days from the invoice date.
-• If the amount due is less than 10 KWD, it will be carried over to the next month.
+• If the amount due is less than 10 USD, it will be carried over to the next month.
 
 Termination
 • Either party may terminate this agreement with 30 days written notice.
