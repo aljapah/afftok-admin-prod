@@ -24,6 +24,13 @@ type Click struct {
 	Fingerprint string     `gorm:"type:varchar(64);index:idx_clicks_fingerprint" json:"fingerprint,omitempty"`
 	IsUnique    bool       `gorm:"default:true" json:"is_unique"`
 	
+	// Fraud Detection - كشف الاحتيال
+	FraudScore  float64    `gorm:"type:decimal(5,2);default:0" json:"fraud_score"`      // 0-100
+	FraudFlags  string     `gorm:"type:jsonb" json:"fraud_flags,omitempty"`             // ["vpn", "bot", "proxy"]
+	IsVPN       bool       `gorm:"default:false" json:"is_vpn"`
+	IsBot       bool       `gorm:"default:false" json:"is_bot"`
+	IsProxy     bool       `gorm:"default:false" json:"is_proxy"`
+	
 	// Relationships
 	UserOffer   *UserOffer `gorm:"foreignKey:UserOfferID" json:"user_offer,omitempty"`
 }
@@ -50,6 +57,11 @@ type Conversion struct {
 	// Status tracking
 	Status               string     `gorm:"type:varchar(20);default:'pending';index:idx_conv_status" json:"status"`
 	RejectionReason      string     `gorm:"type:text" json:"rejection_reason,omitempty"`
+	
+	// Fraud Detection - كشف الاحتيال
+	FraudScore           float64    `gorm:"type:decimal(5,2);default:0" json:"fraud_score"`
+	FraudFlags           string     `gorm:"type:jsonb" json:"fraud_flags,omitempty"`
+	AutoRejected         bool       `gorm:"default:false" json:"auto_rejected"` // تم الرفض تلقائياً بسبب الاحتيال
 	
 	// Timestamps
 	ConvertedAt          time.Time  `gorm:"default:CURRENT_TIMESTAMP;index:idx_conv_time" json:"converted_at"`

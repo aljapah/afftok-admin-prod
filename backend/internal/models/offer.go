@@ -61,6 +61,14 @@ type Offer struct {
 	// Tracking - نوع التتبع
 	TrackingType     string     `gorm:"type:varchar(20);default:'cookie'" json:"tracking_type"` // cookie, coupon, link
 	
+	// Attribution Settings - إعدادات نسب التحويل
+	AttributionWindow int       `gorm:"default:30" json:"attribution_window"`                    // أيام: 7, 14, 30, 60, 90
+	AttributionModel  string    `gorm:"type:varchar(20);default:'last_click'" json:"attribution_model"` // first_click, last_click
+	
+	// Fraud Protection - حماية من الاحتيال
+	MaxFraudScore     int       `gorm:"default:70" json:"max_fraud_score"`                       // الحد الأقصى لنقاط الاحتيال (0-100)
+	AutoRejectFraud   bool      `gorm:"default:true" json:"auto_reject_fraud"`                   // رفض تلقائي للتحويلات المشبوهة
+	
 	// Additional Notes - ملاحظات إضافية
 	AdditionalNotes  string     `gorm:"type:text" json:"additional_notes,omitempty"`
 	

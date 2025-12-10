@@ -803,3 +803,35 @@ func (s *SecurityService) TrackConversionAnomaly(userOfferID uuid.UUID, conversi
 	return false
 }
 
+// ============================================
+// CONVERSION DUPLICATE LOCK
+// ============================================
+
+// IsConversionLocked checks if a conversion key (click_id + offer_id) is already locked
+func (s *SecurityService) IsConversionLocked(ctx context.Context, lockKey string) bool {
+	if cache.RedisClient == nil {
+		return false
+	}
+	
+	val, err := cache.Get(ctx, lockKey)
+	return err == nil && val != ""
+}
+
+// LockConversion locks a conversion key for a specified duration
+func (s *SecurityService) LockConversion(ctx context.Context, lockKey string, duration time.Duration) {
+	if cache.RedisClient == nil {
+		return
+	}
+	
+	cache.Set(ctx, lockKey, "1", duration)
+}
+
+// UnlockConversion removes a conversion lock (admin use)
+func (s *SecurityService) UnlockConversion(ctx context.Context, lockKey string) {
+	if cache.RedisClient == nil {
+		return
+	}
+	
+	cache.Delete(ctx, lockKey)
+}
+

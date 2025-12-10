@@ -206,7 +206,11 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 		externalID = fmt.Sprintf("auto_%s_%d", userOfferID.String()[:8], time.Now().UnixNano())
 	}
 
-	// Check for duplicate conversion
+	// ============================================
+	// ENHANCED FRAUD PROTECTION & DUPLICATE LOCK
+	// ============================================
+	
+	// 1. Check for duplicate conversion by external_id
 	if externalID != "" {
 		var existingConversion models.Conversion
 		if err := h.db.Where("external_conversion_id = ?", externalID).First(&existingConversion).Error; err == nil {
@@ -222,10 +226,96 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 
 	// Resolve click ID if provided
 	var clickID *uuid.UUID
+	var clickData *models.Click
 	if req.ClickID != "" {
 		if id, err := uuid.Parse(req.ClickID); err == nil {
 			clickID = &id
+			// Load click data for attribution validation
+			var click models.Click
+			if h.db.First(&click, "id = ?", id).Error == nil {
+				clickData = &click
+			}
 		}
+	}
+	
+	// 2. Enhanced Duplicate Lock: click_id + offer_id (prevents multi-postback for same click)
+	if clickID != nil && userOffer.Offer != nil {
+		duplicateKey := fmt.Sprintf("conv_lock:%s:%s", clickID.String(), userOffer.OfferID.String())
+		ctx := c.Request.Context()
+		
+		// Check if this click+offer already has a conversion (30 day window)
+		if h.securityService.IsConversionLocked(ctx, duplicateKey) {
+			h.observabilityService.Log(services.LogEvent{
+				Timestamp: time.Now(),
+				Level:     services.LogLevelWarning,
+				Category:  "fraud",
+				Message:   "Duplicate conversion blocked (click+offer lock)",
+				IP:        ip,
+				Metadata: map[string]interface{}{
+					"click_id": clickID.String(),
+					"offer_id": userOffer.OfferID.String(),
+				},
+			})
+			c.JSON(http.StatusConflict, gin.H{
+				"error":     "DUPLICATE_CONVERSION",
+				"message":   "Conversion already recorded for this click",
+				"duplicate": true,
+			})
+			return
+		}
+		
+		// Lock this click+offer combination for 30 days
+		h.securityService.LockConversion(ctx, duplicateKey, 30*24*time.Hour)
+	}
+	
+	// 3. Attribution Window Validation
+	if clickData != nil && userOffer.Offer != nil {
+		attributionWindow := userOffer.Offer.AttributionWindow
+		if attributionWindow == 0 {
+			attributionWindow = 30 // Default 30 days
+		}
+		
+		clickAge := time.Since(clickData.ClickedAt)
+		maxAge := time.Duration(attributionWindow) * 24 * time.Hour
+		
+		if clickAge > maxAge {
+			h.observabilityService.Log(services.LogEvent{
+				Timestamp: time.Now(),
+				Level:     services.LogLevelWarning,
+				Category:  "attribution",
+				Message:   "Conversion rejected: outside attribution window",
+				IP:        ip,
+				Metadata: map[string]interface{}{
+					"click_id":           clickID.String(),
+					"click_age_days":     int(clickAge.Hours() / 24),
+					"attribution_window": attributionWindow,
+				},
+			})
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "ATTRIBUTION_EXPIRED",
+				"message": fmt.Sprintf("Click is older than %d day attribution window", attributionWindow),
+			})
+			return
+		}
+	}
+	
+	// 4. Smart Billing Safety: Check fraud score
+	var fraudScore float64
+	var fraudFlags []string
+	if clickData != nil {
+		fraudScore = clickData.FraudScore
+		if clickData.FraudFlags != "" {
+			json.Unmarshal([]byte(clickData.FraudFlags), &fraudFlags)
+		}
+	}
+	
+	maxFraudScore := 70 // Default
+	autoRejectFraud := true
+	if userOffer.Offer != nil {
+		if userOffer.Offer.MaxFraudScore > 0 {
+			maxFraudScore = userOffer.Offer.MaxFraudScore
+		}
+		autoRejectFraud = userOffer.Offer.AutoRejectFraud
 	}
 
 	// Resolve network ID
@@ -240,6 +330,24 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 	status := req.Status
 	if status == "" {
 		status = models.ConversionStatusPending
+	}
+	
+	// 5. Smart Billing Safety: Auto-reject high fraud score conversions
+	if fraudScore >= float64(maxFraudScore) && autoRejectFraud {
+		status = models.ConversionStatusRejected
+		h.observabilityService.Log(services.LogEvent{
+			Timestamp: time.Now(),
+			Level:     services.LogLevelWarning,
+			Category:  "fraud",
+			Message:   "Conversion auto-rejected due to high fraud score",
+			IP:        ip,
+			Metadata: map[string]interface{}{
+				"fraud_score":     fraudScore,
+				"max_fraud_score": maxFraudScore,
+				"fraud_flags":     fraudFlags,
+				"click_id":        req.ClickID,
+			},
+		})
 	}
 
 	// Determine currency
@@ -258,7 +366,16 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 	postbackData, _ := json.Marshal(req)
 	now := time.Now().UTC()
 
-	// Create conversion record
+	// Create conversion record with fraud tracking
+	fraudFlagsJSON, _ := json.Marshal(fraudFlags)
+	autoRejected := status == models.ConversionStatusRejected && fraudScore >= float64(maxFraudScore)
+	
+	// Set rejection reason if auto-rejected
+	rejectionReason := ""
+	if autoRejected {
+		rejectionReason = fmt.Sprintf("Auto-rejected: fraud score %.1f exceeds threshold %d", fraudScore, maxFraudScore)
+	}
+	
 	conversion := models.Conversion{
 		ID:                   uuid.New(),
 		UserOfferID:          userOfferID,
@@ -269,6 +386,10 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 		Commission:           commission,
 		Currency:             currency,
 		Status:               status,
+		RejectionReason:      rejectionReason,
+		FraudScore:           fraudScore,
+		FraudFlags:           string(fraudFlagsJSON),
+		AutoRejected:         autoRejected,
 		ConvertedAt:          now,
 		PostbackData:         string(postbackData),
 		PostbackReceivedAt:   &now,
