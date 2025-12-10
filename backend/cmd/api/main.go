@@ -383,6 +383,7 @@ func main() {
 			advertiser.POST("/offers/:id/pause", advertiserHandler.PauseOffer)
 			advertiser.GET("/offers/:id/stats", advertiserHandler.GetOfferStats)
 			advertiser.GET("/promoters", advertiserHandler.GetPromoters)
+			advertiser.GET("/conversions", advertiserHandler.GetConversions)
 			
 			// Geo targeting for advertisers
 			advertiser.GET("/geo-rules", adminGeoRulesHandler.GetGeoRulesByAdvertiserSelf)

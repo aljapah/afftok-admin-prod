@@ -156,6 +156,46 @@ class AdvertiserService {
     }
   }
 
+  /// Get all conversions for advertiser's offers
+  Future<Map<String, dynamic>> getConversions(String token, {String? offerId, String? status}) async {
+    try {
+      var url = '$_baseUrl/api/advertiser/conversions';
+      final queryParams = <String, String>{};
+      if (offerId != null && offerId.isNotEmpty) queryParams['offer_id'] = offerId;
+      if (status != null && status.isNotEmpty) queryParams['status'] = status;
+      
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.entries.map((e) => '${e.key}=${e.value}').join('&')}';
+      }
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else if (response.statusCode == 401) {
+        throw Exception('Session expired. Please login again.');
+      } else if (response.statusCode == 403) {
+        throw Exception('Access denied. You must be an advertiser.');
+      } else {
+        final errorBody = response.body.isNotEmpty ? json.decode(response.body) : {};
+        throw Exception(errorBody['error'] ?? 'Failed to load conversions: ${response.statusCode}');
+      }
+    } on http.ClientException {
+      throw Exception('Network error. Please check your connection.');
+    } catch (e) {
+      if (e.toString().contains('TimeoutException')) {
+        throw Exception('Request timed out. Please try again.');
+      }
+      rethrow;
+    }
+  }
+
   /// Get all promoters who joined advertiser's offers with their stats
   Future<Map<String, dynamic>> getPromoters(String token) async {
     try {
