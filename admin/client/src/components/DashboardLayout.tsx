@@ -43,7 +43,8 @@ import {
   Plug,
   UserCog,
   History,
-  Wallet
+  Wallet,
+  BadgeCheck
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -61,6 +62,7 @@ const menuItems = [
   { icon: Trophy, label: "Contests", labelAr: "المسابقات", path: "/contests", roles: ['super_admin', 'finance_admin', 'advertiser_manager', 'promoter_support'] },
   { icon: Award, label: "Badges", labelAr: "الشارات", path: "/badges", roles: ['super_admin', 'advertiser_manager'] },
   { icon: Receipt, label: "Invoices", labelAr: "الفواتير", path: "/invoices", roles: ['super_admin', 'finance_admin'] },
+  { icon: BadgeCheck, label: "KYC", labelAr: "التحقق", path: "/kyc", roles: ['super_admin', 'finance_admin', 'promoter_support', 'fraud_reviewer'] },
   { icon: BarChart3, label: "Analytics", labelAr: "التحليلات", path: "/analytics", roles: ['super_admin', 'finance_admin', 'advertiser_manager'] },
 ];
 

@@ -141,6 +141,7 @@ func main() {
 	promoterHandler := handlers.NewPromoterHandler(db)
 	inviteHandler := handlers.NewInviteHandler(db)
 	advertiserHandler := handlers.NewAdvertiserHandler(db)
+	kycHandler := handlers.NewKYCHandler(db)
 	observabilityHandler := handlers.NewObservabilityHandler()
 	
 	// Phase 7: Admin Observability Handlers
@@ -361,6 +362,27 @@ func main() {
 				clicks.GET("/by-offer", clickHandler.GetClicksByOffer)
 			}
 
+			// ========== KYC & Payout Routes ==========
+			kyc := protected.Group("/kyc")
+			{
+				kyc.POST("/submit", kycHandler.SubmitKYC)
+				kyc.GET("/status", kycHandler.GetMyKYC)
+			}
+
+			paymentMethods := protected.Group("/payment-methods")
+			{
+				paymentMethods.GET("", kycHandler.GetMyPaymentMethods)
+				paymentMethods.POST("", kycHandler.AddPaymentMethod)
+				paymentMethods.DELETE("/:id", kycHandler.DeletePaymentMethod)
+			}
+
+			payouts := protected.Group("/payouts")
+			{
+				payouts.GET("", kycHandler.GetMyPayouts)
+				payouts.POST("/request", kycHandler.RequestPayout)
+				payouts.POST("/:id/cancel", kycHandler.CancelPayout)
+			}
+
 			// ========== Advertiser Routes ==========
 			advertiser := protected.Group("/advertiser")
 			{
@@ -397,6 +419,14 @@ func main() {
 				admin.GET("/conversions", postbackHandler.GetConversions)
 				admin.POST("/conversions/:id/approve", postbackHandler.ApproveConversion)
 				admin.POST("/conversions/:id/reject", postbackHandler.RejectConversion)
+
+				// KYC Management
+				admin.GET("/kyc", kycHandler.AdminGetKYCList)
+				admin.POST("/kyc/:id/review", kycHandler.AdminReviewKYC)
+
+				// Payout Management
+				admin.GET("/payouts", kycHandler.AdminGetPayoutList)
+				admin.POST("/payouts/:id/process", kycHandler.AdminProcessPayout)
 
 				// Pending Offers Management (for advertiser submissions)
 				admin.GET("/offers/pending", advertiserHandler.GetPendingOffers)
