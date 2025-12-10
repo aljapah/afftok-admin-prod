@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/aljapah/afftok-backend-prod/internal/alerting"
 	"github.com/aljapah/afftok-backend-prod/internal/cache"
@@ -15,6 +16,8 @@ import (
 	"github.com/aljapah/afftok-backend-prod/internal/middleware"
 	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"github.com/aljapah/afftok-backend-prod/internal/services"
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -26,6 +29,26 @@ func main() {
 
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using environment variables")
+	}
+
+	// Initialize Sentry for error tracking
+	sentryDSN := os.Getenv("SENTRY_DSN")
+	if sentryDSN != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:              sentryDSN,
+			Environment:      os.Getenv("ENVIRONMENT"),
+			Release:          "afftok@1.0.0",
+			TracesSampleRate: 0.2,
+			EnableTracing:    true,
+		})
+		if err != nil {
+			log.Printf("⚠️ Sentry initialization failed: %v", err)
+		} else {
+			log.Println("✅ Sentry initialized for error tracking")
+		}
+		defer sentry.Flush(2 * time.Second)
+	} else {
+		log.Println("⚠️ SENTRY_DSN not set, error tracking disabled")
 	}
 
 	cfg, err := config.Load()
@@ -77,6 +100,13 @@ func main() {
 	router.Use(middleware.SecurityHeadersMiddleware())
 	router.Use(middleware.SecureErrorMiddleware())
 	router.Use(middleware.AuditLogMiddleware())
+	
+	// Sentry middleware for error tracking
+	if os.Getenv("SENTRY_DSN") != "" {
+		router.Use(sentrygin.New(sentrygin.Options{
+			Repanic: true,
+		}))
+	}
 
 	router.Static("/public", "./public")
 
