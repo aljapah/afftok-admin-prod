@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/advertiser_service.dart';
-import '../../l10n/app_localizations.dart';
 
 class ConversionsScreen extends StatefulWidget {
   const ConversionsScreen({super.key});
@@ -62,7 +61,6 @@ class _ConversionsScreenState extends State<ConversionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = AppLocalizations.of(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Scaffold(
