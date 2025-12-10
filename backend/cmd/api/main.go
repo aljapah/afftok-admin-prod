@@ -141,7 +141,7 @@ func main() {
 	promoterHandler := handlers.NewPromoterHandler(db)
 	inviteHandler := handlers.NewInviteHandler(db)
 	advertiserHandler := handlers.NewAdvertiserHandler(db)
-	kycHandler := handlers.NewKYCHandler(db)
+	kycSimpleHandler := handlers.NewKYCSimpleHandler(db)
 	observabilityHandler := handlers.NewObservabilityHandler()
 	
 	// Phase 7: Admin Observability Handlers
@@ -362,26 +362,15 @@ func main() {
 				clicks.GET("/by-offer", clickHandler.GetClicksByOffer)
 			}
 
-			// ========== KYC & Payout Routes ==========
+			// ========== KYC Status (تلقائي) ==========
+			// النظام يفعّل KYC تلقائياً عند كشف سلوك مشبوه
 			kyc := protected.Group("/kyc")
 			{
-				kyc.POST("/submit", kycHandler.SubmitKYC)
-				kyc.GET("/status", kycHandler.GetMyKYC)
+				kyc.GET("/status", kycSimpleHandler.GetMyKYCStatus) // حالة KYC الحالية
 			}
-
-			paymentMethods := protected.Group("/payment-methods")
-			{
-				paymentMethods.GET("", kycHandler.GetMyPaymentMethods)
-				paymentMethods.POST("", kycHandler.AddPaymentMethod)
-				paymentMethods.DELETE("/:id", kycHandler.DeletePaymentMethod)
-			}
-
-			payouts := protected.Group("/payouts")
-			{
-				payouts.GET("", kycHandler.GetMyPayouts)
-				payouts.POST("/request", kycHandler.RequestPayout)
-				payouts.POST("/:id/cancel", kycHandler.CancelPayout)
-			}
+			
+			// Webhook من مزود التحقق الخارجي (SumSub/Veriff/Persona)
+			api.POST("/kyc/webhook", kycSimpleHandler.ProviderWebhook)
 
 			// ========== Advertiser Routes ==========
 			advertiser := protected.Group("/advertiser")
@@ -420,13 +409,12 @@ func main() {
 				admin.POST("/conversions/:id/approve", postbackHandler.ApproveConversion)
 				admin.POST("/conversions/:id/reject", postbackHandler.RejectConversion)
 
-				// KYC Management
-				admin.GET("/kyc", kycHandler.AdminGetKYCList)
-				admin.POST("/kyc/:id/review", kycHandler.AdminReviewKYC)
-
-				// Payout Management
-				admin.GET("/payouts", kycHandler.AdminGetPayoutList)
-				admin.POST("/payouts/:id/process", kycHandler.AdminProcessPayout)
+				// KYC Management (تلقائي)
+				admin.GET("/kyc/pending", kycSimpleHandler.AdminGetUsersRequiringKYC) // المستخدمين بانتظار التحقق
+				admin.GET("/kyc/:id", kycSimpleHandler.AdminGetUserKYC)                // حالة مستخدم محدد
+				admin.POST("/kyc/:id/reset", kycSimpleHandler.AdminResetKYC)           // إعادة تعيين حالة
+				admin.POST("/kyc/:id/verify", kycSimpleHandler.AdminManualVerify)      // تحقق يدوي (طوارئ)
+				admin.POST("/kyc/:id/require", kycSimpleHandler.AdminTriggerKYC)       // تفعيل KYC يدوياً
 
 				// Pending Offers Management (for advertiser submissions)
 				admin.GET("/offers/pending", advertiserHandler.GetPendingOffers)

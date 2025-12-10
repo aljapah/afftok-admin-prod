@@ -32,6 +32,13 @@ type AfftokUser struct {
 	
 	// Payment method for receiving earnings
 	PaymentMethod    string    `gorm:"type:text" json:"payment_method,omitempty"`
+	
+	// KYC Status - يتحول لـ required تلقائياً عند كشف سلوك مشبوه
+	// none = عادي | required = مطلوب تحقق | verified = تم التحقق | rejected = مرفوض
+	KYCStatus        string    `gorm:"type:varchar(20);default:'none'" json:"kyc_status"`
+	KYCRequiredAt    *time.Time `json:"kyc_required_at,omitempty"`    // متى طُلب التحقق
+	KYCVerifiedAt    *time.Time `json:"kyc_verified_at,omitempty"`    // متى تم التحقق
+	KYCProviderRef   string    `gorm:"type:varchar(100)" json:"kyc_provider_ref,omitempty"` // معرف من مزود خارجي (SumSub/Veriff)
 
 	// Advertiser-specific fields (only used when Role = "advertiser")
 	CompanyName string `gorm:"type:varchar(100)" json:"company_name,omitempty"`
@@ -105,6 +112,35 @@ func GenerateUniqueCode() string {
 	bytes := make([]byte, 4)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
+}
+
+// KYC Status Constants
+const (
+	KYCStatusNone     = "none"     // عادي - لا يحتاج تحقق
+	KYCStatusRequired = "required" // مطلوب تحقق - تم كشف سلوك مشبوه
+	KYCStatusVerified = "verified" // تم التحقق بنجاح
+	KYCStatusRejected = "rejected" // مرفوض - فشل التحقق
+)
+
+// RequiresKYC checks if user needs KYC verification
+func (u *AfftokUser) RequiresKYC() bool {
+	return u.KYCStatus == KYCStatusRequired
+}
+
+// IsKYCVerified checks if user passed KYC
+func (u *AfftokUser) IsKYCVerified() bool {
+	return u.KYCStatus == KYCStatusVerified
+}
+
+// IsKYCRejected checks if user failed KYC
+func (u *AfftokUser) IsKYCRejected() bool {
+	return u.KYCStatus == KYCStatusRejected
+}
+
+// CanPromote checks if user can continue promoting
+func (u *AfftokUser) CanPromote() bool {
+	// Can promote if: no KYC needed OR already verified
+	return u.KYCStatus == KYCStatusNone || u.KYCStatus == KYCStatusVerified
 }
 
 // AdminUser represents an admin panel user

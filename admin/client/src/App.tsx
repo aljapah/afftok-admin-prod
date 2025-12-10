@@ -28,7 +28,6 @@ import AffiliateNetworks from "./pages/AffiliateNetworks";
 import Login from "./pages/Login";
 import AdminUsers from "./pages/AdminUsers";
 import AuditLog from "./pages/AuditLog";
-import KYC from "./pages/KYC";
 
 // Admin User Context
 interface AdminUser {
@@ -56,13 +55,14 @@ export const AdminContext = createContext<AdminContextType>({
 export const useAdmin = () => useContext(AdminContext);
 
 // Role-based access mapping
+// ملاحظة: KYC تلقائي الآن - لا يحتاج صفحة منفصلة
 const roleAccess: Record<string, string[]> = {
   super_admin: ['*'], // All access
-  finance_admin: ['/', '/invoices', '/analytics', '/offers', '/contests', '/affiliate-networks', '/kyc'],
+  finance_admin: ['/', '/invoices', '/analytics', '/offers', '/contests', '/affiliate-networks'],
   tech_admin: ['/', '/monitoring', '/logs', '/webhooks', '/geo-rules', '/fraud', '/integrations', '/affiliate-networks'],
   advertiser_manager: ['/', '/offers', '/networks', '/teams', '/contests', '/badges', '/analytics', '/integrations', '/affiliate-networks'],
-  promoter_support: ['/', '/users', '/teams', '/contests', '/kyc'],
-  fraud_reviewer: ['/', '/fraud', '/geo-rules', '/logs', '/kyc'],
+  promoter_support: ['/', '/users', '/teams', '/contests'],
+  fraud_reviewer: ['/', '/fraud', '/geo-rules', '/logs'],
   viewer: ['/'],
 };
 
@@ -97,7 +97,6 @@ function Router() {
       {canAccess('/contests') && <Route path={"/contests"} component={Contests} />}
       {canAccess('/integrations') && <Route path={"/integrations"} component={Integrations} />}
       {canAccess('/affiliate-networks') && <Route path={"/affiliate-networks"} component={AffiliateNetworks} />}
-      {canAccess('/kyc') && <Route path={"/kyc"} component={KYC} />}
       {/* Super Admin Only */}
       {user?.role === 'super_admin' && <Route path={"/admin-users"} component={AdminUsers} />}
       {user?.role === 'super_admin' && <Route path={"/audit-log"} component={AuditLog} />}
