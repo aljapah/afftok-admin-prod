@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_localizations.dart';
 import '../models/user.dart';
 import '../models/user_offer.dart';
@@ -1535,14 +1536,14 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             ),
             const SizedBox(height: 12),
             
-            // USDT
+            // USDT - Binance Referral Link
             _buildPaymentInfoItem(
               icon: '₮',
               name: 'USDT (TRC20)',
               description: isArabic 
-                  ? 'أنشئ محفظة في Binance أو Trust Wallet واحصل على عنوان TRC20'
-                  : 'Create wallet in Binance or Trust Wallet and get TRC20 address',
-              url: 'https://www.binance.com',
+                  ? 'أنشئ محفظة في Binance واحصل على عنوان TRC20 + مكافأة تصل لـ 100\$'
+                  : 'Create Binance wallet and get TRC20 address + up to \$100 bonus',
+              url: 'https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00HWEWH24F',
             ),
             
             const SizedBox(height: 20),
@@ -1570,34 +1571,44 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
     required String description,
     String? url,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 24)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                const SizedBox(height: 2),
-                Text(description, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
-              ],
+    return GestureDetector(
+      onTap: url != null ? () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } : null,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 24)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text(description, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                ],
+              ),
             ),
-          ),
-          if (url != null)
-            GestureDetector(
-              onTap: () {
-                // Could open URL here
-              },
-              child: Icon(Icons.open_in_new, color: Colors.white.withOpacity(0.4), size: 18),
-            ),
-        ],
+            if (url != null)
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00FF88).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.open_in_new, color: Color(0xFF00FF88), size: 16),
+              ),
+          ],
+        ),
       ),
     );
   }
