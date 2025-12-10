@@ -21,7 +21,8 @@ import {
   AlertTriangle,
   Info,
   Bug,
-  CheckCircle
+  CheckCircle,
+  Copy
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -72,6 +73,24 @@ export default function LogsViewer() {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1000);
     toast.success("Logs refreshed");
+  };
+
+  // Copy log error details
+  const copyLogError = (log: any) => {
+    const errorDetails = `
+🚨 Error Log Report
+========================
+Time: ${log.timestamp}
+Level: ${log.level.toUpperCase()}
+Category: ${log.category}
+Message: ${log.message}
+Metadata: ${JSON.stringify(log.metadata, null, 2)}
+========================
+Please check and fix this issue.
+    `.trim();
+    
+    navigator.clipboard.writeText(errorDetails);
+    toast.success("Log details copied!");
   };
 
   const getLevelIcon = (level: string) => {
@@ -267,6 +286,15 @@ export default function LogsViewer() {
                           {JSON.stringify(log.metadata, null, 2)}
                         </pre>
                       </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => copyLogError(log)}
+                        className="h-8 px-2 shrink-0"
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
                     </div>
                   </div>
                 ))}

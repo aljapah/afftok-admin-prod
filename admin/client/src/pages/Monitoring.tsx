@@ -19,7 +19,8 @@ import {
   Zap,
   TrendingUp,
   Users,
-  Package
+  Package,
+  Copy
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { 
@@ -85,6 +86,24 @@ export default function Monitoring() {
   const systemStatus = dbStatus === 'healthy' && backendStatus === 'healthy' ? 'healthy' : 
                        dbStatus === 'critical' || backendStatus === 'critical' ? 'critical' : 'warning';
   const dbLatency = health?.database?.latency || 0;
+
+  // Copy service error details
+  const copyServiceError = (service: any) => {
+    const errorDetails = `
+🚨 Service Issue Report
+========================
+Service: ${service.name}
+Status: ${service.status}
+Latency: ${service.latency}ms
+Uptime: ${service.uptime}%
+Time: ${new Date().toLocaleString()}
+========================
+Please check and fix this issue.
+    `.trim();
+    
+    navigator.clipboard.writeText(errorDetails);
+    toast.success("Error details copied!");
+  };
 
   // Real services from API
   const services = [
@@ -290,17 +309,30 @@ export default function Monitoring() {
                       </p>
                     </div>
                   </div>
-                  <Badge 
-                    variant={service.status === 'healthy' ? 'outline' : 'destructive'}
-                    className={
-                      service.status === 'healthy' ? 'bg-green-500/10 text-green-500' :
-                      service.status === 'warning' ? 'bg-yellow-500/10 text-yellow-500' :
-                      service.status === 'not_configured' ? 'bg-gray-500/10 text-gray-500' :
-                      'bg-red-500/10 text-red-500'
-                    }
-                  >
-                    {service.status === 'not_configured' ? 'N/A' : service.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {(service.status === 'critical' || service.status === 'warning') && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => copyServiceError(service)}
+                        className="h-8 px-2"
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
+                    )}
+                    <Badge 
+                      variant={service.status === 'healthy' ? 'outline' : 'destructive'}
+                      className={
+                        service.status === 'healthy' ? 'bg-green-500/10 text-green-500' :
+                        service.status === 'warning' ? 'bg-yellow-500/10 text-yellow-500' :
+                        service.status === 'not_configured' ? 'bg-gray-500/10 text-gray-500' :
+                        'bg-red-500/10 text-red-500'
+                      }
+                    >
+                      {service.status === 'not_configured' ? 'N/A' : service.status}
+                    </Badge>
+                  </div>
                 </div>
               ))}
             </div>
@@ -316,7 +348,7 @@ export default function Monitoring() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               <a 
-                href="https://railway.app/project" 
+                href="https://railway.app/project/08a31baf-7ea3-4f82-b78e-3928e165c61d" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted transition-colors"
@@ -329,7 +361,7 @@ export default function Monitoring() {
               </a>
               
               <a 
-                href="https://sentry.io" 
+                href="https://afftok.sentry.io" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted transition-colors"
@@ -342,7 +374,7 @@ export default function Monitoring() {
               </a>
               
               <a 
-                href="https://uptimerobot.com" 
+                href="https://stats.uptimerobot.com/hv6yK9rdZv" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted transition-colors"
