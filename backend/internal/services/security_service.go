@@ -835,3 +835,50 @@ func (s *SecurityService) UnlockConversion(ctx context.Context, lockKey string) 
 	cache.Delete(ctx, lockKey)
 }
 
+// ============================================
+// ZERO DROP: RAW POSTBACK STORAGE
+// ============================================
+
+// StoreRawPostback stores raw postback data before processing (Zero Drop)
+// This allows replay-safe recovery if processing fails
+func (s *SecurityService) StoreRawPostback(ctx context.Context, key, data string, ttl time.Duration) {
+	if cache.RedisClient == nil {
+		return
+	}
+	
+	cache.Set(ctx, "raw_pb:"+key, data, ttl)
+}
+
+// GetRawPostback retrieves a stored raw postback
+func (s *SecurityService) GetRawPostback(ctx context.Context, key string) (string, error) {
+	if cache.RedisClient == nil {
+		return "", fmt.Errorf("redis not available")
+	}
+	
+	return cache.Get(ctx, "raw_pb:"+key)
+}
+
+// DeleteRawPostback removes a raw postback after successful processing
+func (s *SecurityService) DeleteRawPostback(ctx context.Context, key string) {
+	if cache.RedisClient == nil {
+		return
+	}
+	
+	cache.Delete(ctx, "raw_pb:"+key)
+}
+
+// GetAllRawPostbacks returns all pending raw postbacks for recovery
+func (s *SecurityService) GetAllRawPostbacks(ctx context.Context) ([]string, error) {
+	if cache.RedisClient == nil {
+		return nil, fmt.Errorf("redis not available")
+	}
+	
+	// Scan for all raw_pb:* keys
+	keys, err := cache.RedisClient.Keys(ctx, "raw_pb:*").Result()
+	if err != nil {
+		return nil, err
+	}
+	
+	return keys, nil
+}
+

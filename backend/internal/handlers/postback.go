@@ -70,10 +70,17 @@ type PostbackRequest struct {
 	// Geo information (optional - for geo rule enforcement)
 	Country      string `json:"country" form:"country" query:"country"`
 	
-	// Verification
+	// Verification & Replay Protection
 	Signature    string `json:"signature" form:"signature" query:"sig"`
 	Token        string `json:"token" form:"token" query:"token"`
+	Timestamp    int64  `json:"timestamp" form:"timestamp" query:"ts"`     // Unix timestamp
+	Nonce        string `json:"nonce" form:"nonce" query:"nonce"`          // Unique request ID
 }
+
+// Postback validation constants
+const (
+	PostbackMaxAgeMinutes = 60 // Reject postbacks older than 60 minutes
+)
 
 // GeoEnforceOnPostback controls whether geo rules are enforced on postbacks
 // Can be set via environment variable GEO_ENFORCE_ON_POSTBACK
@@ -166,6 +173,73 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter length"})
 		return
 	}
+	
+	// ============================================
+	// TIMESTAMP & NONCE VALIDATION (Replay Protection)
+	// ============================================
+	
+	// Validate timestamp if provided (reject stale postbacks)
+	if req.Timestamp > 0 {
+		postbackTime := time.Unix(req.Timestamp, 0)
+		postbackAge := time.Since(postbackTime)
+		
+		// Reject postbacks older than 60 minutes
+		if postbackAge > time.Duration(PostbackMaxAgeMinutes)*time.Minute {
+			h.observabilityService.Log(services.LogEvent{
+				Timestamp: time.Now(),
+				Level:     services.LogLevelWarning,
+				Category:  "fraud",
+				Message:   "Stale postback rejected (timestamp expired)",
+				IP:        ip,
+				Metadata: map[string]interface{}{
+					"postback_timestamp": req.Timestamp,
+					"age_minutes":        int(postbackAge.Minutes()),
+					"max_age_minutes":    PostbackMaxAgeMinutes,
+				},
+			})
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "POSTBACK_EXPIRED",
+				"message": fmt.Sprintf("Postback timestamp expired (older than %d minutes)", PostbackMaxAgeMinutes),
+			})
+			return
+		}
+		
+		// Also reject postbacks from the future (clock skew > 5 minutes)
+		if postbackAge < -5*time.Minute {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "INVALID_TIMESTAMP",
+				"message": "Postback timestamp is in the future",
+			})
+			return
+		}
+	}
+	
+	// Validate nonce if provided (once-only request)
+	if req.Nonce != "" {
+		nonceKey := fmt.Sprintf("nonce:%s", req.Nonce)
+		nonceCtx := c.Request.Context()
+		
+		if h.securityService.IsConversionLocked(nonceCtx, nonceKey) {
+			h.observabilityService.Log(services.LogEvent{
+				Timestamp: time.Now(),
+				Level:     services.LogLevelWarning,
+				Category:  "fraud",
+				Message:   "Duplicate nonce rejected (replay attack)",
+				IP:        ip,
+				Metadata: map[string]interface{}{
+					"nonce": req.Nonce,
+				},
+			})
+			c.JSON(http.StatusConflict, gin.H{
+				"error":   "DUPLICATE_NONCE",
+				"message": "This request has already been processed",
+			})
+			return
+		}
+		
+		// Lock nonce for 24 hours
+		h.securityService.LockConversion(nonceCtx, nonceKey, 24*time.Hour)
+	}
 
 	// Log incoming postback for debugging
 	postbackJSON, _ := json.Marshal(req)
@@ -207,11 +281,41 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 	}
 
 	// ============================================
+	// ZERO DROP: Store Raw Postback Before Processing
+	// ============================================
+	ctx := c.Request.Context()
+	rawPostbackKey := fmt.Sprintf("raw_postback:%s:%d", externalID, time.Now().UnixNano())
+	h.securityService.StoreRawPostback(ctx, rawPostbackKey, string(postbackJSON), 7*24*time.Hour)
+	
+	// ============================================
 	// ENHANCED FRAUD PROTECTION & DUPLICATE LOCK
 	// ============================================
 	
-	// 1. Check for duplicate conversion by external_id
+	// 1. Redis Lock for external_conversion_id (90 days) - REPLAY ATTACK PROTECTION
 	if externalID != "" {
+		conversionLockKey := fmt.Sprintf("conv_ext:%s", externalID)
+		
+		// Check Redis lock first (faster than DB)
+		if h.securityService.IsConversionLocked(ctx, conversionLockKey) {
+			h.observabilityService.Log(services.LogEvent{
+				Timestamp: time.Now(),
+				Level:     services.LogLevelWarning,
+				Category:  "fraud",
+				Message:   "Replay attack blocked (external_id lock)",
+				IP:        ip,
+				Metadata: map[string]interface{}{
+					"external_id": externalID,
+				},
+			})
+			c.JSON(http.StatusConflict, gin.H{
+				"error":     "DUPLICATE_CONVERSION",
+				"message":   "Conversion already recorded (replay blocked)",
+				"duplicate": true,
+			})
+			return
+		}
+		
+		// Also check DB for persistence
 		var existingConversion models.Conversion
 		if err := h.db.Where("external_conversion_id = ?", externalID).First(&existingConversion).Error; err == nil {
 			// Duplicate found - return success but don't create new
@@ -222,6 +326,9 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 			})
 			return
 		}
+		
+		// Lock this external_id for 90 days (prevents replay attacks)
+		h.securityService.LockConversion(ctx, conversionLockKey, 90*24*time.Hour)
 	}
 
 	// Resolve click ID if provided
@@ -241,7 +348,6 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 	// 2. Enhanced Duplicate Lock: click_id + offer_id (prevents multi-postback for same click)
 	if clickID != nil && userOffer.Offer != nil {
 		duplicateKey := fmt.Sprintf("conv_lock:%s:%s", clickID.String(), userOffer.OfferID.String())
-		ctx := c.Request.Context()
 		
 		// Check if this click+offer already has a conversion (30 day window)
 		if h.securityService.IsConversionLocked(ctx, duplicateKey) {
