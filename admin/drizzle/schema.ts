@@ -113,6 +113,8 @@ export const offers = pgTable("offers", {
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0.0").notNull(),
   usersCount: integer("users_count").default(0).notNull(),
   status: varchar("status", { length: 20 }).default("pending").notNull(),
+  // سبب رفض العرض (اختياري)
+  rejectionReason: text("rejection_reason"),
   totalClicks: integer("total_clicks").default(0).notNull(),
   totalConversions: integer("total_conversions").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

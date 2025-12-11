@@ -10,7 +10,7 @@ export const appRouter = router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      (ctx.res as any).clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return {
         success: true,
       } as const;
@@ -214,6 +214,7 @@ export const appRouter = router({
         return z.object({
           name: z.string().min(1),
           description: z.string().optional(),
+          ownerId: z.string().uuid().optional(),
         }).parse(input);
       })
       .mutation(async ({ input }) => {

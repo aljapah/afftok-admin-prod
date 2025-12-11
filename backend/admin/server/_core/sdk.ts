@@ -2,9 +2,8 @@ import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
-import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
-import type { User } from "../../drizzle/schema";
+import type { SelectUser } from "../../drizzle/schema";
 import * as db from "../db";
 import { ENV } from "./env";
 import type {
@@ -22,6 +21,12 @@ export type SessionPayload = {
   openId: string;
   appId: string;
   name: string;
+};
+
+type RequestLike = {
+  headers?: {
+    cookie?: string;
+  };
 };
 
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
@@ -256,9 +261,9 @@ class SDKServer {
     } as GetUserInfoWithJwtResponse;
   }
 
-  async authenticateRequest(req: Request): Promise<User> {
+  async authenticateRequest(req: RequestLike): Promise<SelectUser> {
     // Regular authentication flow
-    const cookies = this.parseCookies(req.headers.cookie);
+    const cookies = this.parseCookies(req.headers?.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
 

@@ -81,6 +81,8 @@ export const offers = pgTable("offers", {
   payout: integer("payout").default(0).notNull(),
   commission: integer("commission").default(0).notNull(),
   payoutType: varchar("payout_type", { length: 20 }).default("cpa").notNull(),
+  // سبب رفض العرض (اختياري)
+  rejectionReason: text("rejection_reason"),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0.0").notNull(),
   usersCount: integer("users_count").default(0).notNull(),
   status: varchar("status", { length: 20 }).default("pending").notNull(),

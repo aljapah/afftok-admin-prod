@@ -1,6 +1,17 @@
-import type { CookieOptions, Request } from "express";
-
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+
+type RequestLike = {
+  protocol?: string;
+  headers?: Record<string, string | string[] | undefined>;
+};
+
+export type SessionCookieOptions = {
+  domain?: string;
+  httpOnly: boolean;
+  path: string;
+  sameSite: "none" | "lax" | "strict";
+  secure: boolean;
+};
 
 function isIpAddress(host: string) {
   // Basic IPv4 check and IPv6 presence detection.
@@ -8,36 +19,26 @@ function isIpAddress(host: string) {
   return host.includes(":");
 }
 
-function isSecureRequest(req: Request) {
+function isSecureRequest(req: RequestLike) {
   if (req.protocol === "https") return true;
 
-  const forwardedProto = req.headers["x-forwarded-proto"];
+  const forwardedProto = req.headers?.["x-forwarded-proto"];
   if (!forwardedProto) return false;
 
   const protoList = Array.isArray(forwardedProto)
     ? forwardedProto
     : forwardedProto.split(",");
 
-  return protoList.some(proto => proto.trim().toLowerCase() === "https");
+  return protoList.some((proto: string) => proto.trim().toLowerCase() === "https");
 }
 
-export function getSessionCookieOptions(
-  req: Request
-): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure"> {
-  // const hostname = req.hostname;
-  // const shouldSetDomain =
-  //   hostname &&
-  //   !LOCAL_HOSTS.has(hostname) &&
-  //   !isIpAddress(hostname) &&
-  //   hostname !== "127.0.0.1" &&
-  //   hostname !== "::1";
-
-  // const domain =
-  //   shouldSetDomain && !hostname.startsWith(".")
-  //     ? `.${hostname}`
-  //     : shouldSetDomain
-  //       ? hostname
-  //       : undefined;
+export function getSessionCookieOptions(req: RequestLike): SessionCookieOptions {
+  // إعدادات بسيطة للكوكي:
+  // - بدون domain صريح (يدار من المتصفح/الاستضافة)
+  // - httpOnly لحماية الكوكي من JS
+  // - path = "/" لتكون صالحة لكل الواجهة
+  // - sameSite = "none" لدعم السيناريوهات عبر الدومينات
+  // - secure حسب البروتوكول أو الهيدر X-Forwarded-Proto
 
   return {
     httpOnly: true,

@@ -69,6 +69,19 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 }
 
+export async function getUserByOpenId(openId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.openId, openId))
+    .limit(1);
+
+  return result[0] ?? null;
+}
+
 export async function getAllAfftokUsers() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -160,7 +173,8 @@ export async function getClicksAnalytics(days: number = 30) {
     ORDER BY date ASC
   `);
   
-  return (result.rows as any[]).map((row: any) => ({
+  const rows = result as any[];
+  return rows.map((row: any) => ({
     date: row.date,
     clicks: parseInt(row.count),
   }));
@@ -184,7 +198,8 @@ export async function getConversionsAnalytics(days: number = 30) {
     ORDER BY date ASC
   `);
   
-  return (result.rows as any[]).map((row: any) => ({
+  const rows = result as any[];
+  return rows.map((row: any) => ({
     date: row.date,
     conversions: parseInt(row.count),
   }));
@@ -600,7 +615,8 @@ export async function createContest(data: any) {
     ) RETURNING *
   `);
   
-  return result.rows?.[0] || null;
+  const rows = result as any[];
+  return rows[0] || null;
 }
 
 export async function updateContest(data: { id: string; [key: string]: any }) {
