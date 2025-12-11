@@ -1,5 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm run build && node scripts/build-api.mjs",
-  "installCommand": "pnpm install"
+  "builds": [{ "src": "package.json", "use": "@vercel/static-build" }],
+  "routes": [{ "src": "/(.*)", "dest": "/" }]
 }
