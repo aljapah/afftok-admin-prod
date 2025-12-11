@@ -1,5 +1,3 @@
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
-
 type RequestLike = {
   protocol?: string;
   headers?: Record<string, string | string[] | undefined>;
@@ -13,12 +11,6 @@ export type SessionCookieOptions = {
   secure: boolean;
 };
 
-function isIpAddress(host: string) {
-  // Basic IPv4 check and IPv6 presence detection.
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return true;
-  return host.includes(":");
-}
-
 function isSecureRequest(req: RequestLike) {
   if (req.protocol === "https") return true;
 
@@ -29,17 +21,10 @@ function isSecureRequest(req: RequestLike) {
     ? forwardedProto
     : forwardedProto.split(",");
 
-  return protoList.some(proto => proto.trim().toLowerCase() === "https");
+  return protoList.some((proto: string) => proto.trim().toLowerCase() === "https");
 }
 
 export function getSessionCookieOptions(req: RequestLike): SessionCookieOptions {
-  // نستخدم إعدادات بسيطة للكوكي:
-  // - بدون domain صريح (يدار من المتصفح/الاستضافة)
-  // - httpOnly لحماية الكوكي من JS
-  // - path = "/" لتكون صالحة لكل الواجهة
-  // - sameSite = "none" لدعم السيناريوهات عبر الدومينات
-  // - secure حسب البروتوكول أو الهيدر X-Forwarded-Proto
-
   return {
     httpOnly: true,
     path: "/",
