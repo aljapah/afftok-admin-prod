@@ -296,8 +296,32 @@ export async function updateOffer(data: { id: string; [key: string]: any }) {
 export async function deleteOffer(id: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
+  // احذف أولاً جميع البيانات المرتبطة بهذا العرض حتى لا تفشل قيود العلاقات
+  // 1) احذف التحويلات المرتبطة بأي user_offer لهذا العرض
+  await db.execute(sql`
+    DELETE FROM conversions 
+    WHERE user_offer_id IN (
+      SELECT id FROM user_offers WHERE offer_id = ${id}::uuid
+    )
+  `);
+
+  // 2) احذف النقرات المرتبطة بأي user_offer لهذا العرض
+  await db.execute(sql`
+    DELETE FROM clicks 
+    WHERE user_offer_id IN (
+      SELECT id FROM user_offers WHERE offer_id = ${id}::uuid
+    )
+  `);
+
+  // 3) احذف روابط المستخدمين بالعرض
+  await db.execute(sql`
+    DELETE FROM user_offers WHERE offer_id = ${id}::uuid
+  `);
+
+  // 4) في النهاية احذف العرض نفسه
   await db.delete(offers).where(eq(offers.id, id));
+
   return { success: true };
 }
 

@@ -251,58 +251,6 @@ class _PromotersScreenState extends State<PromotersScreen> {
                           fontSize: 13,
                         ),
                       ),
-                      if (email.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        GestureDetector(
-                          onTap: () async {
-                            final uri = Uri.parse('mailto:$email');
-                            if (await canLaunchUrl(uri)) {
-                              await launchUrl(uri);
-                            }
-                          },
-                          child: Row(
-                            children: [
-                              Icon(Icons.email, size: 14, color: Colors.blue.withOpacity(0.8)),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  email,
-                                  style: TextStyle(
-                                    color: Colors.blue.withOpacity(0.8),
-                                    fontSize: 12,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              GestureDetector(
-                                onTap: () {
-                                  Clipboard.setData(ClipboardData(text: email));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(isArabic ? 'تم نسخ البريد' : 'Email copied'),
-                                      backgroundColor: Colors.blue,
-                                      duration: const Duration(seconds: 1),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    isArabic ? 'نسخ' : 'Copy',
-                                    style: const TextStyle(color: Colors.blue, fontSize: 10),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -401,15 +349,43 @@ class _PromotersScreenState extends State<PromotersScreen> {
               ),
             ),
 
-          // Contact Button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Row(
-              children: [
-                if (email.isNotEmpty)
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
+          // Email row (واضح + قابل للنقر + زر نسخ واحد فقط)
+          if (email.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.15)),
+                  color: Colors.black.withOpacity(0.25),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.email, color: Colors.white70, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final uri = Uri.parse('mailto:$email');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                          }
+                        },
+                        child: Text(
+                          email,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            decoration: TextDecoration.underline,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
                         Clipboard.setData(ClipboardData(text: email));
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -419,21 +395,19 @@ class _PromotersScreenState extends State<PromotersScreen> {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.email, size: 16),
-                      label: Text(
-                        isArabic ? 'نسخ البريد' : 'Copy Email',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF6C63FF),
-                        side: const BorderSide(color: Color(0xFF6C63FF)),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        isArabic ? 'نسخ' : 'Copy',
+                        style: const TextStyle(
+                          color: Color(0xFF6C63FF),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -463,7 +437,11 @@ class _PromotersScreenState extends State<PromotersScreen> {
     );
   }
 
-  Widget _buildPaymentMethodDisplay(BuildContext context, String paymentMethod, bool isArabic) {
+  Widget _buildPaymentMethodDisplay(
+    BuildContext context,
+    String paymentMethod,
+    bool isArabic,
+  ) {
     // Check if it's a bank transfer with multiple fields
     final isBankTransfer = paymentMethod.toLowerCase().startsWith('bank:');
     
@@ -540,7 +518,9 @@ class _PromotersScreenState extends State<PromotersScreen> {
       child: Row(
         children: [
           Icon(
-            paymentMethod.toLowerCase().contains('paypal') ? Icons.paypal : Icons.currency_bitcoin,
+            paymentMethod.toLowerCase().contains('paypal')
+                ? Icons.paypal
+                : Icons.currency_bitcoin,
             color: const Color(0xFF00FF88),
             size: 20,
           ),
