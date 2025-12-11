@@ -15,7 +15,7 @@
     }
   ],
   "functions": {
-    "api/trpc.ts": {
+    "api/trpc.js": {
       "maxDuration": 30
     }
   }

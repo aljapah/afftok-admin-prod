@@ -1,6 +1,6 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { appRouter } from "../server/routers";
-import { createContext } from "../server/_core/context";
+import { appRouter } from "../routers";
+import { createContext } from "../_core/context";
 
 export const config = {
   runtime: "nodejs",
@@ -14,4 +14,3 @@ export default async function handler(req: Request) {
     createContext: () => createContext({ req } as any),
   });
 }
-
