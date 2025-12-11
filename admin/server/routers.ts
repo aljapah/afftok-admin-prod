@@ -9,8 +9,8 @@ export const appRouter = router({
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      // في نسخة Vercel الحالية نعتمد على localStorage في المتصفح أكثر من الكوكي،
+      // لذلك نكتفي بجعل الواجهة تحذف بيانات المستخدم بدون لمس الكوكيز هنا.
       return {
         success: true,
       } as const;
