@@ -15,8 +15,9 @@
     }
   ],
   "functions": {
-    "api/trpc.js": {
-      "maxDuration": 30
+    "api/trpc.ts": {
+      "maxDuration": 30,
+      "includeFiles": "server/**"
     }
   }
 }
