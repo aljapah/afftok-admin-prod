@@ -662,7 +662,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                       color: Colors.blue,
                       size: 18,
                     ),
-                  ),
+            ),
                 ),
                 // Edit Button
                 IconButton(
@@ -681,28 +681,28 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             GestureDetector(
               onTap: () => _showEditPaymentMethodDialog(context, user, lang),
               child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
                     color: hasPaymentMethod 
                         ? const Color(0xFF00FF88).withOpacity(0.3)
                         : Colors.orange.withOpacity(0.3),
-                  ),
                 ),
+              ),
                 child: hasPaymentMethod
                     ? Row(
-                        children: [
-                          const Icon(
+                children: [
+                  const Icon(
                             Icons.check_circle,
                             color: Color(0xFF00FF88),
                             size: 18,
-                          ),
+                  ),
                           const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
+                  Expanded(
+                    child: Text(
                               user.paymentMethod!,
                               style: const TextStyle(
                                 color: Colors.white,
@@ -727,10 +727,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            isArabic
+                      isArabic
                                 ? '⚠️ اضغط هنا لإضافة طريقة الدفع'
                                 : '⚠️ Tap here to add payment method',
-                            style: TextStyle(
+                      style: TextStyle(
                               color: Colors.orange.withOpacity(0.9),
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -1065,22 +1065,22 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Header
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF00FF88).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00FF88).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                             child: const Icon(Icons.account_balance_wallet, color: Color(0xFF00FF88), size: 24),
-                          ),
+                    ),
                           const SizedBox(width: 12),
-                          Expanded(
+                  Expanded(
                             child: Text(
                               isArabic ? 'اختر طريقة الدفع' : 'Select Payment Method',
                               style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -1165,13 +1165,13 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Column(
+                    child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Selected Method Header
                       Row(
-                        children: [
-                          Text(
+                      children: [
+                        Text(
                             _getPaymentIcon(selectedType!),
                             style: const TextStyle(fontSize: 28),
                           ),
@@ -1180,18 +1180,18 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                             child: Text(
                               _getPaymentName(selectedType!, isArabic),
                               style: const TextStyle(color: Color(0xFF00FF88), fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
                           ),
+                        ),
                           // Change Button
                           TextButton(
                             onPressed: () => setDialogState(() { selectedType = null; }),
                             child: Text(
                               isArabic ? 'تغيير' : 'Change',
                               style: const TextStyle(color: Colors.blue, fontSize: 14),
-                            ),
-                          ),
-                        ],
-                      ),
+                    ),
+                  ),
+                ],
+              ),
                       const SizedBox(height: 20),
                       
                       // Input Fields - Different for bank transfer
@@ -1233,41 +1233,41 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                         ),
                       ] else ...[
                         // Single field for PayPal / USDT
-                        TextField(
-                          controller: controller,
+              TextField(
+                controller: controller,
                           autofocus: true,
                           style: const TextStyle(color: Colors.white, fontSize: 16),
-                          decoration: InputDecoration(
+                decoration: InputDecoration(
                             labelText: _getFieldLabel(selectedType!, isArabic),
                             labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
                             hintText: _getFieldHint(selectedType!, isArabic),
-                            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.05),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.05),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(color: Color(0xFF00FF88), width: 2),
-                            ),
+                  ),
                             prefixIcon: Icon(_getFieldIcon(selectedType!), color: const Color(0xFF00FF88)),
-                          ),
+                ),
                           keyboardType: selectedType == 'paypal' ? TextInputType.emailAddress : TextInputType.text,
-                        ),
+              ),
                       ],
-                      const SizedBox(height: 24),
-                      
-                      // Save Button
-                      SizedBox(
-                        width: double.infinity,
+              const SizedBox(height: 24),
+              
+              // Save Button
+              SizedBox(
+                width: double.infinity,
                         height: 50,
-                        child: ElevatedButton(
+                child: ElevatedButton(
                           onPressed: isLoading ? null : () async {
                             String formatted;
                             
@@ -1312,10 +1312,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                             } else {
                               setDialogState(() => isLoading = false);
                             }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00FF88),
-                            foregroundColor: Colors.black,
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00FF88),
+                    foregroundColor: Colors.black,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           child: isLoading
@@ -1416,26 +1416,26 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF00FF88).withOpacity(0.15) : Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? const Color(0xFF00FF88) : Colors.white.withOpacity(0.1),
             width: isSelected ? 2 : 1,
-          ),
-        ),
+                    ),
+                  ),
         child: Row(
           children: [
             Text(icon, style: const TextStyle(fontSize: 24)),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
+                  child: Text(
                 name,
                 style: TextStyle(
                   color: isSelected ? const Color(0xFF00FF88) : Colors.white,
                   fontSize: 15,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
                 ),
-              ),
-            ),
             if (isSelected)
               const Icon(Icons.check_circle, color: Color(0xFF00FF88), size: 22),
           ],
@@ -1510,8 +1510,8 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                   isArabic ? 'كيف أسجل في وسائل الدفع؟' : 'How to register?',
                   style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-              ],
-            ),
+            ],
+          ),
             const SizedBox(height: 24),
             
             // PayPal

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"github.com/gin-gonic/gin"
@@ -474,6 +475,132 @@ func (h *TeamHandler) RegenerateInviteCode(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"invite_code": team.InviteCode,
 		"invite_url":  team.InviteURL,
+	})
+}
+
+// GetExclusiveOffersForOwner returns exclusive offers targeting this team that need team owner approval
+func (h *TeamHandler) GetExclusiveOffersForOwner(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	// Find team where this user is owner
+	var team models.Team
+	if err := h.db.Where("owner_id = ?", userID).First(&team).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "You are not an owner of any team"})
+		return
+	}
+
+	// Load offers that are exclusive to this team
+	var offers []models.Offer
+	if err := h.db.
+		Where("exclusive_team_id = ?", team.ID).
+		Order("created_at DESC").
+		Find(&offers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch exclusive offers"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"team":   team,
+		"offers": offers,
+	})
+}
+
+// ApproveExclusiveOffer allows team owner to approve an exclusive offer
+func (h *TeamHandler) ApproveExclusiveOffer(c *gin.Context) {
+	userID, _ := c.Get("userID")
+	offerID := c.Param("offerId")
+
+	// Load offer
+	var offer models.Offer
+	if err := h.db.First(&offer, "id = ?", offerID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Offer not found"})
+		return
+	}
+
+	if offer.ExclusiveTeamID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Offer is not exclusive to any team"})
+		return
+	}
+
+	// Verify that current user is owner of that team
+	var team models.Team
+	if err := h.db.First(&team, "id = ?", offer.ExclusiveTeamID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Team not found"})
+		return
+	}
+
+	if team.OwnerID != userID.(uuid.UUID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only team owner can approve this offer"})
+		return
+	}
+
+	now := time.Now()
+	updates := map[string]interface{}{
+		"team_approval_status": "approved",
+		"team_approval_by":     userID.(uuid.UUID),
+		"team_approval_at":     now,
+		"team_rejection_reason": "",
+	}
+
+	if err := h.db.Model(&offer).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to approve offer"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Offer approved for your team",
+	})
+}
+
+// RejectExclusiveOffer allows team owner to reject an exclusive offer
+func (h *TeamHandler) RejectExclusiveOffer(c *gin.Context) {
+	userID, _ := c.Get("userID")
+	offerID := c.Param("offerId")
+
+	var body struct {
+		Reason string `json:"reason"`
+	}
+	_ = c.ShouldBindJSON(&body)
+
+	// Load offer
+	var offer models.Offer
+	if err := h.db.First(&offer, "id = ?", offerID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Offer not found"})
+		return
+	}
+
+	if offer.ExclusiveTeamID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Offer is not exclusive to any team"})
+		return
+	}
+
+	// Verify that current user is owner of that team
+	var team models.Team
+	if err := h.db.First(&team, "id = ?", offer.ExclusiveTeamID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Team not found"})
+		return
+	}
+
+	if team.OwnerID != userID.(uuid.UUID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only team owner can reject this offer"})
+		return
+	}
+
+	now := time.Now()
+	updates := map[string]interface{}{
+		"team_approval_status": "rejected",
+		"team_approval_by":     userID.(uuid.UUID),
+		"team_approval_at":     now,
+		"team_rejection_reason": body.Reason,
+	}
+
+	if err := h.db.Model(&offer).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reject offer"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Offer rejected for your team",
 	})
 }
 

@@ -32,7 +32,7 @@ type AfftokUser struct {
 	
 	// Payment method for receiving earnings
 	PaymentMethod    string    `gorm:"type:text" json:"payment_method,omitempty"`
-	
+
 	// KYC Status - يتحول لـ required تلقائياً عند كشف سلوك مشبوه
 	// none = عادي | required = مطلوب تحقق | verified = تم التحقق | rejected = مرفوض
 	KYCStatus        string    `gorm:"type:varchar(20);default:'none'" json:"kyc_status"`

@@ -55,6 +55,19 @@ export default function Teams() {
   const [logoUrl, setLogoUrl] = useState("");
   const [ownerId, setOwnerId] = useState("");
   const [maxMembers, setMaxMembers] = useState("10");
+  const [specialization, setSpecialization] = useState("");
+
+  const specializationOptions = [
+    "General",
+    "Technology & Apps",
+    "E‑commerce",
+    "Food & Restaurants",
+    "Beauty & Fashion",
+    "Finance & Banking",
+    "Gaming",
+    "Education",
+    "Services / Agencies",
+  ];
 
   const resetForm = () => {
     setName("");
@@ -62,6 +75,7 @@ export default function Teams() {
     setLogoUrl("");
     setOwnerId("");
     setMaxMembers("10");
+    setSpecialization("");
     setCurrent(null);
     setEditMode(false);
   };
@@ -78,6 +92,7 @@ export default function Teams() {
     setLogoUrl(team.logoUrl ?? "");
     setOwnerId(team.ownerId);
     setMaxMembers(team.maxMembers?.toString() || "10");
+    setSpecialization(team.specialization ?? "");
     setEditMode(true);
     setOpen(true);
   };
@@ -91,6 +106,7 @@ export default function Teams() {
         logoUrl: logoUrl || null,
         ownerId,
         maxMembers: parseInt(maxMembers),
+        specialization: specialization || undefined,
       });
     } else {
       createTeam.mutate({
@@ -99,6 +115,7 @@ export default function Teams() {
         logoUrl: logoUrl || null,
         ownerId,
         maxMembers: parseInt(maxMembers),
+        specialization: specialization || undefined,
       });
     }
     setOpen(false);
@@ -127,6 +144,7 @@ export default function Teams() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>Specialization</TableHead>
                     <TableHead>Logo</TableHead>
                     <TableHead>Members</TableHead>
                     <TableHead>Points</TableHead>
@@ -138,6 +156,7 @@ export default function Teams() {
                     <TableRow key={team.id}>
                       <TableCell className="font-medium">{team.name}</TableCell>
                       <TableCell>{team.description}</TableCell>
+                      <TableCell>{team.specialization || "-"}</TableCell>
                       <TableCell>
                         {team.logoUrl && (
                           <img src={team.logoUrl} alt={team.name} className="w-8 h-8 rounded" />
@@ -209,6 +228,24 @@ export default function Teams() {
                 value={logoUrl}
                 onChange={(e) => setLogoUrl(e.target.value)}
               />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Specialization <span className="text-xs text-muted-foreground">(optional)</span>
+              </label>
+              <Select value={specialization} onValueChange={setSpecialization}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select specialization (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {specializationOptions.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

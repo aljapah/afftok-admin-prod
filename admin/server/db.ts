@@ -376,7 +376,14 @@ export async function getAllTeams() {
   return db.select().from(teams);
 }
 
-export async function createTeam(data: { name: string; description?: string | null; logoUrl?: string | null; ownerId: string; maxMembers?: number }) {
+export async function createTeam(data: {
+  name: string;
+  description?: string | null;
+  logoUrl?: string | null;
+  ownerId: string;
+  maxMembers?: number;
+  specialization?: string | null;
+}) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -388,6 +395,7 @@ export async function createTeam(data: { name: string; description?: string | nu
     maxMembers: data.maxMembers || 10,
     memberCount: 0,
     totalPoints: 0,
+    specialization: data.specialization || null,
   };
 
   const result = await db.insert(teams).values(newTeam).returning();

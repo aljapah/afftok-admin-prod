@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/advertiser_service.dart';
 import '../../services/imgbb_service.dart';
+import '../../services/team_service.dart';
+import '../../models/team.dart';
 
 class CreateOfferScreen extends StatefulWidget {
   final Map<String, dynamic>? existingOffer; // For editing
@@ -18,6 +20,7 @@ class CreateOfferScreen extends StatefulWidget {
 class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final _formKey = GlobalKey<FormState>();
   final _advertiserService = AdvertiserService();
+  final _teamService = TeamService();
   
   // English fields
   final _titleController = TextEditingController();
@@ -54,6 +57,13 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   File? _selectedImage;
   File? _selectedLogo;
   final ImagePicker _picker = ImagePicker();
+  bool _useImageUrlOnly = true; // true = رابط صورة, false = رفع من الجهاز
+
+  // Teams (for optional exclusive team access)
+  List<Team> _teams = [];
+  bool _isLoadingTeams = false;
+  String? _selectedTeamId; // null = open to all teams
+  bool _isTeamExclusive = false;
 
   // قائمة الدول المتاحة
   final List<Map<String, String>> _availableCountries = [
@@ -104,6 +114,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     if (widget.existingOffer != null) {
       _populateForm(widget.existingOffer!);
     }
+    _loadTeams();
   }
 
   void _populateForm(Map<String, dynamic> offer) {
@@ -121,6 +132,18 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     _commissionController.text = (offer['commission'] ?? 0).toString();
     _selectedCategory = offer['category'] ?? 'general';
     _selectedPayoutType = offer['payout_type'] ?? 'cpa';
+    // Exclusive team (optional)
+    if (offer['exclusive_team_id'] != null &&
+        offer['exclusive_team_id'].toString().isNotEmpty) {
+      _selectedTeamId = offer['exclusive_team_id'].toString();
+      _isTeamExclusive = true;
+    } else {
+      _selectedTeamId = null;
+      _isTeamExclusive = false;
+    }
+
+    // إذا كان هناك رابط صورة مخزَّن نستخدم وضع "رابط" افتراضيًا
+    _useImageUrlOnly = _imageUrlController.text.isNotEmpty;
     
     // Parse target countries
     if (offer['target_countries'] != null) {
@@ -151,6 +174,402 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         } catch (_) {}
       }
     }
+  }
+
+  Future<void> _loadTeams() async {
+    setState(() => _isLoadingTeams = true);
+    try {
+      final result = await _teamService.getAllTeams();
+      if (result['success'] == true && mounted) {
+        setState(() {
+          _teams = (result['teams'] as List<Team>?) ?? [];
+          _isLoadingTeams = false;
+        });
+      } else {
+        setState(() => _isLoadingTeams = false);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingTeams = false);
+      }
+    }
+  }
+
+  // شاشة اختيار الفرق في قائمة تحت بعض مع النقاط
+  void _showTeamsSelector(bool isArabic) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF111111),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isArabic ? 'اختيار فريق' : 'Choose Team',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              isArabic
+                                  ? 'اختر الفريق صاحب السمعة الأفضل لعرضك'
+                                  : 'Pick the team with the best performance for your offer',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              _selectedTeamId = null;
+                            });
+                          },
+                          child: Text(
+                            isArabic ? 'كل المروجين' : 'All promoters',
+                            style: const TextStyle(
+                              color: Color(0xFF6C63FF),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      itemCount: _teams.length,
+                      itemBuilder: (context, index) {
+                        final team = _teams[index];
+                        final isSelected = team.id == _selectedTeamId;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedTeamId = team.id;
+                            });
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF1E1333)
+                                  : Colors.white.withOpacity(0.02),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFF6C63FF)
+                                    : Colors.white.withOpacity(0.12),
+                              ),
+                            ),
+                            child: _buildTeamListItem(team, isArabic, isSelected),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTeamListItem(Team team, bool isArabic, bool isSelected) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    Color(team.rank.color),
+                    Color(team.rank.color).withOpacity(0.7),
+                  ],
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  team.name.isNotEmpty ? team.name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          team.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(team.rank.emoji),
+                      const SizedBox(width: 4),
+                      Text(
+                        team.rank.displayName,
+                        style: TextStyle(
+                          color: Color(team.rank.color),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (team.specialization != null &&
+                      team.specialization!.isNotEmpty)
+                    Text(
+                      team.specialization!,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle,
+                  color: const Color(0xFF6C63FF).withOpacity(0.9), size: 20),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _buildSmallStat(
+              icon: Icons.people_alt,
+              label: isArabic ? 'الأعضاء' : 'Members',
+              value: '${team.stats.memberCount}',
+            ),
+            _buildSmallStat(
+              icon: Icons.touch_app,
+              label: isArabic ? 'النقرات' : 'Clicks',
+              value: '${team.stats.totalClicks}',
+            ),
+            _buildSmallStat(
+              icon: Icons.check_circle,
+              label: isArabic ? 'التحويلات' : 'Conversions',
+              value: '${team.stats.totalConversions}',
+            ),
+            _buildSmallStat(
+              icon: Icons.stars,
+              label: isArabic ? 'النقاط' : 'Points',
+              value: '${team.stats.totalPoints}',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // كرت يوضح بيانات الفريق المختار للمعلن
+  Widget _buildSelectedTeamSummaryCard(bool isArabic) {
+    final team = _teams.firstWhere(
+      (t) => t.id == _selectedTeamId,
+      orElse: () => _teams.first,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(team.rank.color),
+                      Color(team.rank.color).withOpacity(0.7),
+                    ],
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    team.name.isNotEmpty ? team.name[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      team.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (team.specialization != null &&
+                        team.specialization!.isNotEmpty)
+                      Text(
+                        team.specialization!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Color(team.rank.color).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${team.rank.emoji} ${team.rank.displayName}',
+                  style: TextStyle(
+                    color: Color(team.rank.color),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _buildSmallStat(
+                icon: Icons.people_alt,
+                label: isArabic ? 'الأعضاء' : 'Members',
+                value: '${team.stats.memberCount}',
+              ),
+              _buildSmallStat(
+                icon: Icons.touch_app,
+                label: isArabic ? 'النقرات' : 'Clicks',
+                value: '${team.stats.totalClicks}',
+              ),
+              _buildSmallStat(
+                icon: Icons.check_circle,
+                label: isArabic ? 'التحويلات' : 'Conversions',
+                value: '${team.stats.totalConversions}',
+              ),
+              _buildSmallStat(
+                icon: Icons.stars,
+                label: isArabic ? 'النقاط' : 'Points',
+                value: '${team.stats.totalPoints}',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallStat({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.white.withOpacity(0.6), size: 16),
+              const SizedBox(width: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -237,6 +656,41 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // تأكيد وجود صورة عرض وشعار إجباريًا (إما روابط أو رفع)
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    if (_useImageUrlOnly) {
+      if (_imageUrlController.text.trim().isEmpty ||
+          _logoUrlController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isArabic
+                  ? 'يجب إضافة رابط صورة العرض ورابط الشعار'
+                  : 'Offer image and logo URLs are required',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    } else {
+      // في وضع الرفع، الروابط تمتلئ آلياً بعد الرفع الناجح
+      if (_imageUrlController.text.trim().isEmpty ||
+          _logoUrlController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isArabic
+                  ? 'يجب رفع صورة العرض والشعار قبل إرسال العرض'
+                  : 'You must upload both offer image and logo before submitting',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -260,6 +714,8 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       'additional_notes': _additionalNotesController.text.trim().isNotEmpty 
           ? _additionalNotesController.text.trim() 
           : null,
+      // Optional exclusive team: إذا كان وضع الفرق مفعّل ومعه فريق مختار
+      'exclusive_team_id': _isTeamExclusive ? _selectedTeamId : null,
     };
 
     try {
@@ -1009,25 +1465,182 @@ Termination
                         ),
                         
                         const SizedBox(height: 16),
-                        _buildImagePicker(
-                          label: isArabic ? 'صورة العرض' : 'Offer Image',
-                          urlController: _imageUrlController,
-                          selectedImage: _selectedImage,
-                          isUploading: _isUploadingImage,
-                          onPick: () => _pickAndUploadImage(isLogo: false),
-                          isArabic: isArabic,
+                        // حقل الصور: إما روابط (صورة + شعار) أو رفع من الجهاز (صورة + شعار)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  isArabic
+                                      ? 'الصور (صورة العرض + الشعار)'
+                                      : 'Images (Offer + Logo)',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  isArabic ? 'صورة واحدة لكل نوع' : 'One image per type',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.4),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _useImageUrlOnly = true;
+                                        // منع الجمع بين روابط ورفع محلي
+                                        _selectedImage = null;
+                                        _selectedLogo = null;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: _useImageUrlOnly
+                                            ? const Color(0xFF6C63FF)
+                                            : Colors.transparent,
+                                        border: Border.all(
+                                          color: const Color(0xFF6C63FF)
+                                              .withOpacity(_useImageUrlOnly ? 1 : 0.4),
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          isArabic ? 'رابط صورة' : 'Image URL',
+                                          style: TextStyle(
+                                            color: _useImageUrlOnly
+                                                ? Colors.white
+                                                : Colors.white.withOpacity(0.8),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _useImageUrlOnly = false;
+                                        // منع الجمع
+                                        _imageUrlController.clear();
+                                        _logoUrlController.clear();
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: !_useImageUrlOnly
+                                            ? const Color(0xFF1E1333)
+                                            : Colors.transparent,
+                                        border: Border.all(
+                                          color: const Color(0xFF6C63FF)
+                                              .withOpacity(!_useImageUrlOnly ? 1 : 0.4),
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          isArabic ? 'رفع من الجهاز' : 'Upload from device',
+                                          style: TextStyle(
+                                            color: !_useImageUrlOnly
+                                                ? Colors.white
+                                                : Colors.white.withOpacity(0.8),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            if (_useImageUrlOnly)
+                              Column(
+                                children: [
+                                  _buildTextField(
+                                    controller: _imageUrlController,
+                                    label: isArabic
+                                        ? 'رابط صورة العرض'
+                                        : 'Offer Image URL',
+                                    icon: Icons.image,
+                                    keyboardType: TextInputType.url,
+                                    validator: (v) {
+                                      if (v == null || v.isEmpty) {
+                                        return isArabic ? 'مطلوب' : 'Required';
+                                      }
+                                      if (!v.startsWith('http')) {
+                                        return isArabic
+                                            ? 'رابط غير صالح'
+                                            : 'Invalid URL';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildTextField(
+                                    controller: _logoUrlController,
+                                    label: isArabic
+                                        ? 'رابط الشعار'
+                                        : 'Logo URL',
+                                    icon: Icons.verified, // أيقونة بسيطة
+                                    keyboardType: TextInputType.url,
+                                    validator: (v) {
+                                      if (v == null || v.isEmpty) {
+                                        return isArabic ? 'مطلوب' : 'Required';
+                                      }
+                                      if (!v.startsWith('http')) {
+                                        return isArabic
+                                            ? 'رابط غير صالح'
+                                            : 'Invalid URL';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              )
+                            else
+                              Column(
+                                children: [
+                                  _buildImagePicker(
+                                    label: isArabic ? 'صورة العرض' : 'Offer Image',
+                                    urlController: _imageUrlController,
+                                    selectedImage: _selectedImage,
+                                    isUploading: _isUploadingImage,
+                                    onPick: () => _pickAndUploadImage(isLogo: false),
+                                    isArabic: isArabic,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildImagePicker(
+                                    label: isArabic ? 'الشعار' : 'Logo',
+                                    urlController: _logoUrlController,
+                                    selectedImage: _selectedLogo,
+                                    isUploading: _isUploadingLogo,
+                                    onPick: () => _pickAndUploadImage(isLogo: true),
+                                    isArabic: isArabic,
+                                  ),
+                                ],
+                              ),
+                          ],
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        _buildImagePicker(
-                          label: isArabic ? 'الشعار' : 'Logo',
-                          urlController: _logoUrlController,
-                          selectedImage: _selectedLogo,
-                          isUploading: _isUploadingLogo,
-                          onPick: () => _pickAndUploadImage(isLogo: true),
-                          isArabic: isArabic,
-                        ),
-                        
                         const SizedBox(height: 24),
                         
                         // Category & Payout Section
@@ -1077,6 +1690,190 @@ Termination
                             ),
                           ],
                         ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Teams Access (Optional)
+                        _buildSectionTitle(
+                          isArabic ? 'استهداف الفرق (اختياري)' : 'Teams Access (Optional)',
+                          Icons.groups,
+                        ),
+                        const SizedBox(height: 12),
+
+                        // زرّين جنب بعض: عام / فريق محدد
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _isTeamExclusive = false;
+                                    _selectedTeamId = null;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: !_isTeamExclusive
+                                        ? const Color(0xFF6C63FF)
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: const Color(0xFF6C63FF)
+                                          .withOpacity(_isTeamExclusive ? 0.4 : 1),
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      isArabic ? 'عام' : 'Public',
+                                      style: TextStyle(
+                                        color: !_isTeamExclusive
+                                            ? Colors.white
+                                            : Colors.white.withOpacity(0.8),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _isTeamExclusive = true;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: _isTeamExclusive
+                                        ? const Color(0xFF1E1333)
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: const Color(0xFF6C63FF)
+                                          .withOpacity(!_isTeamExclusive ? 0.4 : 1),
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      isArabic ? 'فريق محدد' : 'Specific Team',
+                                      style: TextStyle(
+                                        color: _isTeamExclusive
+                                            ? Colors.white
+                                            : Colors.white.withOpacity(0.8),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // لو الوضع عام: رسالة بسيطة فقط
+                        if (!_isTeamExclusive)
+                          Text(
+                            isArabic
+                                ? 'الوضع الحالي: العرض متاح لجميع المروجين بدون تقييد بفريق.'
+                                : 'Current mode: offer is public and visible to all promoters.',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 12,
+                            ),
+                          )
+                        // لو الوضع فريق: نعرض زر عرض الفرق + ملخص الفريق
+                        else if (_isLoadingTeams)
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Color(0xFF6C63FF)),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                isArabic
+                                    ? 'جاري تحميل الفرق...'
+                                    : 'Loading teams...',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          )
+                        else if (_teams.isEmpty)
+                          Text(
+                            isArabic
+                                ? 'لا توجد فرق متاحة حالياً. سيصبح هذا الخيار فعالاً عند وجود فرق نشطة.'
+                                : 'No teams available yet. This option will be useful once there are active teams.',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 13,
+                            ),
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _showTeamsSelector(isArabic),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: Colors.white.withOpacity(0.3),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.groups,
+                                      color: Color(0xFF6C63FF), size: 20),
+                                  label: Text(
+                                    _selectedTeamId == null
+                                        ? (isArabic
+                                            ? 'عرض الفرق واختيار الفريق المناسب'
+                                            : 'View teams and choose the best')
+                                        : (isArabic
+                                            ? 'تغيير الفريق المختار'
+                                            : 'Change selected team'),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                isArabic
+                                    ? 'في حال اختيار فريق، لن يتمكن إلا أعضاء هذا الفريق من الانضمام للعرض.'
+                                    : 'If you select a team, only members of that team will be able to join this offer.',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.6),
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (_selectedTeamId != null)
+                                _buildSelectedTeamSummaryCard(isArabic),
+                            ],
+                          ),
                         
                         const SizedBox(height: 24),
                         

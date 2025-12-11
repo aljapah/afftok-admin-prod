@@ -187,7 +187,7 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 		if postbackAge > time.Duration(PostbackMaxAgeMinutes)*time.Minute {
 			h.observabilityService.Log(services.LogEvent{
 				Timestamp: time.Now(),
-				Level:     services.LogLevelWarning,
+				Level:     services.LogLevelWarn,
 				Category:  "fraud",
 				Message:   "Stale postback rejected (timestamp expired)",
 				IP:        ip,
@@ -222,7 +222,7 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 		if h.securityService.IsConversionLocked(nonceCtx, nonceKey) {
 			h.observabilityService.Log(services.LogEvent{
 				Timestamp: time.Now(),
-				Level:     services.LogLevelWarning,
+				Level:     services.LogLevelWarn,
 				Category:  "fraud",
 				Message:   "Duplicate nonce rejected (replay attack)",
 				IP:        ip,
@@ -299,7 +299,7 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 		if h.securityService.IsConversionLocked(ctx, conversionLockKey) {
 			h.observabilityService.Log(services.LogEvent{
 				Timestamp: time.Now(),
-				Level:     services.LogLevelWarning,
+				Level:     services.LogLevelWarn,
 				Category:  "fraud",
 				Message:   "Replay attack blocked (external_id lock)",
 				IP:        ip,
@@ -353,7 +353,7 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 		if h.securityService.IsConversionLocked(ctx, duplicateKey) {
 			h.observabilityService.Log(services.LogEvent{
 				Timestamp: time.Now(),
-				Level:     services.LogLevelWarning,
+				Level:     services.LogLevelWarn,
 				Category:  "fraud",
 				Message:   "Duplicate conversion blocked (click+offer lock)",
 				IP:        ip,
@@ -387,7 +387,7 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 		if clickAge > maxAge {
 			h.observabilityService.Log(services.LogEvent{
 				Timestamp: time.Now(),
-				Level:     services.LogLevelWarning,
+				Level:     services.LogLevelWarn,
 				Category:  "attribution",
 				Message:   "Conversion rejected: outside attribution window",
 				IP:        ip,
@@ -443,7 +443,7 @@ func (h *PostbackHandler) HandlePostback(c *gin.Context) {
 		status = models.ConversionStatusRejected
 		h.observabilityService.Log(services.LogEvent{
 			Timestamp: time.Now(),
-			Level:     services.LogLevelWarning,
+			Level:     services.LogLevelWarn,
 			Category:  "fraud",
 			Message:   "Conversion auto-rejected due to high fraud score",
 			IP:        ip,

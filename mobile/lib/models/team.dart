@@ -3,6 +3,7 @@ class Team {
   final String name;
   final String? logoUrl;
   final String? description;
+  final String? specialization;
   final String ownerId;
   final String? inviteCode;
   final String? inviteUrl;
@@ -18,6 +19,7 @@ class Team {
     required this.name,
     this.logoUrl,
     this.description,
+    this.specialization,
     required this.ownerId,
     this.inviteCode,
     this.inviteUrl,
@@ -59,6 +61,7 @@ class Team {
       name: json['name'] ?? '',
       logoUrl: json['logo_url'],
       description: json['description'],
+      specialization: json['specialization'],
       ownerId: json['owner_id']?.toString() ?? '',
       inviteCode: json['invite_code'],
       inviteUrl: json['invite_url'],

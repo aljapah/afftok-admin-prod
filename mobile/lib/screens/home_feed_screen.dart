@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/offer.dart';
@@ -8,6 +9,10 @@ import '../utils/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import 'profile_screen_enhanced.dart';
 import 'teams_screen.dart';
+import '../services/contest_service.dart';
+import '../services/api_service.dart';
+import '../models/contest.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'ai_assistant_screen.dart';
 import 'promoter_public_page.dart';
 import 'leaderboard_screen.dart';
@@ -27,6 +32,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   int _selectedNavIndex = 0; // 0 = Teams, 1 = Leaderboard, 2 = AI, 3 = My Page, 4 = Profile
   bool _isLoading = true;
   String? _errorMessage;
+  bool _promoChecked = false;
   
   // Filter categories
   Set<String> _selectedCategories = {};
@@ -38,6 +44,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     super.initState();
     // _checkAuth(); // التحقق يتم في SplashScreen
     _loadOffers();
+    // بعد أول فريم، نفحص إن كان هناك إعلان مسابقة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkContestPromo();
+    });
   }
   
   void _checkAuth() {
@@ -118,6 +128,188 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       });
       print('Error loading offers: $e');
     }
+  }
+
+  Future<void> _checkContestPromo() async {
+    if (_promoChecked) return;
+    _promoChecked = true;
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final contestService = ContestService(apiService);
+      final contests = await contestService.getActiveContests();
+
+      if (contests.isEmpty) return;
+
+      // اختر آخر مسابقة نشطة لديها صورة
+      Contest? featured;
+      for (final c in contests) {
+        if (c.imageUrl != null && c.imageUrl!.isNotEmpty) {
+          if (featured == null || c.startDate.isAfter(featured.startDate)) {
+            featured = c;
+          }
+        }
+      }
+
+      if (featured == null) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final lastSeenId = prefs.getString('last_promo_contest_id');
+      if (lastSeenId == featured.id) {
+        // تم عرض هذا الإعلان من قبل على هذا الجهاز
+        return;
+      }
+
+      if (!mounted) return;
+
+      await _showContestPromoDialog(featured);
+
+      await prefs.setString('last_promo_contest_id', featured.id);
+    } catch (e) {
+      print('Error checking contest promo: $e');
+    }
+  }
+
+  Future<void> _showContestPromoDialog(Contest contest) async {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return Dialog(
+          insetPadding: EdgeInsets.zero,
+          backgroundColor: Colors.black,
+          child: SafeArea(
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF000000), Color(0xFF1A1A1A)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: Column(
+                children: [
+                  // إغلاق
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (contest.imageUrl != null && contest.imageUrl!.isNotEmpty)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: _buildPromoImage(contest.imageUrl!),
+                            ),
+                          const SizedBox(height: 24),
+                          Text(
+                            contest.getLocalizedTitle(isArabic ? 'ar' : 'en'),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (contest.getLocalizedDescription(isArabic ? 'ar' : 'en') != null)
+                            Text(
+                              contest.getLocalizedDescription(isArabic ? 'ar' : 'en')!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 14,
+                                height: 1.5,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF006E),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          // الذهاب إلى شاشة التحديات (تبويب المسابقات في شاشة الفرق)
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const TeamsScreen(initialTabIndex: 2),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          isArabic ? 'اذهب إلى التحديات' : 'Go to Challenges',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPromoImage(String imageUrl) {
+    if (imageUrl.startsWith('data:image')) {
+      try {
+        final base64Data = imageUrl.split(',').last;
+        final bytes = base64Decode(base64Data);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: 280,
+        );
+      } catch (e) {
+        print('Error decoding promo image: $e');
+      }
+    }
+
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: 280,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: double.infinity,
+          height: 280,
+          color: Colors.grey[900],
+          child: const Center(
+            child: Icon(Icons.emoji_events, color: Colors.white, size: 60),
+          ),
+        );
+      },
+    );
   }
 
   void _applyFilter() {

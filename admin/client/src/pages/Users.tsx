@@ -128,13 +128,13 @@ export default function Users() {
       toast.error(`Failed to delete user: ${error.message}`);
     },
   });
-  
+
 
   const filteredUsers = users?.filter((user) => {
     // Text search (general)
     const matchesSearch = searchQuery === "" || 
-      user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.fullName?.toLowerCase().includes(searchQuery.toLowerCase());
     
     // Name filter (specific)

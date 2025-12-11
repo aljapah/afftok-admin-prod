@@ -30,6 +30,8 @@ type Offer struct {
 	NetworkID          *uuid.UUID `gorm:"type:uuid" json:"network_id,omitempty"`
 	AffiliateNetworkID *uuid.UUID `gorm:"type:uuid;index" json:"affiliate_network_id,omitempty"` // الشبكة الخارجية (Noon, Amazon, Payoneer)
 	AdvertiserID       *uuid.UUID `gorm:"type:uuid;index" json:"advertiser_id,omitempty"`        // Link to advertiser user
+	// Optional: restrict this offer to a single team (exclusive access)
+	ExclusiveTeamID    *uuid.UUID `gorm:"type:uuid;index" json:"exclusive_team_id,omitempty"`
 	ExternalOfferID    string     `gorm:"type:varchar(100)" json:"external_offer_id,omitempty"`
 	
 	// Payment Source - مصدر الدفع للمروج
@@ -71,6 +73,12 @@ type Offer struct {
 	
 	// Additional Notes - ملاحظات إضافية
 	AdditionalNotes  string     `gorm:"type:text" json:"additional_notes,omitempty"`
+
+	// Team-exclusive workflow (optional)
+	TeamApprovalStatus string     `gorm:"type:varchar(20);default:''" json:"team_approval_status,omitempty"` // pending, approved, rejected
+	TeamApprovalBy     *uuid.UUID `gorm:"type:uuid" json:"team_approval_by,omitempty"`
+	TeamApprovalAt     *time.Time `json:"team_approval_at,omitempty"`
+	TeamRejectionReason string    `gorm:"type:text" json:"team_rejection_reason,omitempty"`
 	
 	Rating           float64    `gorm:"type:decimal(3,2);default:0.0" json:"rating"`
 	UsersCount       int        `gorm:"default:0" json:"users_count"`

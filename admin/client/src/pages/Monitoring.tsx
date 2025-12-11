@@ -326,17 +326,17 @@ Please check and fix this issue.
                         Copy
                       </Button>
                     )}
-                    <Badge 
-                      variant={service.status === 'healthy' ? 'outline' : 'destructive'}
-                      className={
-                        service.status === 'healthy' ? 'bg-green-500/10 text-green-500' :
-                        service.status === 'warning' ? 'bg-yellow-500/10 text-yellow-500' :
-                        service.status === 'not_configured' ? 'bg-gray-500/10 text-gray-500' :
-                        'bg-red-500/10 text-red-500'
-                      }
-                    >
-                      {service.status === 'not_configured' ? 'N/A' : service.status}
-                    </Badge>
+                  <Badge 
+                    variant={service.status === 'healthy' ? 'outline' : 'destructive'}
+                    className={
+                      service.status === 'healthy' ? 'bg-green-500/10 text-green-500' :
+                      service.status === 'warning' ? 'bg-yellow-500/10 text-yellow-500' :
+                      service.status === 'not_configured' ? 'bg-gray-500/10 text-gray-500' :
+                      'bg-red-500/10 text-red-500'
+                    }
+                  >
+                    {service.status === 'not_configured' ? 'N/A' : service.status}
+                  </Badge>
                   </div>
                 </div>
               ))}

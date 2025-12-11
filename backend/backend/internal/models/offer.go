@@ -26,10 +26,12 @@ func (Network) TableName() string {
 }
 
 type Offer struct {
-	ID               uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	NetworkID        *uuid.UUID `gorm:"type:uuid" json:"network_id,omitempty"`
-	AdvertiserID     *uuid.UUID `gorm:"type:uuid;index" json:"advertiser_id,omitempty"` // NEW: Link to advertiser user
-	ExternalOfferID  string     `gorm:"type:varchar(100)" json:"external_offer_id,omitempty"`
+	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	NetworkID       *uuid.UUID `gorm:"type:uuid" json:"network_id,omitempty"`
+	AdvertiserID    *uuid.UUID `gorm:"type:uuid;index" json:"advertiser_id,omitempty"` // Link to advertiser user
+	// Optional: restrict this offer to a single team (exclusive access)
+	ExclusiveTeamID *uuid.UUID `gorm:"type:uuid;index" json:"exclusive_team_id,omitempty"`
+	ExternalOfferID string     `gorm:"type:varchar(100)" json:"external_offer_id,omitempty"`
 	
 	// English Fields
 	Title            string     `gorm:"type:varchar(255);not null" json:"title"`
@@ -59,6 +61,12 @@ type Offer struct {
 	Network          *Network    `gorm:"foreignKey:NetworkID" json:"network,omitempty"`
 	Advertiser       *AfftokUser `gorm:"foreignKey:AdvertiserID" json:"advertiser,omitempty"` // NEW: Advertiser relationship
 	UserOffers       []UserOffer `gorm:"foreignKey:OfferID" json:"user_offers,omitempty"`
+
+	// Team-exclusive workflow (optional)
+	TeamApprovalStatus string     `gorm:"type:varchar(20);default:''" json:"team_approval_status,omitempty"` // pending, approved, rejected
+	TeamApprovalBy     *uuid.UUID `gorm:"type:uuid" json:"team_approval_by,omitempty"`
+	TeamApprovalAt     *time.Time `json:"team_approval_at,omitempty"`
+	TeamRejectionReason string    `gorm:"type:text" json:"team_rejection_reason,omitempty"`
 }
 
 // GetTitle returns title based on language preference

@@ -159,6 +159,8 @@ export const teams = pgTable("teams", {
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   logoUrl: text("logo_url"),
+  // Optional primary specialization (Tech, Food, Finance, Apps, etc.)
+  specialization: varchar("specialization", { length: 100 }),
   ownerId: uuid("owner_id").notNull(),
   maxMembers: integer("max_members").default(10).notNull(),
   memberCount: integer("member_count").default(0).notNull(),

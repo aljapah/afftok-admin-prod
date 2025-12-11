@@ -131,11 +131,20 @@ func (h *ContestHandler) JoinContest(c *gin.Context) {
 			return
 		}
 	} else {
-		// Team contest - check if user's team is already participating
+		// Team contest - only team owner can join on behalf of the team
 		var member models.TeamMember
 		if err := h.db.Where("user_id = ? AND status = ?", userID, "active").
+			Preload("Team").
 			First(&member).Error; err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "You must be in a team to join this contest"})
+			return
+		}
+
+		if member.Role != "owner" {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "Only the team leader can register the team in this contest",
+				"code":  "TEAM_LEADER_ONLY",
+			})
 			return
 		}
 

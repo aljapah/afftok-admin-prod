@@ -253,6 +253,8 @@ type CreateOfferRequest struct {
 	Payout         int    `json:"payout"`
 	Commission     int    `json:"commission"`
 	PayoutType     string `json:"payout_type"`
+	// Optional: make this offer exclusive to a single team
+	ExclusiveTeamID string `json:"exclusive_team_id"`
 }
 
 // CreateOffer creates a new offer for the advertiser (pending approval)
@@ -301,24 +303,36 @@ func (h *AdvertiserHandler) CreateOffer(c *gin.Context) {
 		payoutType = "cpa"
 	}
 
+	// Parse optional exclusive team ID
+	var exclusiveTeamID *uuid.UUID
+	if req.ExclusiveTeamID != "" {
+		teamUUID, err := uuid.Parse(req.ExclusiveTeamID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid exclusive_team_id"})
+			return
+		}
+		exclusiveTeamID = &teamUUID
+	}
+
 	// Create offer with pending status
 	offer := models.Offer{
-		AdvertiserID:   &advertiserID,
-		Title:          req.Title,
-		TitleAr:        req.TitleAr,
-		Description:    req.Description,
-		DescriptionAr:  req.DescriptionAr,
-		TermsAr:        req.TermsAr,
-		ImageURL:       req.ImageURL,
-		LogoURL:        req.LogoURL,
-		DestinationURL: req.DestinationURL,
-		Category:       req.Category,
-		Payout:         req.Payout,
-		Commission:     req.Commission,
-		PayoutType:     payoutType,
-		Status:         "pending", // Always pending for advertiser-created offers
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		AdvertiserID:    &advertiserID,
+		ExclusiveTeamID: exclusiveTeamID,
+		Title:           req.Title,
+		TitleAr:         req.TitleAr,
+		Description:     req.Description,
+		DescriptionAr:   req.DescriptionAr,
+		TermsAr:         req.TermsAr,
+		ImageURL:        req.ImageURL,
+		LogoURL:         req.LogoURL,
+		DestinationURL:  req.DestinationURL,
+		Category:        req.Category,
+		Payout:          req.Payout,
+		Commission:      req.Commission,
+		PayoutType:      payoutType,
+		Status:          "pending", // Always pending for advertiser-created offers
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 
 	if err := h.db.Create(&offer).Error; err != nil {
@@ -497,24 +511,36 @@ func (h *AdvertiserHandler) UpdateOffer(c *gin.Context) {
 
 	// Update fields
 	updates := map[string]interface{}{
-		"title":           req.Title,
-		"title_ar":        req.TitleAr,
-		"description":     req.Description,
-		"description_ar":  req.DescriptionAr,
-		"terms_ar":        req.TermsAr,
-		"image_url":       req.ImageURL,
-		"logo_url":        req.LogoURL,
-		"destination_url": req.DestinationURL,
-		"category":        req.Category,
-		"payout":          req.Payout,
-		"commission":      req.Commission,
-		"status":          "pending", // Reset to pending for re-review
-		"rejection_reason": "",       // Clear rejection reason
-		"updated_at":      time.Now(),
+		"title":            req.Title,
+		"title_ar":         req.TitleAr,
+		"description":      req.Description,
+		"description_ar":   req.DescriptionAr,
+		"terms_ar":         req.TermsAr,
+		"image_url":        req.ImageURL,
+		"logo_url":         req.LogoURL,
+		"destination_url":  req.DestinationURL,
+		"category":         req.Category,
+		"payout":           req.Payout,
+		"commission":       req.Commission,
+		"status":           "pending", // Reset to pending for re-review
+		"rejection_reason": "",        // Clear rejection reason
+		"updated_at":       time.Now(),
 	}
 
 	if req.PayoutType != "" {
 		updates["payout_type"] = req.PayoutType
+	}
+
+	if req.ExclusiveTeamID != "" {
+		if teamUUID, err := uuid.Parse(req.ExclusiveTeamID); err == nil {
+			updates["exclusive_team_id"] = teamUUID
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid exclusive_team_id"})
+			return
+		}
+	} else {
+		// If empty string is sent, clear exclusive team
+		updates["exclusive_team_id"] = nil
 	}
 
 	if err := h.db.Model(&offer).Updates(updates).Error; err != nil {

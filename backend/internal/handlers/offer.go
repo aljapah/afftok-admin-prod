@@ -298,6 +298,20 @@ func (h *OfferHandler) JoinOffer(c *gin.Context) {
         return
     }
 
+	// If this offer is exclusive to a specific team, ensure user is an active member of that team
+	if offer.ExclusiveTeamID != nil {
+		var membership models.TeamMember
+		if err := h.db.
+			Where("team_id = ? AND user_id = ? AND status = ?", offer.ExclusiveTeamID, userUUID, models.TeamMemberStatusActive).
+			First(&membership).Error; err != nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "This offer is exclusive to a specific team. You must be a member of the selected team to join.",
+				"code":  "TEAM_EXCLUSIVE",
+			})
+			return
+		}
+	}
+
     // Check for existing user offer
     var existingUserOffer models.UserOffer
     if err := h.db.Where("user_id = ? AND offer_id = ?", userUUID, offerID).First(&existingUserOffer).Error; err == nil {

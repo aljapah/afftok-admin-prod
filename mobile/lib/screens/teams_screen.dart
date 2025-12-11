@@ -13,7 +13,9 @@ import '../services/contest_service.dart';
 import '../services/api_service.dart';
 
 class TeamsScreen extends StatefulWidget {
-  const TeamsScreen({Key? key}) : super(key: key);
+  final int initialTabIndex;
+
+  const TeamsScreen({Key? key, this.initialTabIndex = 0}) : super(key: key);
 
   @override
   State<TeamsScreen> createState() => _TeamsScreenState();
@@ -28,7 +30,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: widget.initialTabIndex.clamp(0, 2));
     
     // Load teams when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {

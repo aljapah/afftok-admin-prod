@@ -273,21 +273,32 @@ export const appRouter = router({
         return z.object({
           name: z.string().min(1),
           description: z.string().optional(),
+          logoUrl: z.string().url().optional(),
+          ownerId: z.string().uuid().optional(),
+          maxMembers: z.number().int().min(1).max(100).optional(),
+          specialization: z.string().min(1).max(100).optional(),
         }).parse(input);
       })
       .mutation(async ({ input }) => {
         const { createTeam, getAllAfftokUsers } = await import("./db");
-        
-        const users = await getAllAfftokUsers();
-        if (!users || users.length === 0) {
-          throw new Error("No users found. Please create a user first.");
+
+        // If ownerId not provided, fall back to first Afftok user (legacy behaviour)
+        let ownerId = input.ownerId;
+        if (!ownerId) {
+          const users = await getAllAfftokUsers();
+          if (!users || users.length === 0) {
+            throw new Error("No users found. Please create a user first.");
+          }
+          ownerId = users[0].id;
         }
-        
-        const defaultOwnerId = users[0].id;
-        
+
         return createTeam({
-            ...input,
-            ownerId: input.ownerId || defaultOwnerId,
+          name: input.name,
+          description: input.description ?? null,
+          logoUrl: input.logoUrl ?? null,
+          ownerId,
+          maxMembers: input.maxMembers,
+          specialization: input.specialization ?? null,
         });
       }),
     update: publicProcedure
@@ -296,6 +307,10 @@ export const appRouter = router({
           id: z.string(),
           name: z.string().min(1).optional(),
           description: z.string().optional(),
+          logoUrl: z.string().url().optional(),
+          ownerId: z.string().uuid().optional(),
+          maxMembers: z.number().int().min(1).max(100).optional(),
+          specialization: z.string().min(1).max(100).optional(),
         }).parse(input);
       })
       .mutation(async ({ input }) => {

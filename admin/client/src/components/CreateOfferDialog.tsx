@@ -80,6 +80,7 @@ async function uploadToImgBB(file: File): Promise<string | null> {
 
 export function CreateOfferDialog() {
   const [open, setOpen] = useState(false);
+  const [imageMode, setImageMode] = useState<"url" | "upload">("url");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -133,6 +134,7 @@ export function CreateOfferDialog() {
         additionalNotes: "",
         advertiserId: "",
       });
+      setImageMode("url");
     },
     onError: (error) => {
       toast.error(`Failed to create offer: ${error.message}`);
@@ -154,6 +156,7 @@ export function CreateOfferDialog() {
       if (url) {
         if (type === 'image') {
           setFormData({ ...formData, imageUrl: url });
+          setImageMode("upload");
         } else {
           setFormData({ ...formData, logoUrl: url });
         }
@@ -286,35 +289,79 @@ export function CreateOfferDialog() {
             
             {/* Offer Image */}
             <div className="grid gap-2">
-              <Label>Offer Image</Label>
-              <div className="flex gap-2">
+              <Label>Offer Image (one image only)</Label>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Source:</span>
+                <div className="inline-flex rounded-md border bg-background">
+                  <button
+                    type="button"
+                    className={`px-2 py-1 text-xs rounded-l-md ${
+                      imageMode === "url"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                    onClick={() => setImageMode("url")}
+                  >
+                    URL
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-2 py-1 text-xs rounded-r-md border-l ${
+                      imageMode === "upload"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                    onClick={() => setImageMode("upload")}
+                  >
+                    Upload
+                  </button>
+                </div>
+                <span className="ml-2">
+                  اختر إما رابط صورة أو رفع صورة من الجهاز (صورة واحدة فقط).
+                </span>
+              </div>
+
+              {imageMode === "url" && (
                 <Input
                   type="url"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://example.com/image.png or upload"
-                  className="flex-1"
+                  placeholder="https://example.com/image.png"
+                  className="flex-1 mt-2"
                 />
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={imageInputRef}
-                  onChange={(e) => handleImageUpload(e, 'image')}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={uploadingImage}
-                >
-                  {uploadingImage ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
+              )}
+
+              {/* Hidden file input موجود في كل الأحوال */}
+              <input
+                type="file"
+                accept="image/*"
+                ref={imageInputRef}
+                onChange={(e) => handleImageUpload(e, 'image')}
+                className="hidden"
+              />
+
+              {imageMode === "upload" && (
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={uploadingImage}
+                  >
+                    {uploadingImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                  </Button>
+                  {formData.imageUrl && (
+                    <span className="text-xs text-muted-foreground truncate max-w-[220px]">
+                      {formData.imageUrl}
+                    </span>
                   )}
-                </Button>
-              </div>
+                </div>
+              )}
+
               {formData.imageUrl && (
                 <img src={formData.imageUrl} alt="Preview" className="h-20 w-20 object-cover rounded border" />
               )}

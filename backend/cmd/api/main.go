@@ -336,6 +336,10 @@ func main() {
 				teams.DELETE("/:id/members/:memberId", teamHandler.RemoveMember)
 				teams.GET("/:id/pending", teamHandler.GetPendingRequests)
 				teams.POST("/:id/regenerate-invite", teamHandler.RegenerateInviteCode)
+				// Team-exclusive offers workflow
+				teams.GET("/exclusive/offers", teamHandler.GetExclusiveOffersForOwner)
+				teams.POST("/exclusive/offers/:offerId/approve", teamHandler.ApproveExclusiveOffer)
+				teams.POST("/exclusive/offers/:offerId/reject", teamHandler.RejectExclusiveOffer)
 				teams.DELETE("/:id", teamHandler.DeleteTeam)
 			}
 

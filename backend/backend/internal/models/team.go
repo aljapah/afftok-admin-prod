@@ -12,6 +12,8 @@ type Team struct {
 	Name        string    `gorm:"type:varchar(100);not null" json:"name"`
 	Description string    `gorm:"type:text" json:"description,omitempty"`
 	LogoURL     string    `gorm:"type:text" json:"logo_url,omitempty"`
+	// Optional primary specialization for this team (e.g. Tech, Food, Finance)
+	Specialization string    `gorm:"type:varchar(100)" json:"specialization,omitempty"`
 	OwnerID     uuid.UUID `gorm:"type:uuid;not null" json:"owner_id"`
 	MaxMembers  int       `gorm:"default:10" json:"max_members"`
 	MemberCount int       `gorm:"default:1" json:"member_count"`

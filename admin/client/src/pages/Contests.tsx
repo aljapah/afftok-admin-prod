@@ -1,5 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Table,
@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Target, Users, Calendar, DollarSign, Clock, Plus, Edit, Trash2, Play, Square } from "lucide-react";
+import { Trophy, Target, Users, Calendar, DollarSign, Clock, Plus, Edit, Trash2, Play, Square, Megaphone } from "lucide-react";
 import { format } from "date-fns";
 
 export default function Contests() {
@@ -59,6 +59,8 @@ export default function Contests() {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [current, setCurrent] = useState<any>(null);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoContest, setPromoContest] = useState<any>(null);
 
   // Form fields
   const [title, setTitle] = useState("");
@@ -195,6 +197,11 @@ export default function Contests() {
     }
   };
 
+  const activeOrUpcoming = useMemo(
+    () => (contests ?? []).filter((c: any) => c.status === "active" || c.status === "draft"),
+    [contests],
+  );
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -216,10 +223,25 @@ export default function Contests() {
           </h1>
           <p className="text-muted-foreground mt-1">إدارة المسابقات والتحديات للمروجين والفرق</p>
         </div>
-        <Button onClick={openCreateModal} className="gap-2">
-          <Plus className="h-4 w-4" />
-          إنشاء مسابقة جديدة
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            disabled={!activeOrUpcoming.length}
+            onClick={() => {
+              if (!activeOrUpcoming.length) return;
+              setPromoContest(activeOrUpcoming[0]);
+              setPromoOpen(true);
+            }}
+          >
+            <Megaphone className="h-4 w-4 text-pink-500" />
+            الإعلان
+          </Button>
+          <Button onClick={openCreateModal} className="gap-2">
+            <Plus className="h-4 w-4" />
+            إنشاء مسابقة جديدة
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -421,6 +443,100 @@ export default function Contests() {
         </CardContent>
       </Card>
 
+      {/* Promo Dialog */}
+      <Dialog open={promoOpen} onOpenChange={setPromoOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-pink-500" />
+              الإعلان الترويجي للمسابقة
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {promoContest ? (
+              <>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Trophy className="h-5 w-5 text-yellow-400" />
+                      {promoContest.title}
+                    </CardTitle>
+                    {promoContest.titleAr && (
+                      <p className="text-sm text-muted-foreground">{promoContest.titleAr}</p>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {promoContest.description && (
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {promoContest.description}
+                      </p>
+                    )}
+                    {promoContest.descriptionAr && (
+                      <p className="text-sm text-muted-foreground leading-relaxed" dir="rtl">
+                        {promoContest.descriptionAr}
+                      </p>
+                    )}
+                    <div className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-sm">
+                      <div className="font-semibold text-amber-400 mb-1">🎁 الجائزة / Prize</div>
+                      <div className="text-amber-300">
+                        {promoContest.prizeTitleAr || promoContest.prizeTitle || "جائزة خاصة للمركز الأول"}
+                      </div>
+                    </div>
+                    <div className="mt-3 text-xs text-muted-foreground">
+                      {promoContest.startDate && promoContest.endDate && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            من {format(new Date(promoContest.startDate), "dd/MM/yyyy")} إلى{" "}
+                            {format(new Date(promoContest.endDate), "dd/MM/yyyy")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">
+                    النص الجاهز للنشر (يمكن نسخه ولصقه في تلغرام / إكس / إلخ)
+                  </p>
+                  <Textarea
+                    readOnly
+                    className="h-40 text-sm"
+                    value={
+                      `🎯 مسابقة جديدة على AffTok\n\n` +
+                      `🏆 ${promoContest.titleAr || promoContest.title}\n\n` +
+                      (promoContest.descriptionAr ? `${promoContest.descriptionAr}\n\n` : "") +
+                      `🎁 الجائزة: ${
+                        promoContest.prizeTitleAr || promoContest.prizeTitle || "جائزة خاصة"
+                      }\n` +
+                      `📅 المدة: من ${
+                        promoContest.startDate
+                          ? format(new Date(promoContest.startDate), "dd/MM/yyyy")
+                          : "اليوم"
+                      } إلى ${
+                        promoContest.endDate
+                          ? format(new Date(promoContest.endDate), "dd/MM/yyyy")
+                          : "تاريخ الانتهاء"
+                      }\n\n` +
+                      `📲 اشترك الآن عبر تطبيق AffTok وابدأ بجمع النقاط!`
+                    }
+                    onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    اضغط داخل المربع ثم Ctrl+C أو Command+C لنسخ الإعلان بالكامل.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                لا توجد مسابقة محددة للإعلان حالياً. اختر مسابقة نشطة أو مسودة من الجدول ثم أعد المحاولة.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Create/Edit Modal */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -478,13 +594,36 @@ export default function Contests() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">صورة المسابقة (URL)</label>
-                <Input
-                  placeholder="https://example.com/image.png"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
+              <div className="space-y-2">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">صورة المسابقة (رابط أو رفع محلي)</label>
+                  <Input
+                    placeholder="https://example.com/image.png أو ارفع صورة من جهازك"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        const result = ev.target?.result;
+                        if (typeof result === "string") {
+                          setImageUrl(result); // data:image/...;base64,...
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    اختر صورة من جهازك، وسيتم حفظها مع المسابقة واستخدامها في شاشة الإعلان داخل التطبيق.
+                  </p>
+                </div>
               </div>
             </div>
 
