@@ -84,10 +84,11 @@ type AlertThresholds struct {
 }
 
 // DefaultThresholds returns default alert thresholds
+// Note: Neon serverless can have 500-1500ms cold start latency, so we use higher thresholds
 func DefaultThresholds() *AlertThresholds {
 	return &AlertThresholds{
-		DBLatencyMs:         30,
-		RedisLatencyMs:      10,
+		DBLatencyMs:         1000, // 1 second - Neon cold start can be 500-1500ms
+		RedisLatencyMs:      100,  // 100ms - Redis should be fast
 		DroppedClicksMax:    0,
 		WALPendingMax:       1000,
 		CPUPercentMax:       80,

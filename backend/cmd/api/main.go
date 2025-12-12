@@ -248,6 +248,11 @@ func main() {
 	_ = alertManager // Used in handlers
 	log.Println("✅ Alert manager initialized")
 	
+	// Start Health Monitor (checks DB, Redis, Memory every 30 seconds and sends alerts)
+	healthMonitor := services.GetHealthMonitor()
+	healthMonitor.Start()
+	defer healthMonitor.Stop()
+	
 	// Initialize Threat Detector
 	threatDetector := services.GetThreatDetector()
 	_ = threatDetector // Used in handlers
