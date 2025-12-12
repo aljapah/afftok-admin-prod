@@ -53,7 +53,7 @@ import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 
 // All menu items with role access
-const menuItems = [
+const menuItems: { icon: any; label: string; labelAr: string; path: string; roles: string[]; badge?: string }[] = [
   { icon: LayoutDashboard, label: "Dashboard", labelAr: "الرئيسية", path: "/", roles: ['*'] },
   { icon: Users, label: "Users", labelAr: "المستخدمون", path: "/users", roles: ['super_admin', 'promoter_support'] },
   { icon: Tag, label: "Offers", labelAr: "العروض", path: "/offers", roles: ['super_admin', 'finance_admin', 'advertiser_manager'] },
@@ -62,6 +62,7 @@ const menuItems = [
   { icon: Trophy, label: "Contests", labelAr: "المسابقات", path: "/contests", roles: ['super_admin', 'finance_admin', 'advertiser_manager', 'promoter_support'] },
   { icon: Award, label: "Badges", labelAr: "الشارات", path: "/badges", roles: ['super_admin', 'advertiser_manager'] },
   { icon: Receipt, label: "Invoices", labelAr: "الفواتير", path: "/invoices", roles: ['super_admin', 'finance_admin'] },
+  { icon: Wallet, label: "Payouts", labelAr: "الدفعات", path: "/payouts", roles: ['super_admin', 'finance_admin'], badge: "🔜" },
   // KYC تلقائي الآن - يُعرض في تفاصيل المستخدم فقط
   { icon: BarChart3, label: "Analytics", labelAr: "التحليلات", path: "/analytics", roles: ['super_admin', 'finance_admin', 'advertiser_manager'] },
 ];
@@ -256,6 +257,9 @@ function DashboardLayoutContent({
                     >
                       <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
                       <span className="truncate text-sm">{item.label}</span>
+                      {item.badge && (
+                        <span className="ml-auto text-xs opacity-60">{item.badge}</span>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

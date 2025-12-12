@@ -28,6 +28,7 @@ import AffiliateNetworks from "./pages/AffiliateNetworks";
 import Login from "./pages/Login";
 import AdminUsers from "./pages/AdminUsers";
 import AuditLog from "./pages/AuditLog";
+import Payouts from "./pages/Payouts";
 
 // Admin User Context
 interface AdminUser {
@@ -58,7 +59,7 @@ export const useAdmin = () => useContext(AdminContext);
 // ملاحظة: KYC تلقائي الآن - لا يحتاج صفحة منفصلة
 const roleAccess: Record<string, string[]> = {
   super_admin: ['*'], // All access
-  finance_admin: ['/', '/invoices', '/analytics', '/offers', '/contests', '/affiliate-networks'],
+  finance_admin: ['/', '/invoices', '/payouts', '/analytics', '/offers', '/contests', '/affiliate-networks'],
   tech_admin: ['/', '/monitoring', '/logs', '/webhooks', '/geo-rules', '/fraud', '/integrations', '/affiliate-networks'],
   advertiser_manager: ['/', '/offers', '/networks', '/teams', '/contests', '/badges', '/analytics', '/integrations', '/affiliate-networks'],
   promoter_support: ['/', '/users', '/teams', '/contests'],
@@ -94,6 +95,7 @@ function Router() {
       {canAccess('/logs') && <Route path={"/logs"} component={LogsViewer} />}
       {canAccess('/webhooks') && <Route path={"/webhooks"} component={Webhooks} />}
       {canAccess('/invoices') && <Route path={"/invoices"} component={Invoices} />}
+      {canAccess('/payouts') && <Route path={"/payouts"} component={Payouts} />}
       {canAccess('/contests') && <Route path={"/contests"} component={Contests} />}
       {canAccess('/integrations') && <Route path={"/integrations"} component={Integrations} />}
       {canAccess('/affiliate-networks') && <Route path={"/affiliate-networks"} component={AffiliateNetworks} />}

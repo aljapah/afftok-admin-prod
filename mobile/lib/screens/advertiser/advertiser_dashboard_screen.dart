@@ -9,6 +9,7 @@ import 'conversions_screen.dart';
 import 'promoters_screen.dart';
 import 'integration_setup_screen.dart';
 import 'geo_targeting_screen.dart';
+import 'advertiser_payoneer_screen.dart';
 
 class AdvertiserDashboardScreen extends StatefulWidget {
   const AdvertiserDashboardScreen({super.key});
@@ -85,7 +86,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
                   style: TextStyle(
                     fontSize: 120,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white.withOpacity(0.03),
+                    color: Colors.white.withValues(alpha: 0.03),
                     letterSpacing: 8,
                   ),
                 ),
@@ -100,7 +101,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
               style: TextStyle(
                 fontSize: 80,
                 fontWeight: FontWeight.w900,
-                color: Colors.white.withOpacity(0.02),
+                color: Colors.white.withValues(alpha: 0.02),
                 letterSpacing: 4,
               ),
             ),
@@ -113,7 +114,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
               style: TextStyle(
                 fontSize: 60,
                 fontWeight: FontWeight.w900,
-                color: Colors.white.withOpacity(0.02),
+                color: Colors.white.withValues(alpha: 0.02),
                 letterSpacing: 4,
               ),
             ),
@@ -201,7 +202,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6C63FF).withOpacity(0.3),
+            color: const Color(0xFF6C63FF).withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -213,7 +214,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.business, color: Colors.white, size: 30),
@@ -226,7 +227,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
                 Text(
                   isArabic ? 'مرحباً،' : 'Welcome,',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 14,
                   ),
                 ),
@@ -290,9 +291,9 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +312,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               fontSize: 12,
             ),
           ),
@@ -444,6 +445,25 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        // Payoneer Button (Coming Soon)
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionButton(
+                isArabic ? '💰 Payoneer (قريباً)' : '💰 Payoneer (Soon)',
+                Icons.account_balance_wallet,
+                Colors.orange,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdvertiserPayoneerScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox()), // Empty space for alignment
+          ],
+        ),
       ],
     );
   }
@@ -470,7 +490,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
                 height: 4,
                 margin: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -503,12 +523,12 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            const Color(0xFF6C63FF).withOpacity(0.2),
-                            const Color(0xFF9D4EDD).withOpacity(0.2),
+                            const Color(0xFF6C63FF).withValues(alpha: 0.2),
+                            const Color(0xFF9D4EDD).withValues(alpha: 0.2),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.3)),
+                        border: Border.all(color: const Color(0xFF6C63FF).withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,7 +553,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
                               ? 'يتم سداد المستحقات عبر تحويل بنكي وفق التفاصيل المرفقة داخل الفاتورة الشهرية.'
                               : 'Payments are made via bank transfer according to the details included in the monthly invoice.',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -542,7 +562,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
+                              color: Colors.white.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Column(
@@ -586,7 +606,7 @@ class _AdvertiserDashboardScreenState extends State<AdvertiserDashboardScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
+                        color: Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -636,7 +656,7 @@ Termination
 • All outstanding amounts must be paid before termination takes effect.
 ''',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 13,
                           height: 1.6,
                         ),
@@ -660,7 +680,7 @@ Termination
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
             fontSize: 12,
           ),
         ),
@@ -683,9 +703,9 @@ Termination
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -727,7 +747,7 @@ Termination
             Text(
               '${_offers.length} ${isArabic ? 'عرض' : 'offers'}',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 14,
               ),
             ),
@@ -760,9 +780,9 @@ Termination
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -774,7 +794,7 @@ Termination
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6C63FF).withOpacity(0.2),
+                  color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: offer['logo_url'] != null && offer['logo_url'].toString().isNotEmpty
@@ -813,7 +833,7 @@ Termination
                     Text(
                       offer['category'] ?? 'General',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                         fontSize: 12,
                       ),
                     ),
@@ -825,7 +845,7 @@ Termination
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
+                  color: statusColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -846,7 +866,7 @@ Termination
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -1029,7 +1049,7 @@ Termination
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF6C63FF).withOpacity(0.2),
+                                color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -1041,7 +1061,7 @@ Termination
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.2),
+                                color: Colors.green.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -1191,7 +1211,7 @@ Termination
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: 10,
           ),
         ),
@@ -1203,21 +1223,21 @@ Termination
     return Container(
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
           Icon(
             Icons.inbox_outlined,
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             size: 60,
           ),
           const SizedBox(height: 16),
           Text(
             isArabic ? 'لا توجد عروض بعد' : 'No offers yet',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: 16,
             ),
           ),
@@ -1227,7 +1247,7 @@ Termination
               ? 'أضف عرضك الأول للبدء'
               : 'Add your first offer to get started',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               fontSize: 14,
             ),
           ),
@@ -1240,7 +1260,7 @@ Termination
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

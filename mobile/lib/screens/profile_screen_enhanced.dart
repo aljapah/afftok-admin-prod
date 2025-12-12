@@ -16,6 +16,7 @@ import 'webview_screen.dart';
 import 'promoter_public_page.dart';
 import 'advertiser/advertiser_dashboard_screen.dart';
 import 'role_selection_screen.dart';
+import 'promoter_payoneer_screen.dart';
 
 class WebViewPage extends StatelessWidget {
   final String url;
@@ -256,7 +257,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF006E).withOpacity(0.5),
+                          color: const Color(0xFFFF006E).withValues(alpha: 0.5),
                           blurRadius: 20,
                           spreadRadius: 2,
                         ),
@@ -352,7 +353,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
         Text(
           '@${user.username}',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
             fontSize: 14,
           ),
         ),
@@ -366,7 +367,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               user.bio!,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 13,
               ),
               maxLines: 3,
@@ -381,10 +382,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -423,18 +424,18 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFFFF006E).withOpacity(0.25),
-              const Color(0xFFFF4D00).withOpacity(0.15),
+              const Color(0xFFFF006E).withValues(alpha: 0.25),
+              const Color(0xFFFF4D00).withValues(alpha: 0.15),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFFFF006E).withOpacity(0.4),
+            color: const Color(0xFFFF006E).withValues(alpha: 0.4),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFFF006E).withOpacity(0.2),
+              color: const Color(0xFFFF006E).withValues(alpha: 0.2),
               blurRadius: 15,
               spreadRadius: 0,
             ),
@@ -448,7 +449,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF006E).withOpacity(0.2),
+                    color: const Color(0xFFFF006E).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -478,7 +479,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                             ? 'شاركه لكسب العمولات'
                             : 'Share it to earn commissions',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 11,
                         ),
                       ),
@@ -501,10 +502,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFFFF006E).withOpacity(0.3),
+                    color: const Color(0xFFFF006E).withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -594,13 +595,13 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF00FF88).withOpacity(0.15),
-              const Color(0xFF00D9FF).withOpacity(0.08),
+              const Color(0xFF00FF88).withValues(alpha: 0.15),
+              const Color(0xFF00D9FF).withValues(alpha: 0.08),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFF00FF88).withOpacity(0.3),
+            color: const Color(0xFF00FF88).withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -612,7 +613,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00FF88).withOpacity(0.2),
+                    color: const Color(0xFF00FF88).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -640,7 +641,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                             ? 'يراها المعلن للتواصل معك'
                             : 'Visible to advertisers',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 11,
                         ),
                       ),
@@ -654,7 +655,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     padding: const EdgeInsets.all(6),
                     margin: const EdgeInsets.only(right: 4),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.2),
+                      color: Colors.blue.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
@@ -684,12 +685,12 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                     color: hasPaymentMethod 
-                        ? const Color(0xFF00FF88).withOpacity(0.3)
-                        : Colors.orange.withOpacity(0.3),
+                        ? const Color(0xFF00FF88).withValues(alpha: 0.3)
+                        : Colors.orange.withValues(alpha: 0.3),
                 ),
               ),
                 child: hasPaymentMethod
@@ -712,7 +713,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                           ),
                           Icon(
                             Icons.edit_note,
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                             size: 18,
                           ),
                         ],
@@ -722,7 +723,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                         children: [
                           Icon(
                             Icons.warning_amber_rounded,
-                            color: Colors.orange.withOpacity(0.8),
+                            color: Colors.orange.withValues(alpha: 0.8),
                             size: 18,
                           ),
                           const SizedBox(width: 8),
@@ -731,7 +732,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                                 ? '⚠️ اضغط هنا لإضافة طريقة الدفع'
                                 : '⚠️ Tap here to add payment method',
                       style: TextStyle(
-                              color: Colors.orange.withOpacity(0.9),
+                              color: Colors.orange.withValues(alpha: 0.9),
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
@@ -743,62 +744,71 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             
             const SizedBox(height: 16),
             
-            // Payoneer Coming Soon
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF6B00).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFFF6B00).withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B00).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
+            // Payoneer Coming Soon - Clickable
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PromoterPayoneerScreen()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B00).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFF6B00).withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF6B00).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.account_balance_wallet, color: Color(0xFFFF6B00), size: 20),
                     ),
-                    child: const Icon(Icons.account_balance_wallet, color: Color(0xFFFF6B00), size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Text(
-                              'Payoneer',
-                              style: TextStyle(
-                                color: Color(0xFFFF6B00),
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                'Payoneer',
+                                style: TextStyle(
+                                  color: Color(0xFFFF6B00),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  isArabic ? 'قريباً' : 'Soon',
+                                  style: const TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
                               ),
-                              child: Text(
-                                isArabic ? 'قريباً' : 'Soon',
-                                style: const TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          isArabic ? 'نظام دفع موحد وآلي لجميع العروض' : 'Unified & automated payment system',
-                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11),
-                        ),
-                      ],
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isArabic ? 'نظام دفع موحد وآلي لجميع العروض' : 'Unified & automated payment system',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    Icon(Icons.arrow_forward_ios, color: Colors.white.withValues(alpha: 0.3), size: 16),
+                  ],
+                ),
               ),
             ),
           ],
@@ -817,9 +827,9 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -827,7 +837,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -852,7 +862,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.2),
+                          color: Colors.orange.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
@@ -871,7 +881,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                 Text(
                   description,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 11,
                   ),
                 ),
@@ -894,13 +904,13 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF00FF88).withOpacity(0.15),
-              const Color(0xFF00D9FF).withOpacity(0.08),
+              const Color(0xFF00FF88).withValues(alpha: 0.15),
+              const Color(0xFF00D9FF).withValues(alpha: 0.08),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFF00FF88).withOpacity(0.3),
+            color: const Color(0xFF00FF88).withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -911,7 +921,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00FF88).withOpacity(0.2),
+                    color: const Color(0xFF00FF88).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -941,7 +951,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                             ? 'يراها المعلن للتواصل معك'
                             : 'Visible to advertisers',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 11,
                         ),
                       ),
@@ -965,10 +975,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
               ),
               child: user.paymentMethod != null && user.paymentMethod!.isNotEmpty
@@ -996,7 +1006,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                           size: 18,
                         ),
                         const SizedBox(width: 8),
@@ -1005,7 +1015,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                               ? 'لم يتم تحديد طريقة الدفع بعد'
                               : 'No payment method set',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 13,
                           ),
                         ),
@@ -1019,7 +1029,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                     ? 'أمثلة: PayPal: email@example.com أو STC Pay: 0551234567'
                     : 'Examples: PayPal: email@example.com or Bank: IBAN...',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                   fontSize: 11,
                   fontStyle: FontStyle.italic,
                 ),
@@ -1074,7 +1084,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00FF88).withOpacity(0.2),
+                      color: const Color(0xFF00FF88).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                             child: const Icon(Icons.account_balance_wallet, color: Color(0xFF00FF88), size: 24),
@@ -1095,7 +1105,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.2),
+                                color: Colors.blue.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(Icons.help_outline, color: Colors.blue, size: 20),
@@ -1132,7 +1142,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                         onPressed: () => Navigator.pop(dialogContext),
                         child: Text(
                           isArabic ? 'إلغاء' : 'Cancel',
-                          style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
                         ),
                       ),
                     ],
@@ -1239,18 +1249,18 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                           style: const TextStyle(color: Colors.white, fontSize: 16),
                 decoration: InputDecoration(
                             labelText: _getFieldLabel(selectedType!, isArabic),
-                            labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                            labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
                             hintText: _getFieldHint(selectedType!, isArabic),
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: Colors.white.withValues(alpha: 0.05),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1335,7 +1345,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                         onPressed: () => Navigator.pop(dialogContext),
                         child: Text(
                           isArabic ? 'إلغاء' : 'Cancel',
-                          style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
                         ),
                       ),
                     ],
@@ -1381,11 +1391,11 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Colors.white.withValues(alpha: 0.05),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -1393,7 +1403,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -1415,10 +1425,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00FF88).withOpacity(0.15) : Colors.white.withOpacity(0.05),
+          color: isSelected ? const Color(0xFF00FF88).withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF00FF88) : Colors.white.withOpacity(0.1),
+            color: isSelected ? const Color(0xFF00FF88) : Colors.white.withValues(alpha: 0.1),
             width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -1500,7 +1510,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.2),
+                    color: Colors.blue.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.help_outline, color: Colors.blue, size: 24),
@@ -1581,7 +1591,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -1594,7 +1604,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                 children: [
                   Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(height: 2),
-                  Text(description, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                  Text(description, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
                 ],
               ),
             ),
@@ -1602,7 +1612,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00FF88).withOpacity(0.2),
+                  color: const Color(0xFF00FF88).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(Icons.open_in_new, color: Color(0xFF00FF88), size: 16),
@@ -1710,10 +1720,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
             child: Column(
@@ -1728,7 +1738,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                         Text(
                           lang.thisMonth,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 14,
                           ),
                         ),
@@ -1755,7 +1765,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                         Text(
                           lang.bestOffer,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 14,
                           ),
                         ),
@@ -1797,13 +1807,13 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFFFF006E).withOpacity(0.2),
-                const Color(0xFFFF006E).withOpacity(0.05),
+                const Color(0xFFFF006E).withValues(alpha: 0.2),
+                const Color(0xFFFF006E).withValues(alpha: 0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFFFF006E).withOpacity(0.3),
+              color: const Color(0xFFFF006E).withValues(alpha: 0.3),
             ),
           ),
           child: Column(
@@ -1857,7 +1867,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
                         Text(
                           'عرض الفرق',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 12,
                           ),
                         ),
@@ -1911,7 +1921,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
             fontSize: 11,
           ),
         ),
@@ -1940,7 +1950,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF006E).withOpacity(0.6),
+                color: const Color(0xFFFF006E).withValues(alpha: 0.6),
                 blurRadius: 30,
                 spreadRadius: 5,
               ),
@@ -1975,7 +1985,7 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -2033,10 +2043,10 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -2055,7 +2065,7 @@ class _StatCard extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               fontSize: 11,
             ),
             textAlign: TextAlign.center,
@@ -2085,7 +2095,7 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(

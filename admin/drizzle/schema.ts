@@ -274,3 +274,83 @@ export const advertiserIntegrations = pgTable("advertiser_integrations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// =====================================================
+// Payoneer Payout System - نظام الدفعات عبر Payoneer
+// (معطل حالياً - جاهز للتفعيل بعد التعاقد مع Payoneer)
+// =====================================================
+
+// Payout Batches - دفعات الشهر
+export const payoutBatches = pgTable("payout_batches", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  period: varchar("period", { length: 7 }).notNull().unique(), // "2025-01"
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  
+  // الإحصائيات
+  totalAmount: decimal("total_amount", { precision: 14, scale: 2 }).default("0"),
+  totalPlatformFee: decimal("total_platform_fee", { precision: 14, scale: 2 }).default("0"),
+  totalNetAmount: decimal("total_net_amount", { precision: 14, scale: 2 }).default("0"),
+  totalPayouts: integer("total_payouts").default(0),
+  totalPublishers: integer("total_publishers").default(0),
+  totalAdvertisers: integer("total_advertisers").default(0),
+  totalConversions: integer("total_conversions").default(0),
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  
+  // الحالة
+  status: varchar("status", { length: 20 }).default("draft"), // draft, submitted, processing, completed, failed
+  
+  // Payoneer Integration
+  payoneerBatchId: varchar("payoneer_batch_id", { length: 100 }),
+  payoneerStatus: varchar("payoneer_status", { length: 50 }),
+  payoneerError: text("payoneer_error"),
+  payoneerResponse: text("payoneer_response"), // JSONB
+  
+  // التواريخ
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  submittedAt: timestamp("submitted_at"),
+  completedAt: timestamp("completed_at"),
+  
+  createdById: uuid("created_by_id"),
+  notes: text("notes"),
+});
+
+// Payouts - المستحقات الفردية
+export const payouts = pgTable("payouts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  batchId: uuid("batch_id"), // يمكن أن يكون null
+  
+  // الأطراف
+  advertiserId: uuid("advertiser_id").notNull(),
+  publisherId: uuid("publisher_id").notNull(),
+  
+  // تفاصيل المبلغ
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  platformFee: decimal("platform_fee", { precision: 12, scale: 2 }).default("0"),
+  netAmount: decimal("net_amount", { precision: 12, scale: 2 }).default("0"),
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  
+  // الفترة
+  period: varchar("period", { length: 7 }).notNull(),
+  periodStart: timestamp("period_start"),
+  periodEnd: timestamp("period_end"),
+  
+  // الإحصائيات
+  conversionsCount: integer("conversions_count").default(0),
+  clicksCount: integer("clicks_count").default(0),
+  
+  // الحالة
+  status: varchar("status", { length: 20 }).default("pending"), // pending, approved, paid, failed, cancelled
+  
+  // Payoneer Integration
+  payoneerPaymentId: varchar("payoneer_payment_id", { length: 100 }),
+  payoneerStatus: varchar("payoneer_status", { length: 50 }),
+  payoneerError: text("payoneer_error"),
+  
+  // التواريخ
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  approvedAt: timestamp("approved_at"),
+  paidAt: timestamp("paid_at"),
+});

@@ -40,6 +40,11 @@ type AfftokUser struct {
 	KYCVerifiedAt    *time.Time `json:"kyc_verified_at,omitempty"`    // متى تم التحقق
 	KYCProviderRef   string    `gorm:"type:varchar(100)" json:"kyc_provider_ref,omitempty"` // معرف من مزود خارجي (SumSub/Veriff)
 
+	// Payoneer Integration - نظام بايونير للدفعات (قريباً)
+	PayoneerEmail    string `gorm:"type:varchar(255)" json:"payoneer_email,omitempty"`
+	PayoneerStatus   string `gorm:"type:varchar(20);default:'none'" json:"payoneer_status"` // none, pending, verified
+	PayoneerVerifiedAt *time.Time `json:"payoneer_verified_at,omitempty"`
+
 	// Advertiser-specific fields (only used when Role = "advertiser")
 	CompanyName string `gorm:"type:varchar(100)" json:"company_name,omitempty"`
 	Phone       string `gorm:"type:varchar(30)" json:"phone,omitempty"`
