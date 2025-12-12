@@ -312,6 +312,12 @@ Please check and fix this issue.
                         {service.status === 'not_configured' ? 'Not Configured' : 
                          `Latency: ${service.latency}ms | Uptime: ${service.uptime}%`}
                       </p>
+                      {service.note && (
+                        <p className="text-xs text-yellow-500">{service.note}</p>
+                      )}
+                      {service.name.includes('PostgreSQL') && service.latency > 500 && (
+                        <p className="text-xs text-yellow-500">⚡ Cold start (normal for Neon free tier)</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
